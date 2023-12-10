@@ -1,32 +1,49 @@
 {
-  "name": "interface-v2",
-  "private": true,
-  "sideEffects": false,
-  "type": "module",
-  "scripts": {
-    "build": "remix build",
-    "dev": "remix dev --manual",
-    "start": "remix-serve ./build/index.js",
-    "typecheck": "tsc"
-  },
-  "dependencies": {
-    "@remix-run/css-bundle": "^2.3.1",
-    "@remix-run/node": "^2.3.1",
-    "@remix-run/react": "^2.3.1",
-    "@remix-run/serve": "^2.3.1",
-    "isbot": "^3.6.8",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@remix-run/dev": "^2.3.1",
-    "@remix-run/eslint-config": "^2.3.1",
-    "@types/react": "^18.2.20",
-    "@types/react-dom": "^18.2.7",
-    "eslint": "^8.38.0",
-    "typescript": "^5.1.6"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  }
+	"name": "interface-v2",
+	"private": true,
+	"sideEffects": false,
+	"type": "module",
+	"scripts": {
+		"build": "remix build",
+		"dev": "remix dev --manual",
+		"start": "remix-serve ./build/index.js",
+		"typecheck": "tsc",
+		"format": "prettier --write .",
+		"lint": "eslint --cache --cache-location ./node_modules/.cache/eslint ."
+	},
+	"dependencies": {
+		"@ariakit/react": "^0.3.9",
+		"@remix-run/css-bundle": "^2.3.1",
+		"@remix-run/node": "^2.3.1",
+		"@remix-run/react": "^2.3.1",
+		"@remix-run/serve": "^2.3.1",
+		"isbot": "^3.6.8",
+		"nprogress": "^0.2.0",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0",
+		"viem": "^1.19.13",
+		"wagmi": "^1.4.10"
+	},
+	"devDependencies": {
+		"@remix-run/dev": "^2.3.1",
+		"@types/nprogress": "^0.2.3",
+		"@types/react": "^18.2.20",
+		"@types/react-dom": "^18.2.7",
+		"@typescript-eslint/eslint-plugin": "^6.13.2",
+		"@typescript-eslint/parser": "^6.13.2",
+		"eslint": "^8.55.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-import": "^2.29.0",
+		"eslint-plugin-jsx-a11y": "^6.8.0",
+		"eslint-plugin-react": "^7.33.2",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"prettier": "^3.1.1",
+		"prettier-plugin-tailwindcss": "^0.5.9",
+		"tailwindcss": "^3.3.6",
+		"typescript": "^5.3.3"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	}
 }
