@@ -13,6 +13,7 @@ import {
 import NProgress from "nprogress";
 import { useEffect, useMemo } from "react";
 
+import { WalletProvider } from "~/lib/wallet";
 import nProgressStyles from "~/styles/nprogress.css";
 import tailwindHref from "~/styles/tailwind.css";
 
@@ -70,7 +71,9 @@ export default function App() {
 				<Links />
 			</head>
 			<body>
-				<Outlet />
+				<WalletProvider>
+					<Outlet />
+				</WalletProvider>
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />
