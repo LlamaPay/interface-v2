@@ -15,6 +15,7 @@ import NProgress from "nprogress";
 import { useEffect, useMemo } from "react";
 
 import interFont from "~/assets/fonts/InterVariable.woff2";
+import { Header } from "~/components/Header";
 import { WalletProvider } from "~/lib/wallet";
 import nProgressStyles from "~/styles/nprogress.css";
 import tailwindHref from "~/styles/tailwind.css";
@@ -103,6 +104,7 @@ function App() {
 				<ThemeHead ssrTheme={Boolean(data.theme)} />
 			</head>
 			<body>
+				<Header />
 				<Outlet />
 				<ThemeBody ssrTheme={Boolean(data.theme)} />
 				<ScrollRestoration />
