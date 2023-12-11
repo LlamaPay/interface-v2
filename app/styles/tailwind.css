@@ -1,19 +1,26 @@
+:root {
+	font-family: Inter, sans-serif;
+	font-feature-settings:
+		"liga" 1,
+		"calt" 1; /* fix for Chrome */
+}
+@supports (font-variation-settings: normal) {
+	:root {
+		font-family: InterVariable, sans-serif;
+	}
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
 	html {
-		font-family: "futura", sans-serif;
 		@apply h-full scroll-smooth;
 	}
 
 	body {
-		@apply h-full;
-	}
-
-	body > div[data-rk] {
-		@apply relative isolate flex min-h-full flex-col bg-white text-black;
+		@apply isolate flex min-h-full flex-col bg-[#FAFFFE] text-black dark:bg-[#1d1d1d] dark:text-white;
 	}
 
 	button {
@@ -46,26 +53,4 @@
 }
 
 @layer components {
-	.dialog {
-		@apply fixed inset-0 z-10 m-auto flex h-fit max-h-[calc(100vh-2*0.75rem)] flex-col gap-0 overflow-auto border-2 border-solid border-black bg-white p-4 text-black shadow;
-	}
-	/* if modifying these styles, make sure to update button styles in row gallery */
-	.page-px {
-		@apply px-2 md:px-4 lg:px-8 xl:px-10 2xl:px-12;
-	}
-
-	.page-mx {
-		@apply mx-2 md:mx-4 lg:mx-8 xl:mx-10 2xl:mx-12;
-	}
-
-	/* Hide scrollbar for Chrome, Safari and Opera */
-	.no-scrollbar::-webkit-scrollbar {
-		@apply hidden;
-	}
-
-	/* Hide scrollbar for IE, Edge and Firefox */
-	.no-scrollbar {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
 }
