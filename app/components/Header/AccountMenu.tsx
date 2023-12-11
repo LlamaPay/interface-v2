@@ -4,13 +4,12 @@ import { useAccount, useBalance, useDisconnect, useEnsName } from "wagmi";
 import { Icon } from "~/components/Icon";
 import { formatAddress } from "~/utils/formatAddress";
 
-export const AccountMenu = ({ className }: { className: string }) => {
+export const AccountMenu = () => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
 	const { address } = useAccount();
 	const { disconnect } = useDisconnect();
 	const { data } = useBalance();
-
 	const { data: ensName } = useEnsName({
 		address,
 		chainId: 1
@@ -18,12 +17,15 @@ export const AccountMenu = ({ className }: { className: string }) => {
 
 	return (
 		<>
-			<Ariakit.Button onClick={dialog.show} className={className}>
+			<Ariakit.Button
+				onClick={dialog.show}
+				className="hidden h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:inline"
+			>
 				{address ? ensName ?? formatAddress(address) : null}
 			</Ariakit.Button>
 			<Ariakit.Dialog store={dialog} backdrop={<div className="dialog-backdrop" />} className="dialog">
 				<button
-					className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-black/20"
+					className="ml-auto hidden h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-black/20 md:flex"
 					onClick={dialog.toggle}
 				>
 					<Icon className="h-4 w-4 flex-shrink-0" name="x-icon" />

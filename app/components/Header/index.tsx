@@ -5,12 +5,14 @@ import logoDark from "~/assets/icons/logo-dark.svg";
 import logoLight from "~/assets/icons/logo-light.svg";
 import moon from "~/assets/icons/moon.svg";
 import sun from "~/assets/icons/sun.svg";
+import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { Theme, useTheme } from "~/utils/theme-provider";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
 );
+const AppMenu = lazy(() => import("~/components/Header/AppMenu").then((module) => ({ default: module.AppMenu })));
 const ConnectWallet = lazy(() =>
 	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
 );
@@ -33,36 +35,47 @@ export const Header = () => {
 			{hydrated ? (
 				<>
 					{!isConnected ? (
-						<Suspense fallback={<HeaderButton disabled>Connect Wallet</HeaderButton>}>
-							<ConnectWallet className="rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
+						<Suspense
+							fallback={
+								<button
+									className="h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white"
+									disabled
+								>
+									Connect Wallet
+								</button>
+							}
+						>
+							<ConnectWallet className="h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
 						</Suspense>
 					) : (
-						<Suspense fallback={<></>}>
-							<NetworkMenu />
-							<AccountMenu className="rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
-						</Suspense>
+						<>
+							<Suspense fallback={<></>}>
+								<NetworkMenu />
+							</Suspense>
+							<Suspense fallback={<></>}>
+								<AccountMenu />
+							</Suspense>
+							<Suspense
+								fallback={
+									<button className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:hidden">
+										<span className="sr-only">Open Menu</span>
+										<Icon className="h-4 w-4 flex-shrink-0 text-[#3D3D3D] dark:text-white/60" name="three-dots" />
+									</button>
+								}
+							>
+								<AppMenu />
+							</Suspense>
+						</>
 					)}
 				</>
 			) : null}
-			<HeaderButton onClick={toggleTheme}>
-				<img src={theme === "dark" ? moon : sun} alt="" className="h-6" />
-				<span className="sr-only"></span>
-			</HeaderButton>
+			<button
+				className="hidden h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:flex"
+				onClick={toggleTheme}
+			>
+				<img src={theme === "dark" ? moon : sun} alt="" className="h-4" />
+				<span className="sr-only">Change Theme</span>
+			</button>
 		</header>
-	);
-};
-
-interface HeaderButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	children: React.ReactNode;
-}
-
-const HeaderButton = ({ children, ...props }: HeaderButtonProps) => {
-	return (
-		<button
-			className="rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white"
-			{...props}
-		>
-			{children}
-		</button>
 	);
 };
