@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { createConfig, configureChains, WagmiConfig } from "wagmi";
-import { mainnet } from "wagmi/chains";
+import { mainnet, optimism } from "wagmi/chains";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { SafeConnector } from "wagmi/connectors/safe";
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
@@ -8,10 +8,10 @@ import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 
 import { LLAMAPAY_CHAINS_LIB } from "./constants";
 
-const projectId = "b3d4ba9fb97949ab12267b470a6f31d2";
+const projectId = "2b0fa925a6e30cf250c05823fa9ef890";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-	[mainnet],
+	[mainnet, optimism],
 	[
 		jsonRpcProvider({
 			rpc: (chain) => ({
@@ -26,11 +26,17 @@ const config = createConfig({
 	publicClient,
 	webSocketPublicClient,
 	connectors: [
-		new InjectedConnector({ chains }),
+		new InjectedConnector({ chains, options: { shimDisconnect: true } }),
 		new WalletConnectConnector({
 			chains,
 			options: {
-				projectId
+				projectId,
+				metadata: {
+					name: "LlamaPay",
+					description: "Automate transactions and stream them by the second.",
+					url: "https://llamapay.io",
+					icons: ["https://llamapay.io/icon.svg"]
+				}
 			}
 		}),
 		new SafeConnector({
