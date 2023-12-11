@@ -16,6 +16,7 @@ import { useEffect, useMemo } from "react";
 
 import interFont from "~/assets/fonts/InterVariable.woff2";
 import { Header } from "~/components/Header";
+import { Nav } from "~/components/Nav";
 import { WalletProvider } from "~/lib/wallet";
 import nProgressStyles from "~/styles/nprogress.css";
 import tailwindHref from "~/styles/tailwind.css";
@@ -105,6 +106,7 @@ function App() {
 			</head>
 			<body>
 				<Header />
+				<Nav />
 				<Outlet />
 				<ThemeBody ssrTheme={Boolean(data.theme)} />
 				<ScrollRestoration />

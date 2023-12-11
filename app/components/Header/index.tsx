@@ -29,7 +29,7 @@ export const Header = () => {
 	const { isConnected } = useAccount();
 
 	return (
-		<header className="flex flex-wrap items-center gap-4 border-b border-black/5 p-4 dark:border-white/5 md:px-8">
+		<header className="col-span-full flex flex-wrap items-center gap-4 border-b border-black/5 p-4 dark:border-white/5 md:px-8">
 			<img src={theme === "dark" ? logoLight : logoDark} alt="" className="mr-auto h-8 md:h-10" />
 
 			{hydrated ? (
