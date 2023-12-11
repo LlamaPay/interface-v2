@@ -74,9 +74,10 @@
 	max-height: calc(100vh - 2 * 0.75rem);
 	overflow: auto;
 	border-radius: 0.75rem;
-	background-color: hsl(204 20% 100%);
+	border-color: 1px solid rgb(0 0 0 / 0.05);
+	background-color: #fafffe;
 	padding: 1rem;
-	color: hsl(204 10% 10%);
+	color: black;
 	box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 	transform-origin: center;
 	opacity: 0;
@@ -87,11 +88,9 @@
 }
 
 :is(.dark .dialog) {
-	border-width: 1px;
-	border-style: solid;
-	border-color: hsl(204 3% 26%);
-	background-color: hsl(204 3% 18%);
-	color: hsl(204 20% 100%);
+	border-color: 1px solid rgb(255 255 255 / 0.05);
+	background-color: #1d1d1d;
+	color: white;
 }
 
 @media (min-width: 640px) {

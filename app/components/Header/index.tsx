@@ -8,8 +8,14 @@ import sun from "~/assets/icons/sun.svg";
 import { useHydrated } from "~/hooks/useHydrated";
 import { Theme, useTheme } from "~/utils/theme-provider";
 
+const AccountMenu = lazy(() =>
+	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
+);
 const ConnectWallet = lazy(() =>
 	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
+);
+const NetworkMenu = lazy(() =>
+	import("~/components/Header/NetworkMenu").then((module) => ({ default: module.NetworkMenu }))
 );
 
 export const Header = () => {
@@ -22,7 +28,7 @@ export const Header = () => {
 
 	return (
 		<header className="flex flex-wrap items-center gap-4 border-b border-black/5 p-4 dark:border-white/5 md:px-8">
-			<img src={theme === "dark" ? logoLight : logoDark} alt="" className="mr-auto h-5 md:h-10" />
+			<img src={theme === "dark" ? logoLight : logoDark} alt="" className="mr-auto h-8 md:h-10" />
 
 			{hydrated ? (
 				<>
@@ -30,7 +36,12 @@ export const Header = () => {
 						<Suspense fallback={<HeaderButton disabled>Connect Wallet</HeaderButton>}>
 							<ConnectWallet className="rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
 						</Suspense>
-					) : null}
+					) : (
+						<Suspense fallback={<></>}>
+							<NetworkMenu />
+							<AccountMenu className="rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
+						</Suspense>
+					)}
 				</>
 			) : null}
 			<HeaderButton onClick={toggleTheme}>

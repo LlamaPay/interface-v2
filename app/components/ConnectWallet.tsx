@@ -10,6 +10,7 @@ import rainbow from "~/assets/wallets/rainbow.svg";
 import safe from "~/assets/wallets/safe.svg";
 import uniswap from "~/assets/wallets/uniswap.svg";
 import walletconnect from "~/assets/wallets/walletconnect.svg";
+import { Icon } from "~/components/Icon";
 
 const walletIcons = Object.entries({
 	brave,
@@ -44,9 +45,7 @@ export const ConnectWallet = ({ className }: { className: string }) => {
 					className="absolute right-6 top-[26px] flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-black/20"
 					onClick={dialog.toggle}
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-						<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-					</svg>
+					<Icon className="h-4 w-4 flex-shrink-0" name="x-icon" />
 
 					<span className="sr-only">Close Dialog</span>
 				</button>
@@ -66,7 +65,7 @@ export const ConnectWallet = ({ className }: { className: string }) => {
 								<span className="mr-auto">{connector.name}</span>
 
 								<span className="rounded-lg border border-white/10">
-									<Icon name={connector.name} />
+									<ConnectorLogo name={connector.name} />
 								</span>
 							</button>
 						</li>
@@ -78,7 +77,7 @@ export const ConnectWallet = ({ className }: { className: string }) => {
 	);
 };
 
-const Icon = ({ name }: { name: string }) => {
+const ConnectorLogo = ({ name }: { name: string }) => {
 	const src = walletIcons.find(([wname]) => name.toLowerCase().includes(wname))?.[1] ?? null;
 
 	if (!src) return null;

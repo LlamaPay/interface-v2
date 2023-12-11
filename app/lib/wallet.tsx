@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
+import { mainnet, optimism } from "viem/chains";
 import { createConfig, configureChains, WagmiConfig } from "wagmi";
-import { mainnet, optimism } from "wagmi/chains";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { SafeConnector } from "wagmi/connectors/safe";
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
