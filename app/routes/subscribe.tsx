@@ -1,6 +1,6 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { getAddress, parseUnits } from "viem";
 import { optimism } from "viem/chains";
@@ -52,6 +52,7 @@ export default function Index() {
 	const { chain } = useNetwork();
 	const { switchNetwork } = useSwitchNetwork();
 	const hydrated = useHydrated();
+	const navigate = useNavigate();
 
 	const {
 		data: balance,
@@ -82,7 +83,7 @@ export default function Index() {
 				address,
 				LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions as `0x${string}`
 			],
-		enabled: address ? true : false,
+		enabled: address && LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions ? true : false,
 		cacheTime: 20_000
 	});
 
@@ -153,6 +154,7 @@ export default function Index() {
 					},
 					"*"
 				);
+				navigate("/");
 
 				formRef.current?.reset();
 
@@ -191,7 +193,8 @@ export default function Index() {
 		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain ||
-		!LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions;
+		!LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions ||
+		amountToDeposit.length === 0;
 	const disableSubscribe =
 		disableAll ||
 		amountToDeposit.length === 0 ||
@@ -371,7 +374,7 @@ export default function Index() {
 
 					<div className="flex w-full flex-wrap items-center gap-2">
 						<button
-							className="flex-1 rounded-lg bg-[#13785a] p-3 text-white disabled:text-opacity-60 dark:bg-[#23BF91] dark:text-black"
+							className="flex-1 rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 							disabled={disableApprove}
 							type="button"
 							onClick={() => {
@@ -393,7 +396,7 @@ export default function Index() {
 						</button>
 
 						<button
-							className="flex-1 rounded-lg bg-[#13785a] p-3 text-white disabled:text-opacity-60 dark:bg-[#23BF91] dark:text-black"
+							className="flex-1 rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 							disabled={disableSubscribe}
 						>
 							{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}

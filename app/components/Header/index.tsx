@@ -1,3 +1,4 @@
+import { Link } from "@remix-run/react";
 import { lazy, Suspense } from "react";
 import { useAccount } from "wagmi";
 
@@ -30,7 +31,10 @@ export const Header = () => {
 
 	return (
 		<header className="col-span-full flex flex-wrap items-center gap-4 border-b border-black/5 p-4 dark:border-white/5 md:px-8">
-			<img src={theme === "dark" ? logoLight : logoDark} alt="" className="mr-auto h-8 md:h-10" />
+			<Link to="/" className="mr-auto h-8 md:h-10">
+				<img src={theme === "dark" ? logoLight : logoDark} alt="" className="mr-auto h-8 md:h-10" />
+				<span className="sr-only">navigate to home page</span>
+			</Link>
 
 			{hydrated ? (
 				<>
