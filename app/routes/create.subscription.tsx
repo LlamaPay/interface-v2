@@ -87,7 +87,7 @@ export default function Create() {
 					onClick={() => {
 						navigator.clipboard.writeText(url ?? "");
 					}}
-					className="rounded-lg bg-[#13785a] p-3 text-white dark:text-black"
+					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 				>
 					Copy
 				</button>

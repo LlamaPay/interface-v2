@@ -61,7 +61,7 @@ export default function Index() {
 		refetch: refetchBalance
 	} = useBalance({
 		address,
-		token: DAI_OPTIMISM.address as `0x${string}`,
+		token: DAI_OPTIMISM.address,
 		chainId: optimism.id,
 		cacheTime: 20_000
 	});
@@ -75,15 +75,11 @@ export default function Index() {
 		error: errorFetchingAllowance,
 		refetch: refetchAllowance
 	} = useContractRead({
-		address: DAI_OPTIMISM.address as `0x${string}`,
+		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "allowance",
-		args: address &&
-			LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions && [
-				address,
-				LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions as `0x${string}`
-			],
-		enabled: address && LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions ? true : false,
+		args: address && [address, LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions],
+		enabled: address ? true : false,
 		cacheTime: 20_000
 	});
 
@@ -108,7 +104,7 @@ export default function Index() {
 		isLoading: confirmingTokenApproval,
 		error: errorConfirmingTokenApproval
 	} = useContractWrite({
-		address: DAI_OPTIMISM.address as `0x${string}`,
+		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "approve"
 	});
@@ -193,7 +189,6 @@ export default function Index() {
 		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain ||
-		!LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions ||
 		amountToDeposit.length === 0;
 	const disableSubscribe =
 		disableAll ||
@@ -380,7 +375,7 @@ export default function Index() {
 							onClick={() => {
 								approveToken?.({
 									args: [
-										LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions as `0x${string}`,
+										LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 										parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
 									]
 								});

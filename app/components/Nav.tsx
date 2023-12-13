@@ -2,6 +2,7 @@ import { Link, useLocation } from "@remix-run/react";
 
 export const Nav = () => {
 	const location = useLocation();
+
 	return (
 		<nav className="hidden h-full w-full flex-col gap-3 px-8 py-9 md:flex">
 			<Link
