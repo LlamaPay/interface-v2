@@ -5,38 +5,9 @@ import { useAccount, useContractWrite, useNetwork, useQuery, useWaitForTransacti
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, SUBSCRIPTION_AMOUNT_DIVISOR, SUBSCRIPTION_DURATION } from "~/lib/constants";
+import { type IFormattedSub, type ISub } from "~/types";
 
-import { SUB_CHAIN_LIB, subsContract, contract, client } from "./utils";
-
-interface ISub {
-	expirationDate: string;
-	id: string;
-	initialPeriod: string;
-	initialShares: string;
-	receiver: string;
-	startTimestamp: string;
-	unsubscribed: boolean;
-	amountPerCycle: string;
-	realExpiration: string;
-	accumulator: string;
-}
-
-interface IFormattedSub {
-	id: string;
-	receiver: string;
-	startTimestamp: number;
-	unsubscribed: boolean;
-	initialShares: number;
-	initialPeriod: number;
-	expirationDate: number;
-	SUBSCRIPTION_DURATION: number;
-	fullPeriodStartingTime: number;
-	totalAmountPaid: number;
-	amountPerCycle: number;
-	realExpiration: number;
-	subDuration: string;
-	accumulator: number;
-}
+import { SUB_CHAIN_LIB, subsContract, contract, client, formatSubs } from "./utils";
 
 async function calculateSubBalance({ sub, contract, client }: { sub: any; contract: any; client: any }) {
 	if (!sub) return null;
@@ -117,57 +88,7 @@ async function getSubscriptions(address?: string) {
 	`;
 		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
-		return (data.subs ?? []).map((sub) => {
-			const id = sub.id;
-			const receiver = sub.receiver;
-			const startTimestamp = +sub.startTimestamp;
-			const unsubscribed = sub.unsubscribed;
-			const initialShares = +sub.initialShares;
-			const initialPeriod = +sub.initialPeriod;
-			const expirationDate = +sub.expirationDate;
-			const amountPerCycle = +sub.amountPerCycle;
-			const realExpiration = +sub.realExpiration;
-			const accumulator = +sub.accumulator;
-			const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
-			const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
-			const fullCycles = (expirationDate - initialPeriod) / SUBSCRIPTION_DURATION;
-			const amountPaidFully = fullCycles * amountPerCycle;
-			const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
-			const amountPaidPartially = partialCycles * amountPerCycle;
-
-			let subDuration = `${fullCycles} ${SUBSCRIPTION_DURATION === 24 * 60 * 60 ? "days" : "month"}`;
-
-			if (partialCycles) {
-				subDuration += `,`;
-
-				const [hours, minutes] = (partialCycles * 24).toString().split(".");
-
-				if (hours) {
-					subDuration += ` ${hours} hours`;
-				}
-
-				if (minutes) {
-					subDuration += ` ${(+minutes * 60).toString().slice(0, 2)} minutes`;
-				}
-			}
-
-			return {
-				id,
-				receiver,
-				startTimestamp,
-				unsubscribed,
-				initialShares,
-				initialPeriod,
-				expirationDate,
-				SUBSCRIPTION_DURATION,
-				fullPeriodStartingTime,
-				totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
-				amountPerCycle,
-				realExpiration,
-				subDuration,
-				accumulator
-			} as IFormattedSub;
-		});
+		return formatSubs(data?.subs ?? []);
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}
@@ -202,11 +123,11 @@ export const Unsubscribe = () => {
 			) : subs.length === 0 ? (
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
-				<ul className="flex flex-col gap-4 overflow-x-auto">
+				<div className="flex flex-col gap-4 overflow-x-auto">
 					{subs.map((sub) => (
 						<Sub key={sub.id} data={sub} refetchSubs={refetchSubs} />
 					))}
-				</ul>
+				</div>
 			)}
 		</>
 	);
@@ -266,10 +187,15 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 	});
 
 	return (
-		<li className="flex flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5">
+		<div className="flex flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5">
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">Receiver</span>
-				<a target="_blank" rel="noopene noreferrer" href={`https://optimistic.etherscan.io/address/${data.receiver}`}>
+				<a
+					target="_blank"
+					rel="noopene noreferrer"
+					href={`https://optimistic.etherscan.io/address/${data.receiver}`}
+					className="underline"
+				>
 					{data.receiver.slice(0, 4) + "..." + data.receiver.slice(-4)}
 				</a>
 			</p>
@@ -355,6 +281,6 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 					<p className="text-center text-sm text-red-500">Transaction Failed</p>
 				)
 			) : null}
-		</li>
+		</div>
 	);
 };
