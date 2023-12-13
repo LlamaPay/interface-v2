@@ -1,4 +1,5 @@
 import * as Ariakit from "@ariakit/react";
+import { optimism } from "viem/chains";
 import { useConnect } from "wagmi";
 
 import brave from "~/assets/wallets/brave.svg";
@@ -24,7 +25,7 @@ const walletIcons = Object.entries({
 	rainbow
 });
 
-export const ConnectWallet = ({ className, chainId }: { className: string; chainId?: number }) => {
+export const ConnectWallet = ({ className, chainId = optimism.id }: { className: string; chainId?: number }) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
 	const { connect, connectors, error, isLoading, pendingConnector } = useConnect();
