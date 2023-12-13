@@ -22,6 +22,11 @@ export const contract: any = getContract({
 	publicClient: client as any
 });
 
+const daysInMonth = 30;
+const hoursInDay = 24;
+const minutesInHour = 60;
+// const secondsInMinute = 60;
+
 export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
 		const id = sub.id;
@@ -42,22 +47,34 @@ export const formatSubs = (data: Array<ISub>) => {
 		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
 		const amountPaidPartially = partialCycles * amountPerCycle;
 
-		let subDuration = "";
+		const totalCycles = fullCycles + partialCycles;
 
-		subDuration = `${fullCycles} ${SUBSCRIPTION_DURATION === 24 * 60 * 60 ? "days" : "month"}`;
+		const totalDays = totalCycles * daysInMonth;
 
-		if (partialCycles) {
-			subDuration += `,`;
+		let days = Math.floor(totalDays);
+		const remainingHours = (totalDays - days) * hoursInDay;
+		const hours = Math.floor(remainingHours);
+		const remainingMinutes = (remainingHours - hours) * minutesInHour;
+		const minutes = Math.floor(remainingMinutes);
+		// const remainingSeconds = (remainingMinutes - minutes) * secondsInMinute
+		// const seconds = Math.floor(remainingSeconds)
 
-			const [hours, minutes] = (partialCycles * 24).toString().split(".");
+		const subDuration: Array<string> = [];
 
-			if (hours) {
-				subDuration += ` ${hours} hours`;
-			}
+		if (days >= 30) {
+			const months = days % daysInMonth;
+			subDuration.push(`${months} ${months > 1 ? "months" : "month"}`);
+			days -= months * daysInMonth;
+		}
 
-			if (minutes) {
-				subDuration += ` ${(+minutes * 60).toString().slice(0, 2)} minutes`;
-			}
+		if (days > 0) {
+			subDuration.push(`${days} ${days > 1 ? "days" : "day"}`);
+		}
+		if (hours > 0) {
+			subDuration.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
+		}
+		if (minutes > 0) {
+			subDuration.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
 		}
 
 		return {
@@ -74,7 +91,7 @@ export const formatSubs = (data: Array<ISub>) => {
 			totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
 			amountPerCycle,
 			realExpiration,
-			subDuration,
+			subDuration: subDuration.join(", "),
 			accumulator
 		} as IFormattedSub;
 	});
