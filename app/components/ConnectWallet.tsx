@@ -24,7 +24,7 @@ const walletIcons = Object.entries({
 	rainbow
 });
 
-export const ConnectWallet = ({ className }: { className: string }) => {
+export const ConnectWallet = ({ className, chainId }: { className: string; chainId?: number }) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
 	const { connect, connectors, error, isLoading, pendingConnector } = useConnect();
@@ -55,7 +55,7 @@ export const ConnectWallet = ({ className }: { className: string }) => {
 						<li key={connector.id} className="flex items-center">
 							<button
 								disabled={!connector.ready}
-								onClick={() => connect({ connector })}
+								onClick={() => connect({ connector, chainId })}
 								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20"
 							>
 								{isLoading && pendingConnector?.id === connector.id ? (

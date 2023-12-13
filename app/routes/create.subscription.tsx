@@ -1,8 +1,20 @@
+import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { useState } from "react";
 
 import { Icon } from "~/components/Icon";
 import { DAI_OPTIMISM } from "~/lib/constants";
+
+export const meta: MetaFunction = () => {
+	return [
+		{ title: "Subscriptions - LlamaPay" },
+		{
+			name: "description",
+			content:
+				"Recurring subscriptions while having subscribers also earn yield on their deposits through ERC4626-compatible vaults."
+		}
+	];
+};
 
 export default function Create() {
 	const [receiver, setReceiver] = useState("");
@@ -21,9 +33,13 @@ export default function Create() {
 					<span>Receiver Address</span>
 					<input
 						name="receiver"
-						className="border-black/8 rounded-lg border  bg-[#ffffff] p-3 dark:border-white/5 dark:bg-[#141414]"
+						className="rounded-lg border border-black/[0.15]  bg-[#ffffff] p-3 dark:border-white/5 dark:bg-[#141414]"
 						placeholder="0x..."
 						required
+						autoComplete="off"
+						autoCorrect="off"
+						type="text"
+						spellCheck="false"
 						value={receiver}
 						onChange={(e) => setReceiver(e.target.value)}
 					/>
@@ -33,7 +49,7 @@ export default function Create() {
 					<span className="relative">
 						<input
 							name="amount"
-							className="border-black/8 w-full rounded-lg border  bg-[#ffffff] p-3 pr-14 dark:border-white/5 dark:bg-[#141414]"
+							className="w-full rounded-lg border border-black/[0.15]  bg-[#ffffff] p-3 pr-14 dark:border-white/5 dark:bg-[#141414]"
 							required
 							autoComplete="off"
 							autoCorrect="off"
@@ -61,7 +77,7 @@ export default function Create() {
 
 				<p className="flex flex-col gap-1">
 					<span>Subscription URL</span>
-					<span className="border-black/8 w-full rounded-lg border  bg-[#ffffff] p-3 dark:border-white/5 dark:bg-[#141414]">
+					<span className="w-full break-all rounded-lg border border-black/[0.15]  bg-[#ffffff] p-3 dark:border-white/5 dark:bg-[#141414]">
 						{url}
 					</span>
 				</p>

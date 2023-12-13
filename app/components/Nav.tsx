@@ -11,7 +11,7 @@ export const Nav = () => {
 			>
 				Dashboard
 			</Link>
-			<Link
+			{/* <Link
 				to="/incoming"
 				className="font-semibold text-black data-[active=true]:text-[#13785a] dark:text-white dark:data-[active=true]:text-[#23BF91]"
 				data-active={location.pathname === "/incoming"}
@@ -24,7 +24,7 @@ export const Nav = () => {
 				data-active={location.pathname === "/outgoing"}
 			>
 				Outgoing
-			</Link>
+			</Link> */}
 			<hr className="border-black/[0.15] dark:border-white/[0.15]" />
 			<a
 				href="https://docs.llamapay.io/"
