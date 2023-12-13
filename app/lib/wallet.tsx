@@ -15,7 +15,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 	[
 		jsonRpcProvider({
 			rpc: (chain) => ({
-				http: LLAMAPAY_CHAINS_LIB[chain.id]!.rpc
+				http: (LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc
 			})
 		})
 	]
