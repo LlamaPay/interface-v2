@@ -1,6 +1,7 @@
 import { Link } from "@remix-run/react";
 import { useState } from "react";
 
+import { Icon } from "~/components/Icon";
 import { DAI_OPTIMISM } from "~/lib/constants";
 
 export default function Create() {
@@ -9,11 +10,13 @@ export default function Create() {
 	const url = `https://llamapay.io/subscribe?address=${receiver}&amount=${amount}`;
 	return (
 		<main className="relative mx-auto flex w-full max-w-[450px] flex-col gap-5 px-4 py-9 md:-left-[102px]">
-			{/* <Link to="/" className="text-[#9CA3AF]">
-				Dashboard
-			</Link> */}
+			<Link to="/" className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]">
+				<Icon name="arrow-left-sm" className="h-4 w-4 flex-shrink-0" />
+				<span>Dashboard</span>
+			</Link>
 
 			<form className="flex flex-col gap-4">
+				<h1 className="mb-4 text-center text-xl font-medium">Create Subscription</h1>
 				<label className="relative flex flex-col gap-1">
 					<span>Receiver Address</span>
 					<input
