@@ -29,7 +29,7 @@ export default function Index() {
 				<Ariakit.TabProvider defaultSelectedId={defaultSelectedId}>
 					<Ariakit.TabList className="p-5 pb-0" aria-label="Payment Type">
 						<Ariakit.Tab
-							className="group flex flex-nowrap items-center gap-1 border-b border-b-transparent pb-3 text-sm font-medium data-[active-item]:border-b-[#21B58A] data-[active-item]:text-[#21B58A]"
+							className="group flex flex-nowrap items-center gap-1 border-b border-b-transparent pb-3 text-sm font-medium data-[active-item]:border-b-[#13785a] data-[active-item]:text-[#13785a] dark:data-[active-item]:border-b-[#21B58A] dark:data-[active-item]:text-[#21B58A]"
 							id="subscriptions"
 						>
 							<span>Subscriptions</span>
