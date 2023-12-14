@@ -1,6 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { parseUnits, formatUnits } from "viem";
 import { optimism } from "viem/chains";
-import { useAccount, useContractWrite, useNetwork, useQuery, useWaitForTransaction } from "wagmi";
+import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
 
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";

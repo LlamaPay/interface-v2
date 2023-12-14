@@ -3,6 +3,7 @@ import { Link } from "@remix-run/react";
 import { Suspense, lazy } from "react";
 
 import spriteHref from "~/assets/icons/sprite2.svg";
+import { useHydrated } from "~/hooks/useHydrated";
 
 const defaultSelectedId = "subscriptions";
 
@@ -11,6 +12,7 @@ const Subscriptions = lazy(() => import("./Subscriptions").then((module) => ({ d
 const Unsubscribe = lazy(() => import("./Unsubscribe").then((module) => ({ default: module.Unsubscribe })));
 
 export default function Index() {
+	const hydrated = useHydrated();
 	return (
 		<main className="flex flex-col gap-5 px-4 py-9 md:px-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
@@ -60,17 +62,17 @@ export default function Index() {
 						tabId="subscriptions"
 					>
 						<Suspense fallback={<></>}>
-							<Subscriptions />
+							{hydrated ? <Subscriptions /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 					<Ariakit.TabPanel className="mt-1 max-w-[calc(100vw-204px-64px-4px)] overflow-x-auto p-5" tabId="unsubscribe">
 						<Suspense fallback={<></>}>
-							<Unsubscribe />
+							{hydrated ? <Unsubscribe /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 					<Ariakit.TabPanel className="mt-1 max-w-[calc(100vw-204px-64px-4px)] overflow-x-auto p-5" tabId="claim">
 						<Suspense fallback={<></>}>
-							<Claim />
+							{hydrated ? <Claim /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 				</Ariakit.TabProvider>

@@ -7,6 +7,7 @@ specifiers:
   '@remix-run/node': ^2.3.1
   '@remix-run/react': ^2.3.1
   '@remix-run/serve': ^2.3.1
+  '@tanstack/react-query': 4.36.1
   '@types/nprogress': ^0.2.3
   '@types/react': ^18.2.20
   '@types/react-dom': ^18.2.7
@@ -38,6 +39,7 @@ dependencies:
   '@remix-run/node': 2.3.1_typescript@5.3.3
   '@remix-run/react': 2.3.1_3lfo6mjrbe7gnpm2z32jgk7g6a
   '@remix-run/serve': 2.3.1_typescript@5.3.3
+  '@tanstack/react-query': 4.36.1_biqbaboplfbrettd7655fr4n2y
   graphql: 16.8.1
   graphql-request: 6.1.0_graphql@16.8.1
   isbot: 3.7.1

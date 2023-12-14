@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
-import { useAccount, useQuery } from "wagmi";
+import { useAccount } from "wagmi";
 
 import incomingImg from "~/assets/icons/incoming.svg";
 import outgoingImg from "~/assets/icons/outgoing.svg";

@@ -11,6 +11,7 @@ import {
 	useLoaderData,
 	useNavigation
 } from "@remix-run/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NProgress from "nprogress";
 import { useEffect, useMemo } from "react";
 
@@ -22,6 +23,8 @@ import nProgressStyles from "~/styles/nprogress.css";
 import tailwindHref from "~/styles/tailwind.css";
 import { ThemeBody, ThemeHead, ThemeProvider, useTheme } from "~/utils/theme-provider";
 import { getThemeSession } from "~/utils/theme.server";
+
+const queryClient = new QueryClient();
 
 export const loader: LoaderFunction = async ({ request }) => {
 	const themeSession = await getThemeSession(request);
@@ -124,7 +127,9 @@ export default function AppWithProviders() {
 	return (
 		<ThemeProvider specifiedTheme={data.theme}>
 			<WalletProvider>
-				<App />
+				<QueryClientProvider client={queryClient}>
+					<App />
+				</QueryClientProvider>
 			</WalletProvider>
 		</ThemeProvider>
 	);
