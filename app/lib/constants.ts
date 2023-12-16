@@ -28,7 +28,7 @@ export const DAI_OPTIMISM = {
 	address: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1" as `0x${string}`,
 	name: "DAI",
 	decimals: 18,
-	img: `https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1?h=16&w=16`
+	img: `https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1`
 } as const;
 
 export const SUBSCRIPTION_DURATION = 30 * 24 * 60 * 60;
