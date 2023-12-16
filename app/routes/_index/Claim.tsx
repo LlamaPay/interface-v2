@@ -101,7 +101,7 @@ export const Claim = () => {
 				contract,
 				client
 			}),
-		{ enabled: address ? true : false, cacheTime: 20_000, refetchInterval: 20_000 }
+		{ cacheTime: 20_000, refetchInterval: 20_000 }
 	);
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -104,7 +104,6 @@ export const Unsubscribe = () => {
 		error: errorFetchingSubs,
 		refetch: refetchSubs
 	} = useQuery(["subs", address], () => getSubscriptions(address), {
-		enabled: address ? true : false,
 		cacheTime: 20_000,
 		refetchInterval: 20_000
 	});
