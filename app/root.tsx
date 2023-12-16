@@ -9,6 +9,7 @@ import {
 	ScrollRestoration,
 	useFetchers,
 	useLoaderData,
+	useLocation,
 	useNavigation
 } from "@remix-run/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -67,6 +68,7 @@ function App() {
 	const data = useLoaderData<typeof loader>();
 	const [theme] = useTheme();
 
+	const location = useLocation();
 	const navigation = useNavigation();
 	const fetchers = useFetchers();
 
@@ -108,8 +110,14 @@ function App() {
 				<ThemeHead ssrTheme={Boolean(data.theme)} />
 			</head>
 			<body>
-				<Header />
-				<Nav />
+				{location.pathname.startsWith("/subscribe") ? (
+					<></>
+				) : (
+					<>
+						<Header />
+						<Nav />
+					</>
+				)}
 				<Outlet />
 				<ThemeBody ssrTheme={Boolean(data.theme)} />
 				<ScrollRestoration />

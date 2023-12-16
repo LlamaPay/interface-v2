@@ -20,9 +20,7 @@ export default function Create() {
 	const [receiver, setReceiver] = useState("");
 	const [amount, setAmount] = useState("");
 	const [bgColor, setBgColor] = useState("#23BF91");
-	const url = `https://llamapay.io/subscribe?address=${receiver}&amount=${amount}&brandColor=${encodeURIComponent(
-		bgColor
-	)}`;
+	const url = `https://llamapay.io/subscribe?to=${receiver}&amount=${amount}&brandColor=${encodeURIComponent(bgColor)}`;
 	return (
 		<main className="relative mx-auto flex w-full max-w-[450px] flex-col gap-5 px-4 py-9 md:-left-[102px]">
 			<Link to="/" className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]">
