@@ -10,6 +10,7 @@ import {
 	useBalance,
 	useContractRead,
 	useContractWrite,
+	useEnsName,
 	useNetwork,
 	useSwitchNetwork,
 	useWaitForTransaction
@@ -216,7 +217,10 @@ export default function Index() {
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain;
 
-	console.log(loaderData.bgColor);
+	const { data: ensName } = useEnsName({
+		address: loaderData.to,
+		chainId: 1
+	});
 
 	return (
 		<main
@@ -231,58 +235,35 @@ export default function Index() {
 			className="relative col-span-full row-span-full lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
 		>
 			<div className="mx-auto flex w-full flex-col lg:flex-row">
-				<div className="flex flex-1 flex-col gap-5 bg-[var(--page-bg-color)] px-4 py-9 text-[var(--page-text-color)] lg:ml-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
+				<div className="flex flex-1 flex-col bg-[var(--page-bg-color)] px-4 py-9 text-[var(--page-text-color)] lg:ml-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
 					<Link to="/" className="flex items-center gap-1">
 						<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
 						<span className="sr-only">Dashboard</span>
 					</Link>
 
-					<table className="my-4 w-full border-collapse">
-						<tbody>
-							<tr>
-								<th
-									className={`border p-2 ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} text-center text-base font-normal`}
-								>
-									Subscribe To
-								</th>
-								<td
-									className={`border p-2 ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} text-center text-base`}
-								>
-									<a
-										target="_blank"
-										rel="noreferrer noopener"
-										href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
-										className="underline"
-									>
-										{loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
-									</a>
-								</td>
-							</tr>
-							<tr>
-								<th
-									className={`border p-2 ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} text-center text-base font-normal`}
-								>
-									Amount per month
-								</th>
-								<td
-									className={`border p-2 ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} text-center text-base`}
-								>
-									<span className="flex items-center justify-center gap-1">
-										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-										<span>{loaderData.amount + " DAI"}</span>
-									</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
+					<h1 className="ml-1 mt-10 text-lg font-medium text-[var(--page-text-color)] opacity-80">
+						Subscribe to{" "}
+						<a
+							target="_blank"
+							rel="noreferrer noopener"
+							href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
+							className="underline"
+						>
+							{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
+						</a>
+					</h1>
+					<p className="ml-1 mr-auto mt-1 text-4xl font-semibold">
+						<span className="flex items-center justify-center gap-1">
+							<img
+								src="https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1?h=36&w=36"
+								width={36}
+								height={36}
+								alt=""
+							/>
+							<span>{loaderData.amount + " DAI"}</span>
+							<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
+						</span>
+					</p>
 				</div>
 				<div className="flex flex-1 flex-col gap-5 overflow-auto bg-[var(--page-bg-color-2)] px-4 py-9 text-[var(--page-text-color-2)] lg:mr-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
 					<h1 className="mb-4 text-center text-xl font-medium">Subscribe</h1>
