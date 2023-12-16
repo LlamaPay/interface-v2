@@ -3,6 +3,7 @@ import { Link } from "@remix-run/react";
 import { Suspense, lazy } from "react";
 
 import spriteHref from "~/assets/icons/sprite2.svg";
+import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 
 const defaultSelectedId = "subscriptions";
@@ -20,7 +21,7 @@ export default function Index() {
 					<Link
 						to={l.to}
 						key={l.to}
-						className="flex flex-1 flex-nowrap items-center gap-2 rounded-lg border border-black/5  bg-[#FCFFFE] p-3 shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]"
+						className="flex flex-nowrap items-center gap-2 rounded-lg border border-black/5  bg-[#FCFFFE] p-3 shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]"
 					>
 						<svg className="h-8 w-8">
 							<use href={`${spriteHref}#${l.iconId}`} />
@@ -29,6 +30,7 @@ export default function Index() {
 							<span className="text-[#111827] dark:text-[#dcdcdc]">{l.name}</span>
 							<span className="text-sm text-[#596575] dark:text-[#838486]">{l.description}</span>
 						</span>
+						<Icon name="arrow-right" className="ml-4 h-4 w-4" />
 					</Link>
 				))}
 			</div>
@@ -83,7 +85,7 @@ export default function Index() {
 
 const links = [
 	{
-		name: "Create a new Subscription",
+		name: "Create a new subscription",
 		description: "Subscriptions made simple",
 		to: "/create/subscription",
 		iconId: "stream"
