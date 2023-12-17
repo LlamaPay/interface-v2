@@ -30,8 +30,8 @@ specifiers:
   react-dom: ^18.2.0
   tailwindcss: ^3.3.6
   typescript: ^5.3.3
-  viem: ^1.19.13
-  wagmi: ^1.4.10
+  viem: ^1.20.0
+  wagmi: ^1.4.12
 
 dependencies:
   '@ariakit/react': 0.3.9_biqbaboplfbrettd7655fr4n2y
@@ -46,8 +46,8 @@ dependencies:
   nprogress: 0.2.0
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
-  viem: 1.19.13_typescript@5.3.3
-  wagmi: 1.4.10_sjjeh2zm54n2hjdvk77n75r4iu
+  viem: 1.20.0_typescript@5.3.3
+  wagmi: 1.4.12_64iejtcmten4q5zfgm2vi2z7gu
 
 devDependencies:
   '@remix-run/dev': 2.3.1_55fy66ex6cm7pm5igabrpgiksi
@@ -1014,10 +1014,6 @@ packages:
     resolution: {integrity: sha512-Lg3PnLp0QXpxwLIAuuJboLeRaIhrgJjeuh797QADg3xz8wGLugQOS5DpsE8A6i6Adgzf+bacllkKZG3J0tGfDw==}
     dev: true
 
-  /@ledgerhq/connect-kit-loader/1.1.2:
-    resolution: {integrity: sha512-mscwGroSJQrCTjtNGBu+18FQbZYA4+q6Tyx6K7CXHl6AwgZKbWfZYdgP2F+fyZcRUdGRsMX8QtvU61VcGGtO1A==}
-    dev: false
-
   /@lit-labs/ssr-dom-shim/1.1.2:
     resolution: {integrity: sha512-jnOD+/+dSrfTWYfSXBXlo5l5f0q1UuJo3tkbMDCYA2lKUYq79jaxqtGEvnRoh049nt1vdo1+45RinipU6FGY2g==}
     dev: false
@@ -1574,23 +1570,11 @@ packages:
     dependencies:
       web-streams-polyfill: 3.2.1
 
-  /@safe-global/safe-apps-provider/0.17.1_typescript@5.3.3:
-    resolution: {integrity: sha512-lYfRqrbbK1aKU1/UGkYWc/X7PgySYcumXKc5FB2uuwAs2Ghj8uETuW5BrwPqyjBknRxutFbTv+gth/JzjxAhdQ==}
+  /@safe-global/safe-apps-provider/0.18.1_typescript@5.3.3:
+    resolution: {integrity: sha512-V4a05A3EgJcriqtDoJklDz1BOinWhC6P0hjUSxshA4KOZM7rGPCTto/usXs09zr1vvL28evl/NldSTv97j2bmg==}
     dependencies:
-      '@safe-global/safe-apps-sdk': 8.0.0_typescript@5.3.3
+      '@safe-global/safe-apps-sdk': 8.1.0_typescript@5.3.3
       events: 3.3.0
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-    dev: false
-
-  /@safe-global/safe-apps-sdk/8.0.0_typescript@5.3.3:
-    resolution: {integrity: sha512-gYw0ki/EAuV1oSyMxpqandHjnthZjYYy+YWpTAzf8BqfXM3ItcZLpjxfg+3+mXW8HIO+3jw6T9iiqEXsqHaMMw==}
-    dependencies:
-      '@safe-global/safe-gateway-typescript-sdk': 3.13.2
-      viem: 1.19.13_typescript@5.3.3
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -1602,7 +1586,7 @@ packages:
     resolution: {integrity: sha512-XJbEPuaVc7b9n23MqlF6c+ToYIS3f7P2Sel8f3cSBQ9WORE4xrSuvhMpK9fDSFqJ7by/brc+rmJR/5HViRr0/w==}
     dependencies:
       '@safe-global/safe-gateway-typescript-sdk': 3.13.2
-      viem: 1.19.13_typescript@5.3.3
+      viem: 1.20.0_typescript@5.3.3
     transitivePeerDependencies:
       - bufferutil
       - typescript
@@ -2121,8 +2105,8 @@ packages:
     resolution: {integrity: sha512-17kVyLq3ePTKOkveHxXuIJZtGYs+cSoev7BlP+Lf4916qfDhk/HBjvlYDe8egrea7LNPHKwSZJK/bzZC+Q6AwQ==}
     dev: true
 
-  /@wagmi/connectors/3.1.8_4eqaatrh7jhe7g3auqoxjxlqka:
-    resolution: {integrity: sha512-J6m8xWFw/Qb4V6VeERazEgfXPztx7wDWCfmUSrfSM54SSjdaFprAOZlcAMqBtibqH8HgnPvbdFA0DEOHbeX2ag==}
+  /@wagmi/connectors/3.1.10_zntj4fv6oph4n4rg7cduygoqba:
+    resolution: {integrity: sha512-ZLJC1QaeiZarkF07Cr9mOlVjPO1Lf5TBx+JKBms2y5fUIXlKrxCfQgO/gDCureboI+Us2X3IRI659+XacSGpbA==}
     peerDependencies:
       typescript: '>=5.0.4'
       viem: '>=0.3.35'
@@ -2131,8 +2115,7 @@ packages:
         optional: true
     dependencies:
       '@coinbase/wallet-sdk': 3.7.2
-      '@ledgerhq/connect-kit-loader': 1.1.2
-      '@safe-global/safe-apps-provider': 0.17.1_typescript@5.3.3
+      '@safe-global/safe-apps-provider': 0.18.1_typescript@5.3.3
       '@safe-global/safe-apps-sdk': 8.1.0_typescript@5.3.3
       '@walletconnect/ethereum-provider': 2.10.6_my6oae45k3yes2s3ptuoyq23iu
       '@walletconnect/legacy-provider': 2.0.0
@@ -2141,7 +2124,7 @@ packages:
       abitype: 0.8.7_typescript@5.3.3
       eventemitter3: 4.0.7
       typescript: 5.3.3
-      viem: 1.19.13_typescript@5.3.3
+      viem: 1.20.0_typescript@5.3.3
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -2164,8 +2147,8 @@ packages:
       - zod
     dev: false
 
-  /@wagmi/core/1.4.10_4eqaatrh7jhe7g3auqoxjxlqka:
-    resolution: {integrity: sha512-XJ5iSWZKOZSgQP3LFn/QHJqLGoX53SiBKc0/6s7KkVc68VmFenrZymNRg3fSwBsINlZgRVWpSj2lAVsl8IjSgw==}
+  /@wagmi/core/1.4.12_zntj4fv6oph4n4rg7cduygoqba:
+    resolution: {integrity: sha512-bLcYmmGgjtl3jAGo8X3Sm6oUwsdjbVxFMu9SWnwHdE4S9JdYeWM57dEhQgq8SYul2yQ7yY2/gimBf1Or0Ky3dQ==}
     peerDependencies:
       typescript: '>=5.0.4'
       viem: '>=0.3.35'
@@ -2173,11 +2156,11 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@wagmi/connectors': 3.1.8_4eqaatrh7jhe7g3auqoxjxlqka
+      '@wagmi/connectors': 3.1.10_zntj4fv6oph4n4rg7cduygoqba
       abitype: 0.8.7_typescript@5.3.3
       eventemitter3: 4.0.7
       typescript: 5.3.3
-      viem: 1.19.13_typescript@5.3.3
+      viem: 1.20.0_typescript@5.3.3
       zustand: 4.4.7_my6oae45k3yes2s3ptuoyq23iu
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -8187,8 +8170,8 @@ packages:
       vfile-message: 3.1.4
     dev: true
 
-  /viem/1.19.13_typescript@5.3.3:
-    resolution: {integrity: sha512-DizIwJAecLedI+nq6c5LIqCLAnYXUhQX5BnH6o1H2ln6isPyJVf+v4H1IfMlRHgR5KRlC+wGI/mCjarr3tW6eg==}
+  /viem/1.20.0_typescript@5.3.3:
+    resolution: {integrity: sha512-yPjV9pJr10xi28C/9LEvs5zdZNEMiru3Kz7nufghVYABJAfeSkoZQXb6b23n7MscS7c55JO5nmUI3xKkd9g6Yg==}
     peerDependencies:
       typescript: '>=5.0.4'
     peerDependenciesMeta:
@@ -8269,8 +8252,8 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /wagmi/1.4.10_sjjeh2zm54n2hjdvk77n75r4iu:
-    resolution: {integrity: sha512-n37srrOLWZIHq0ROXj15bpCZEo8GBtABcPchPDneTz3QUpLGY+EeiXrBaFHWcjNiTBOgDHyLIuS4Q0Xtj/DiYQ==}
+  /wagmi/1.4.12_64iejtcmten4q5zfgm2vi2z7gu:
+    resolution: {integrity: sha512-QRxpjhdMlZmbYTfn9VQkQMKq+l3kwA1O7tF10vaykPrjbGX+IIlyn72ib9oqW9BfQO7n/Sf/mnVz1zbxRhGPWA==}
     peerDependencies:
       react: '>=17.0.0'
       typescript: '>=5.0.4'
@@ -8282,12 +8265,12 @@ packages:
       '@tanstack/query-sync-storage-persister': 4.36.1
       '@tanstack/react-query': 4.36.1_biqbaboplfbrettd7655fr4n2y
       '@tanstack/react-query-persist-client': 4.36.1_36z47x7546ezgz5hgrznhvzpxe
-      '@wagmi/core': 1.4.10_4eqaatrh7jhe7g3auqoxjxlqka
+      '@wagmi/core': 1.4.12_zntj4fv6oph4n4rg7cduygoqba
       abitype: 0.8.7_typescript@5.3.3
       react: 18.2.0
       typescript: 5.3.3
       use-sync-external-store: 1.2.0_react@18.2.0
-      viem: 1.19.13_typescript@5.3.3
+      viem: 1.20.0_typescript@5.3.3
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
