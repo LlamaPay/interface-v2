@@ -3,6 +3,7 @@ import { optimism } from "viem/chains";
 import { createConfig, configureChains, WagmiConfig } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { SafeConnector } from "wagmi/connectors/safe";
+import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
 import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 
 import { LLAMAPAY_CHAINS_LIB } from "./constants";
@@ -26,6 +27,18 @@ const config = createConfig({
 	webSocketPublicClient,
 	connectors: [
 		new InjectedConnector({ chains, options: { shimDisconnect: true } }),
+		new WalletConnectConnector({
+			chains,
+			options: {
+				projectId,
+				metadata: {
+					name: "LlamaPay",
+					description: "Automate transactions and stream them by the second.",
+					url: "https://llamapay.io",
+					icons: ["https://llamapay.io/icon.svg"]
+				}
+			}
+		}),
 		new SafeConnector({
 			chains,
 			options: {
