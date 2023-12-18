@@ -133,10 +133,6 @@ export default function Index() {
 		}
 	});
 
-	// assuming 5% yield on DAI deposited by user
-	const realCost = amountToDeposit.length > 0 ? loaderData.amount - (0.05 * +amountToDeposit) / 12 : null;
-	const expectedMonths = realCost ? Math.floor(+amountToDeposit / realCost) : null;
-
 	const {
 		data: subscribeTxData,
 		write: subscribe,
@@ -160,7 +156,7 @@ export default function Index() {
 					{
 						subscribed: true,
 						totalDeposited: amountToDeposit,
-						expectedMonthsLength: expectedMonths
+						expectedMonthsLength: expectedMonthsFuture
 					},
 					"*"
 				);
@@ -229,6 +225,12 @@ export default function Index() {
 		address: loaderData.to,
 		chainId: 1
 	});
+
+	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
+	// assuming 5% yield on DAI deposited by user
+	const realCostFuture =
+		amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - (0.05 * claimableAmount) / 12 : null;
+	const expectedMonthsFuture = realCostFuture ? Math.floor(claimableAmount / realCostFuture) : null;
 
 	return (
 		<main
@@ -336,7 +338,7 @@ export default function Index() {
 							} p-3 text-sm `}
 						>
 							<span>Real Cost:</span>
-							{realCost && realCost < 0 ? (
+							{realCostFuture && realCostFuture < 0 ? (
 								<>
 									<span>Free</span>
 									<Ariakit.TooltipProvider showTimeout={0}>
@@ -364,11 +366,11 @@ export default function Index() {
 							) : (
 								<>
 									<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-									<span>{`${formatNum(realCost, 2) ?? 0} DAI per month`}</span>
+									<span>{`${formatNum(realCostFuture, 2) ?? 0} DAI per month`}</span>
 								</>
 							)}
 						</p>
-						{expectedMonths && expectedMonths < 0 ? (
+						{expectedMonthsFuture && expectedMonthsFuture < 0 ? (
 							<>
 								<p
 									className={`-mt-3 flex items-center gap-1 rounded-lg border ${
@@ -405,7 +407,8 @@ export default function Index() {
 									loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
 								} p-3 text-sm `}
 							>
-								{`Subscription Months: ${expectedMonths ?? ""}`}
+								Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
+								{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
 							</p>
 						)}
 
