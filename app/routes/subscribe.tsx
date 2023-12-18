@@ -361,7 +361,7 @@ export default function Index() {
 											}
 										/>
 										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											{`This assumes current yield doesn't go down`}
+											{`This assumes current yield (5% APR on your deposits) doesn't go down`}
 										</Ariakit.Tooltip>
 									</Ariakit.TooltipProvider>
 								</>
@@ -419,7 +419,7 @@ export default function Index() {
 											}
 										/>
 										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											{`This assumes current yield doesn't go down`}
+											{`This assumes current yield (5% APR on your deposits) doesn't go down`}
 										</Ariakit.Tooltip>
 									</Ariakit.TooltipProvider>
 								</p>
