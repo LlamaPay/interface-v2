@@ -235,7 +235,7 @@ export default function Index() {
 			className="relative col-span-full row-span-full lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
 		>
 			<div className="mx-auto flex w-full flex-col lg:flex-row">
-				<div className="flex flex-1 flex-col bg-[var(--page-bg-color)] px-4 py-9 text-[var(--page-text-color)] lg:ml-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
+				<div className="ml-auto flex flex-1 flex-col bg-[var(--page-bg-color)] px-4 py-9 text-[var(--page-text-color)] lg:ml-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
 					<Link to="/" className="flex items-center gap-1">
 						<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
 						<span className="sr-only">Dashboard</span>
@@ -254,12 +254,7 @@ export default function Index() {
 					</h1>
 					<p className="ml-1 mr-auto mt-1 text-4xl font-semibold">
 						<span className="flex items-center justify-center gap-1">
-							<img
-								src="https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1?h=36&w=36"
-								width={36}
-								height={36}
-								alt=""
-							/>
+							<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
 							<span>{loaderData.amount + " DAI"}</span>
 							<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
 						</span>
