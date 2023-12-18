@@ -1,8 +1,8 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { type CSSProperties, useRef, useState } from "react";
-import { getAddress, parseUnits } from "viem";
+import { type CSSProperties, useRef, useState, useEffect } from "react";
+import { formatUnits, getAddress, parseUnits } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -133,6 +133,7 @@ export default function Index() {
 		}
 	});
 
+	// assuming 5% yield on DAI deposited by user
 	const realCost = amountToDeposit.length > 0 ? loaderData.amount - (0.05 * +amountToDeposit) / 12 : null;
 	const expectedMonths = realCost ? Math.floor(+amountToDeposit / realCost) : null;
 
@@ -174,22 +175,29 @@ export default function Index() {
 		}
 	});
 
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
-		const amountPerCycle = loaderData.amount;
-		const decimalsAmountPerCycle = parseUnits(amountPerCycle, DAI_OPTIMISM.decimals);
-		const currentTime = BigInt(Math.floor(Date.now() / 1e3));
-		let timeDiff = (currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
+	const amountPerCycle = loaderData.amount;
+	const decimalsAmountPerCycle = parseUnits(amountPerCycle, DAI_OPTIMISM.decimals);
+	const currentTime = BigInt(Math.floor(Date.now() / 1e3));
+	let timeDiff = 0n,
+		amountForCurrentPeriod = 0n;
+	if (currentPeriod) {
+		timeDiff = (currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
 		while (timeDiff < 0) {
 			timeDiff += BigInt(SUBSCRIPTION_DURATION);
 		}
-		const claimableThisPeriod = (decimalsAmountPerCycle * timeDiff) / BigInt(SUBSCRIPTION_DURATION);
+		amountForCurrentPeriod = (decimalsAmountPerCycle * timeDiff) / BigInt(SUBSCRIPTION_DURATION);
+	}
+	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
+	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
+
+	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+
 		subscribe?.({
 			args: [
 				loaderData.to,
 				decimalsAmountPerCycle,
-				parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - claimableThisPeriod
+				parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod
 			]
 		});
 	};
@@ -259,6 +267,14 @@ export default function Index() {
 							<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
 						</span>
 					</p>
+					{currentPeriod ? (
+						<>
+							<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
+								Current period ends in <EndsIn deadline={currentPeriodEndsIn} /> <br /> and you will be charged{" "}
+								{formatNum(+amountChargedInstantly, 2)} DAI instantly.
+							</p>
+						</>
+					) : null}
 				</div>
 				<div className="flex flex-1 flex-col gap-5 overflow-auto bg-[var(--page-bg-color-2)] px-4 py-9 text-[var(--page-text-color-2)] lg:mr-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
 					<h1 className="mb-4 text-center text-xl font-medium">Subscribe</h1>
@@ -501,7 +517,7 @@ function rgbToRgb(rgb: string) {
 	return result ? { r: +result[0], g: +result[1], b: +result[2] } : null;
 }
 
-export function getTextColor(color: string) {
+function getTextColor(color: string) {
 	const rgb = color.startsWith("#") ? hexToRgb(color) : color.startsWith("rgb") ? rgbToRgb(color) : null;
 
 	if (!rgb) return "black";
@@ -509,3 +525,31 @@ export function getTextColor(color: string) {
 	const luminance = 0.2126 * rgb["r"] + 0.7152 * rgb["g"] + 0.0722 * rgb["b"];
 	return luminance < 140 ? "#ffffff" : "#000000";
 }
+
+const EndsIn = ({ deadline }: { deadline: number }) => {
+	const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
+	let days = diffTime / (24 * 60 * 60 * 1000);
+	let hours = (days % 1) * 24;
+	let minutes = (hours % 1) * 60;
+	let secs = (minutes % 1) * 60;
+	[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
+
+	const [deadlineFormatted, setDeadline] = useState<string>("");
+
+	useEffect(() => {
+		const id = setInterval(() => {
+			const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
+			let days = diffTime / (24 * 60 * 60 * 1000);
+			let hours = (days % 1) * 24;
+			let minutes = (hours % 1) * 60;
+			let secs = (minutes % 1) * 60;
+			[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
+
+			setDeadline(`${days}D ${hours}H ${minutes}M ${secs < 10 ? "0" : ""}${secs}S`);
+		}, 1000);
+
+		return () => clearInterval(id);
+	}, [deadline]);
+
+	return <>{deadlineFormatted !== "" ? deadlineFormatted : `${days}D ${hours}H ${minutes}M ${secs}S`}</>;
+};
