@@ -550,29 +550,30 @@ export default function Index() {
 							)}
 
 							{errorConfirmingTokenApproval ? (
-								<p className="break-all text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500" data-error-1>
 									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
 							{errorConfirmingApproveTx ? (
-								<p className="break-all text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500" data-error-2>
 									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
 								</p>
 							) : null}
 							{errorConfirmingSubscription ? (
-								<p className="break-all text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500" data-error-3>
 									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
 								</p>
 							) : null}
 							{errorWaitingForSubscriptionTxDataOnChain ? (
-								<p className="break-all text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500" data-error->
+									4
 									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
 										errorWaitingForSubscriptionTxDataOnChain.message}
 								</p>
 							) : null}
 
 							{errorFetchingAllowance ? (
-								<p className="break-all text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
 									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
 								</p>
 							) : null}
