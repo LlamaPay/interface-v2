@@ -1,16 +1,16 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { useQuery } from "@tanstack/react-query";
 import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
-import { formatUnits, getAddress, parseUnits } from "viem";
-import { optimism } from "viem/chains";
+import { createPublicClient, formatUnits, getAddress, http, parseUnits } from "viem";
+import { mainnet, optimism } from "viem/chains";
 import {
 	erc20ABI,
 	useAccount,
 	useBalance,
 	useContractRead,
 	useContractWrite,
-	useEnsName,
 	useNetwork,
 	useSwitchNetwork,
 	useWaitForTransaction
@@ -18,8 +18,9 @@ import {
 
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
+import { ENS_RESOLVER_ABI } from "~/lib/abi.ens-resolver";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
+import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, MAINNET_ENS_RESOLVER, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
 
 const AccountMenu = lazy(() =>
@@ -227,9 +228,8 @@ export default function Index() {
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain;
 
-	const { data: ensName } = useEnsName({
-		address: loaderData.to,
-		chainId: 1
+	const { data: ensName } = useGetEnsName({
+		address: loaderData.to
 	});
 
 	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
@@ -285,8 +285,10 @@ export default function Index() {
 								rel="noreferrer noopener"
 								href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
 								className="underline"
+								suppressHydrationWarning
 							>
-								{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
+								{(ensName && ensName.length > 0 ? ensName : null) ??
+									loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
 							</a>
 						</h1>
 						<p className="mr-auto mt-1 text-4xl font-semibold">
@@ -300,7 +302,7 @@ export default function Index() {
 							<Icon name="cog" className="h-4 w-4 flex-shrink-0" />
 							<span className="">Manage your subscriptions</span>
 						</Link>
-						{currentPeriod ? (
+						{hydrated && currentPeriod ? (
 							<>
 								<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
 									Current period ends in <EndsIn deadline={currentPeriodEndsIn} /> <br /> and you will be charged{" "}
@@ -363,7 +365,7 @@ export default function Index() {
 
 							<p className={`flex items-center gap-1 text-sm`}>
 								<span>Net Cost:</span>
-								{amountToDeposit.length <= 0 ? (
+								{!hydrated || amountToDeposit.length <= 0 ? (
 									""
 								) : realCostFuture && realCostFuture < 0 ? (
 									<>
@@ -418,7 +420,7 @@ export default function Index() {
 									</>
 								)}
 							</p>
-							{expectedMonthsFuture && expectedMonthsFuture < 0 ? (
+							{hydrated && expectedMonthsFuture && expectedMonthsFuture < 0 ? (
 								<>
 									<p className={`flex items-center gap-1 text-sm`}>
 										<span>{`Subscription Months: Infinite`}</span>
@@ -446,17 +448,28 @@ export default function Index() {
 									</p>
 								</>
 							) : (
-								<p className={`flex items-center gap-1 text-sm`}>
+								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
 									Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
 									{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
 								</p>
 							)}
 
 							{!hydrated ? null : !isConnected || !chain ? (
-								<ConnectWallet
-									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-									chainId={optimism.id}
-								/>
+								<Suspense
+									fallback={
+										<button
+											className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+											disabled
+										>
+											Connect Wallet
+										</button>
+									}
+								>
+									<ConnectWallet
+										className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+										chainId={optimism.id}
+									/>
+								</Suspense>
 							) : chain.id !== optimism.id ? (
 								<button
 									onClick={() => switchNetwork?.(chain.id)}
@@ -596,4 +609,29 @@ const EndsIn = ({ deadline }: { deadline: number }) => {
 	}, [deadline]);
 
 	return <>{deadlineFormatted !== "" ? deadlineFormatted : `${days}D ${hours}H ${minutes}M ${secs}S`}</>;
+};
+
+const getEnsName = async ({ address }: { address: string }) => {
+	try {
+		if (!address) return null;
+		const client = createPublicClient({
+			chain: mainnet,
+			transport: http(LLAMAPAY_CHAINS_LIB[mainnet.id].rpc)
+		});
+
+		const name = await client.readContract({
+			address: MAINNET_ENS_RESOLVER,
+			abi: ENS_RESOLVER_ABI,
+			functionName: "getNames",
+			args: [[address.toLowerCase()]]
+		});
+
+		return (name as Array<string>)[0];
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : "Failed to fetch ens name");
+	}
+};
+
+const useGetEnsName = ({ address }: { address: string }) => {
+	return useQuery(["ens-name", address], () => getEnsName({ address }));
 };

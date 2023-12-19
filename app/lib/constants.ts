@@ -34,3 +34,5 @@ export const DAI_OPTIMISM = {
 export const SUBSCRIPTION_DURATION = 30 * 24 * 60 * 60;
 
 export const SUBSCRIPTION_AMOUNT_DIVISOR = parseUnits("1", DAI_OPTIMISM.decimals);
+
+export const MAINNET_ENS_RESOLVER = "0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C";
