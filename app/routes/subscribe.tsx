@@ -506,7 +506,7 @@ export default function Index() {
 									</div>
 									<div className="flex flex-1 flex-col gap-6">
 										<button
-											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color-2)] p-3 text-[var(--page-text-color-2)] disabled:opacity-60"
+											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:bg-[var(--page-bg-color-2)] disabled:text-[var(--page-text-color-2)] disabled:opacity-60"
 											disabled={disableApprove}
 											type="button"
 											onClick={() => {
@@ -528,7 +528,7 @@ export default function Index() {
 										</button>
 
 										<button
-											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color-2)] p-3 text-[var(--page-text-color-2)] disabled:opacity-60"
+											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:bg-[var(--page-bg-color-2)] disabled:text-[var(--page-text-color-2)] disabled:opacity-60"
 											disabled={disableSubscribe}
 										>
 											{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
