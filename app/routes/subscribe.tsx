@@ -278,12 +278,7 @@ export default function Index() {
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
 					<div className="mx-auto flex max-w-[650px] flex-col px-4 py-9 lg:ml-auto lg:px-[100px]">
-						<Link to="/" className="flex items-center gap-1">
-							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
-							<span className="sr-only">Dashboard</span>
-						</Link>
-
-						<h1 className="ml-1 mt-10 text-lg font-medium text-[var(--page-text-color)] opacity-80">
+						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-80">
 							Subscribe to{" "}
 							<a
 								target="_blank"
@@ -294,13 +289,17 @@ export default function Index() {
 								{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
 							</a>
 						</h1>
-						<p className="ml-1 mr-auto mt-1 text-4xl font-semibold">
+						<p className="mr-auto mt-1 text-4xl font-semibold">
 							<span className="flex items-center justify-center gap-1">
 								<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
 								<span>{loaderData.amount + " DAI"}</span>
 								<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
 							</span>
 						</p>
+						<Link to="/" className="mt-10 flex items-center gap-1 text-sm underline opacity-80">
+							<Icon name="cog" className="h-4 w-4 flex-shrink-0" />
+							<span className="">Manage your subscriptions</span>
+						</Link>
 						{currentPeriod ? (
 							<>
 								<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
