@@ -4,7 +4,7 @@ import { useAccount, useBalance, useDisconnect, useEnsName } from "wagmi";
 import { Icon } from "~/components/Icon";
 import { formatAddress } from "~/utils/formatAddress";
 
-export const AccountMenu = () => {
+export const AccountMenu = ({ className }: { className?: string }) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
 	const { address } = useAccount();
@@ -19,7 +19,10 @@ export const AccountMenu = () => {
 		<>
 			<Ariakit.Button
 				onClick={dialog.show}
-				className="hidden h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:inline"
+				className={
+					className ??
+					"hidden h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:inline"
+				}
 			>
 				{address ? ensName ?? formatAddress(address) : null}
 			</Ariakit.Button>

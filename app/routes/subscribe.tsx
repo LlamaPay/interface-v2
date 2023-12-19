@@ -1,7 +1,7 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { type CSSProperties, useRef, useState, useEffect } from "react";
+import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
 import { formatUnits, getAddress, parseUnits } from "viem";
 import { optimism } from "viem/chains";
 import {
@@ -16,12 +16,21 @@ import {
 	useWaitForTransaction
 } from "wagmi";
 
-import { ConnectWallet } from "~/components/ConnectWallet";
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
+
+const AccountMenu = lazy(() =>
+	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
+);
+const ConnectWallet = lazy(() =>
+	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
+);
+const NetworkMenu = lazy(() =>
+	import("~/components/Header/NetworkMenu").then((module) => ({ default: module.NetworkMenu }))
+);
 
 export const meta: MetaFunction = () => {
 	return [
@@ -244,6 +253,31 @@ export default function Index() {
 			}
 			className="relative col-span-full row-span-full flex flex-col lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
 		>
+			{hydrated ? (
+				<>
+					{!isConnected ? (
+						<Suspense
+							fallback={
+								<button
+									className="absolute right-4 top-4 rounded-lg border p-2 text-[var(--page-text-color)] lg:border-[var(--page-bg-color)] lg:text-[var(--page-text-color-2)]"
+									disabled
+								>
+									Connect Wallet
+								</button>
+							}
+						>
+							<ConnectWallet className="absolute right-4 top-4 rounded-lg border p-2 text-[var(--page-text-color)] lg:border-[var(--page-bg-color)] lg:text-[var(--page-text-color-2)]" />
+						</Suspense>
+					) : (
+						<div className="absolute right-4 top-4 flex items-center gap-4">
+							<Suspense fallback={<></>}>
+								<AccountMenu className="absolute right-4 top-4 rounded-lg border p-2 text-[var(--page-text-color)] lg:border-[var(--page-bg-color)] lg:text-[var(--page-text-color-2)]" />
+							</Suspense>
+						</div>
+					)}
+				</>
+			) : null}
+
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
 					<div className="mx-auto flex max-w-[650px] flex-col px-4 py-9 lg:ml-auto lg:px-[100px]">
