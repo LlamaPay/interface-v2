@@ -45,7 +45,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const to = searchParams.get("to");
 	const amount = searchParams.get("amount");
 	const brandColor = searchParams.get("brandColor");
-	if (typeof to !== "string" || typeof amount !== "string" || amount.length === 0 || Number.isNaN(Number(amount))) {
+	if (
+		typeof to !== "string" ||
+		typeof amount !== "string" ||
+		amount.length === 0 ||
+		Number.isNaN(Number(amount)) ||
+		Number(amount) === 0
+	) {
 		throw new Response("Not Found", { status: 404 });
 	}
 
@@ -63,6 +69,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	return { to: getAddress(to), amount, bgColor, textColor, bgColor2, textColor2 };
 }
+
+const AAVE_YIELD = 0.0052;
 
 export default function Index() {
 	const loaderData: any = useLoaderData();
@@ -192,8 +200,6 @@ export default function Index() {
 		}
 		amountForCurrentPeriod = (decimalsAmountPerCycle * timeDiff) / BigInt(SUBSCRIPTION_DURATION);
 	}
-	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
-	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -234,13 +240,15 @@ export default function Index() {
 		address: loaderData.to
 	});
 
+	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
+	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
 	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
-	// assuming 5% yield on DAI deposited by user
-	const realCostFuture =
-		amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - (0.05 * claimableAmount) / 12 : null;
-	const expectedMonthsFuture = realCostFuture ? Math.floor(claimableAmount / realCostFuture) : null;
+	const netCostFuture =
+		amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - (AAVE_YIELD * claimableAmount) / 12 : null;
+	const expectedMonthsFuture = netCostFuture ? Math.floor(claimableAmount / netCostFuture) : null;
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
+
 	return (
 		<main
 			style={
@@ -296,7 +304,7 @@ export default function Index() {
 						<p className="mr-auto mt-1 text-4xl font-semibold">
 							<span className="flex items-center justify-center gap-1">
 								<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
-								<span>{loaderData.amount + " DAI"}</span>
+								<span>{formatNum(+loaderData.amount, 2) + " DAI"}</span>
 								<span className="mb-[2px] mt-auto text-base font-normal opacity-[0.85]">/ month</span>
 							</span>
 						</p>
@@ -305,20 +313,23 @@ export default function Index() {
 							<span className="">Manage your subscriptions</span>
 						</Link>
 						{hydrated && currentPeriod ? (
-							<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90">
-								<li className="list-disc">
-									Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
-								</li>
-								<li className="list-disc">{`You'll be charged ${formatNum(
-									+amountChargedInstantly,
-									2
-								)} DAI instantly to pay for remainder of the month`}</li>
-								<li className="list-disc">
-									After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
-									{`you'll be charged ${loaderData.amount} DAI, which will be repeated every 30 days`}
-								</li>
-								<li className="list-disc">{`You can withdraw all the money that hasn't been charged yet at any time`}</li>
-							</ul>
+							<>
+								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90">
+									<li className="list-disc">
+										Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
+									</li>
+									<li className="list-disc">{`You'll be charged ${formatNum(
+										+amountChargedInstantly,
+										2
+									)} DAI instantly to pay for remainder of the month`}</li>
+									<li className="list-disc">
+										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
+										{`you'll be charged ${loaderData.amount} DAI, which will be repeated every 30 days`}
+									</li>
+									<li className="list-disc">{`You can withdraw all the money that hasn't been charged yet at any time`}</li>
+								</ul>
+								<ExampleDepositTable />
+							</>
 						) : null}
 					</div>
 				</div>
@@ -389,7 +400,7 @@ export default function Index() {
 								<span>Net Cost:</span>
 								{!hydrated || amountToDeposit.length <= 0 ? (
 									""
-								) : realCostFuture && realCostFuture < 0 ? (
+								) : netCostFuture && netCostFuture < 0 ? (
 									<>
 										<span>Free</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
@@ -417,7 +428,7 @@ export default function Index() {
 								) : (
 									<>
 										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-										<span>{`${formatNum(realCostFuture, 2) ?? 0} DAI per month`}</span>
+										<span>{`${formatNum(netCostFuture, 2) ?? 0} DAI per month`}</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
 											<Ariakit.TooltipAnchor
 												render={
@@ -689,4 +700,46 @@ const getShortTimeFromDeadline = (deadline: number) => {
 	}
 
 	return `${secs} seconds`;
+};
+
+const ExampleDepositTable = () => {
+	const loaderData = useLoaderData<typeof loader>();
+	const amount = +loaderData.amount;
+	const claimableAmount = +amount * 2500;
+	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
+	const netCostPerMonth = monthlyYield - +amount;
+	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
+
+	return (
+		<div className="overflow-x-auto">
+			<table className="mt-10 border-collapse opacity-[0.85]">
+				<tbody>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Your Deposit</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
+					</tr>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">AAVE Yield</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>
+					</tr>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Monthly Yield</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">+{formatNum(monthlyYield, 2)} DAI</td>
+					</tr>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Subscription</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">-{amount} DAI</td>
+					</tr>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Net Cost</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">+{formatNum(netCostPerMonth, 2)} DAI</td>
+					</tr>
+					<tr className={`border-b ${borderColor}`}>
+						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
+						<td className="whitespace-nowrap p-2 pl-6 text-sm">Infinite!</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	);
 };
