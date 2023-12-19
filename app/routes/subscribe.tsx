@@ -81,8 +81,7 @@ export default function Index() {
 	} = useBalance({
 		address,
 		token: DAI_OPTIMISM.address,
-		chainId: optimism.id,
-		cacheTime: 20_000
+		chainId: optimism.id
 	});
 
 	const formRef = useRef<HTMLFormElement>(null);
@@ -98,8 +97,7 @@ export default function Index() {
 		abi: erc20ABI,
 		functionName: "allowance",
 		args: address && [address, LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions],
-		enabled: address ? true : false,
-		cacheTime: 20_000
+		enabled: address ? true : false
 	});
 
 	const {
@@ -110,8 +108,7 @@ export default function Index() {
 	} = useContractRead({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
-		functionName: "currentPeriod",
-		cacheTime: 20_000
+		functionName: "currentPeriod"
 	});
 
 	const isApproved =
@@ -554,38 +551,37 @@ export default function Index() {
 								</div>
 							)}
 
-							{errorConfirmingTokenApproval ? (
+							{hydrated && errorConfirmingTokenApproval ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-1>
 									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
-							{errorConfirmingApproveTx ? (
+							{hydrated && errorConfirmingApproveTx ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-2>
 									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
 								</p>
 							) : null}
-							{errorConfirmingSubscription ? (
+							{hydrated && errorConfirmingSubscription ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-3>
 									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
 								</p>
 							) : null}
-							{errorWaitingForSubscriptionTxDataOnChain ? (
-								<p className="break-all text-center text-sm text-red-500" data-error->
-									4
+							{hydrated && errorWaitingForSubscriptionTxDataOnChain ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-4>
 									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
 										errorWaitingForSubscriptionTxDataOnChain.message}
 								</p>
 							) : null}
 
-							{errorFetchingAllowance ? (
+							{hydrated && errorFetchingAllowance ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-5>
 									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
 								</p>
 							) : null}
 
-							{errorFetchingCurrentPeriod ? (
-								<p className="break-all text-center text-sm text-red-500">
-									Failed to calculate total amount to be paid
+							{hydrated && isConnected && errorFetchingCurrentPeriod ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-6>
+									{(errorFetchingCurrentPeriod as any)?.shortMessage ?? errorFetchingCurrentPeriod.message}
 								</p>
 							) : null}
 

@@ -13,12 +13,12 @@ export const LLAMAPAY_CHAINS = [mainnet];
 
 export const LLAMAPAY_CHAINS_LIB = {
 	[mainnet.id]: {
-		rpc: "https://eth.llamarpc.com",
+		rpc: "https://rpc.ankr.com/eth",
 		contracts: {},
 		subgraphs: {}
 	},
 	[optimism.id]: {
-		rpc: "https://rpc.ankr.com/optimism",
+		rpc: "https://optimism.publicnode.com",
 		contracts: { subscriptions: "0x543e186ae5c7FeA674C489F50215EE8036e87897" },
 		subgraphs: { subscriptions: "https://api.thegraph.com/subgraphs/name/0xngmi/llamasubs-optimism" }
 	}
