@@ -242,284 +242,288 @@ export default function Index() {
 					"--page-text-color-2": loaderData.textColor2
 				} as CSSProperties
 			}
-			className="relative col-span-full row-span-full lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
+			className="relative col-span-full row-span-full flex flex-col lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
 		>
-			<div className="mx-auto flex w-full flex-col lg:flex-row">
-				<div className="ml-auto flex flex-1 flex-col bg-[var(--page-bg-color)] px-4 py-9 text-[var(--page-text-color)] lg:ml-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
-					<Link to="/" className="flex items-center gap-1">
-						<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
-						<span className="sr-only">Dashboard</span>
-					</Link>
+			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
+				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
+					<div className="mx-auto flex max-w-[650px] flex-col px-4 py-9 lg:ml-auto lg:px-[100px]">
+						<Link to="/" className="flex items-center gap-1">
+							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
+							<span className="sr-only">Dashboard</span>
+						</Link>
 
-					<h1 className="ml-1 mt-10 text-lg font-medium text-[var(--page-text-color)] opacity-80">
-						Subscribe to{" "}
-						<a
-							target="_blank"
-							rel="noreferrer noopener"
-							href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
-							className="underline"
-						>
-							{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
-						</a>
-					</h1>
-					<p className="ml-1 mr-auto mt-1 text-4xl font-semibold">
-						<span className="flex items-center justify-center gap-1">
-							<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
-							<span>{loaderData.amount + " DAI"}</span>
-							<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
-						</span>
-					</p>
-					{currentPeriod ? (
-						<>
-							<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
-								Current period ends in <EndsIn deadline={currentPeriodEndsIn} /> <br /> and you will be charged{" "}
-								{formatNum(+amountChargedInstantly, 2)} DAI instantly.
-							</p>
-						</>
-					) : null}
-				</div>
-				<div className="flex flex-1 flex-col gap-5 overflow-auto bg-[var(--page-bg-color-2)] px-4 py-9 text-[var(--page-text-color-2)] lg:mr-auto lg:max-w-[650px] lg:bg-none lg:px-[100px]">
-					<h1 className="mb-4 text-center text-xl font-medium">Subscribe</h1>
-
-					<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
-						<label className="flex flex-col gap-1">
-							<span>Amount to deposit</span>
-							<input
-								name="amountToDeposit"
-								className={`peer w-full rounded-lg border ${
-									loaderData.textColor2 === "#000000"
-										? "border-black/[0.3] bg-black/[0.08]"
-										: "border-white/[0.3] bg-white/[0.08]"
-								} p-3 invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-500`}
-								required
-								autoComplete="off"
-								autoCorrect="off"
-								type="text"
-								pattern="^[0-9]*[.,]?[0-9]*$"
-								placeholder="0.0"
-								minLength={1}
-								maxLength={79}
-								spellCheck="false"
-								inputMode="decimal"
-								title="Enter numbers only."
-								value={amountToDeposit}
-								onChange={(e) => {
-									if (!Number.isNaN(Number(e.target.value))) {
-										setAmountToDeposit(e.target.value.trim());
-									}
-								}}
-								disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
-							/>
-
-							<p
-								className={`flex items-center gap-1 rounded-lg border ${
-									loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-								} p-3 text-sm `}
+						<h1 className="ml-1 mt-10 text-lg font-medium text-[var(--page-text-color)] opacity-80">
+							Subscribe to{" "}
+							<a
+								target="_blank"
+								rel="noreferrer noopener"
+								href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
+								className="underline"
 							>
-								<span>Balance:</span>
-								{!hydrated || fetchingBalance ? (
-									<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
-								) : !isConnected || errorFetchingBalance ? null : (
-									<>
-										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-										<span>{(formatNum(balance ? +balance.formatted : null, 2) ?? "0") + " DAI"}</span>
-									</>
-								)}
-							</p>
-
-							<span className="mt-1 hidden text-xs text-red-500 peer-[&:not(:placeholder-shown):not(:focus):invalid]:block">
-								Enter numbers only
+								{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
+							</a>
+						</h1>
+						<p className="ml-1 mr-auto mt-1 text-4xl font-semibold">
+							<span className="flex items-center justify-center gap-1">
+								<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
+								<span>{loaderData.amount + " DAI"}</span>
+								<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
 							</span>
-						</label>
-
-						<p
-							className={`-mt-3 flex items-center gap-1 rounded-lg border ${
-								loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-							} p-3 text-sm `}
-						>
-							<span>Real Cost:</span>
-							{amountToDeposit.length <= 0 ? (
-								""
-							) : realCostFuture && realCostFuture < 0 ? (
-								<>
-									<span>Free</span>
-									<Ariakit.TooltipProvider showTimeout={0}>
-										<Ariakit.TooltipAnchor
-											render={
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													viewBox="0 0 20 20"
-													fill="currentColor"
-													className="h-5 w-5"
-												>
-													<path
-														fillRule="evenodd"
-														d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-														clipRule="evenodd"
-													/>
-												</svg>
-											}
-										/>
-										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											{`This assumes current yield (5% APR on your deposits) doesn't go down`}
-										</Ariakit.Tooltip>
-									</Ariakit.TooltipProvider>
-								</>
-							) : (
-								<>
-									<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-									<span>{`${formatNum(realCostFuture, 2) ?? 0} DAI per month`}</span>
-									<Ariakit.TooltipProvider showTimeout={0}>
-										<Ariakit.TooltipAnchor
-											render={
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													viewBox="0 0 20 20"
-													fill="currentColor"
-													className="h-5 w-5"
-												>
-													<path
-														fillRule="evenodd"
-														d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-														clipRule="evenodd"
-													/>
-												</svg>
-											}
-										/>
-										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											{`You will earn 5% APR on your deposits`}
-										</Ariakit.Tooltip>
-									</Ariakit.TooltipProvider>
-								</>
-							)}
 						</p>
-						{expectedMonthsFuture && expectedMonthsFuture < 0 ? (
+						{currentPeriod ? (
 							<>
+								<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
+									Current period ends in <EndsIn deadline={currentPeriodEndsIn} /> <br /> and you will be charged{" "}
+									{formatNum(+amountChargedInstantly, 2)} DAI instantly.
+								</p>
+							</>
+						) : null}
+					</div>
+				</div>
+				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
+					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 py-9 lg:mr-auto lg:px-[100px]">
+						<h1 className="mb-4 text-center text-xl font-medium">Subscribe</h1>
+
+						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
+							<label className="flex flex-col gap-1">
+								<span>Amount to deposit</span>
+								<input
+									name="amountToDeposit"
+									className={`peer w-full rounded-lg border ${
+										loaderData.textColor2 === "#000000"
+											? "border-black/[0.3] bg-black/[0.08]"
+											: "border-white/[0.3] bg-white/[0.08]"
+									} p-3 invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-500`}
+									required
+									autoComplete="off"
+									autoCorrect="off"
+									type="text"
+									pattern="^[0-9]*[.,]?[0-9]*$"
+									placeholder="0.0"
+									minLength={1}
+									maxLength={79}
+									spellCheck="false"
+									inputMode="decimal"
+									title="Enter numbers only."
+									value={amountToDeposit}
+									onChange={(e) => {
+										if (!Number.isNaN(Number(e.target.value))) {
+											setAmountToDeposit(e.target.value.trim());
+										}
+									}}
+									disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
+								/>
+
 								<p
-									className={`-mt-3 flex items-center gap-1 rounded-lg border ${
+									className={`flex items-center gap-1 rounded-lg border ${
 										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
 									} p-3 text-sm `}
 								>
-									<span>{`Subscription Months: Infinite`}</span>
-									<Ariakit.TooltipProvider showTimeout={0}>
-										<Ariakit.TooltipAnchor
-											render={
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													viewBox="0 0 20 20"
-													fill="currentColor"
-													className="h-5 w-5"
-												>
-													<path
-														fillRule="evenodd"
-														d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-														clipRule="evenodd"
-													/>
-												</svg>
-											}
-										/>
-										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											{`This assumes current yield (5% APR on your deposits) doesn't go down`}
-										</Ariakit.Tooltip>
-									</Ariakit.TooltipProvider>
+									<span>Balance:</span>
+									{!hydrated || fetchingBalance ? (
+										<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
+									) : !isConnected || errorFetchingBalance ? null : (
+										<>
+											<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
+											<span>{(formatNum(balance ? +balance.formatted : null, 2) ?? "0") + " DAI"}</span>
+										</>
+									)}
 								</p>
-							</>
-						) : (
+
+								<span className="mt-1 hidden text-xs text-red-500 peer-[&:not(:placeholder-shown):not(:focus):invalid]:block">
+									Enter numbers only
+								</span>
+							</label>
+
 							<p
 								className={`-mt-3 flex items-center gap-1 rounded-lg border ${
 									loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
 								} p-3 text-sm `}
 							>
-								Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
-								{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
+								<span>Real Cost:</span>
+								{amountToDeposit.length <= 0 ? (
+									""
+								) : realCostFuture && realCostFuture < 0 ? (
+									<>
+										<span>Free</span>
+										<Ariakit.TooltipProvider showTimeout={0}>
+											<Ariakit.TooltipAnchor
+												render={
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 20 20"
+														fill="currentColor"
+														className="h-5 w-5"
+													>
+														<path
+															fillRule="evenodd"
+															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
+															clipRule="evenodd"
+														/>
+													</svg>
+												}
+											/>
+											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+												{`This assumes current yield (5% APR on your deposits) doesn't go down`}
+											</Ariakit.Tooltip>
+										</Ariakit.TooltipProvider>
+									</>
+								) : (
+									<>
+										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
+										<span>{`${formatNum(realCostFuture, 2) ?? 0} DAI per month`}</span>
+										<Ariakit.TooltipProvider showTimeout={0}>
+											<Ariakit.TooltipAnchor
+												render={
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 20 20"
+														fill="currentColor"
+														className="h-5 w-5"
+													>
+														<path
+															fillRule="evenodd"
+															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
+															clipRule="evenodd"
+														/>
+													</svg>
+												}
+											/>
+											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+												{`You will earn 5% APR on your deposits`}
+											</Ariakit.Tooltip>
+										</Ariakit.TooltipProvider>
+									</>
+								)}
 							</p>
-						)}
-
-						{!hydrated ? null : !isConnected || !chain ? (
-							<ConnectWallet
-								className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-								chainId={optimism.id}
-							/>
-						) : chain.id !== optimism.id ? (
-							<button
-								onClick={() => switchNetwork?.(chain.id)}
-								className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-							>
-								Switch Network
-							</button>
-						) : null}
-
-						<div className="flex w-full flex-wrap items-center gap-2">
-							<button
-								className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-								disabled={disableApprove}
-								type="button"
-								onClick={() => {
-									approveToken?.({
-										args: [
-											LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-											parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
-										]
-									});
-								}}
-							>
-								{!hydrated
-									? "Approve"
-									: confirmingTokenApproval || waitingForApproveTxConfirmation
-										? "Confirming..."
-										: isApproved
-											? "Approved"
-											: "Approve"}
-							</button>
-
-							<button
-								className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-								disabled={disableSubscribe}
-							>
-								{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
-							</button>
-						</div>
-
-						{errorConfirmingTokenApproval ? (
-							<p className="text-center text-sm text-red-500">
-								{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
-							</p>
-						) : null}
-						{errorConfirmingApproveTx ? (
-							<p className="text-center text-sm text-red-500">
-								{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
-							</p>
-						) : null}
-						{errorConfirmingSubscription ? (
-							<p className="text-center text-sm text-red-500">
-								{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
-							</p>
-						) : null}
-						{errorWaitingForSubscriptionTxDataOnChain ? (
-							<p className="text-center text-sm text-red-500">
-								{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
-									errorWaitingForSubscriptionTxDataOnChain.message}
-							</p>
-						) : null}
-
-						{errorFetchingAllowance ? (
-							<p className="text-center text-sm text-red-500">
-								{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
-							</p>
-						) : null}
-
-						{errorFetchingCurrentPeriod ? (
-							<p className="text-center text-sm text-red-500">Failed to calculate total amount to be paid</p>
-						) : null}
-
-						{subscribeTxDataOnChain ? (
-							subscribeTxDataOnChain.status === "success" ? (
-								<p className="text-center text-sm text-green-500">Transaction Success</p>
+							{expectedMonthsFuture && expectedMonthsFuture < 0 ? (
+								<>
+									<p
+										className={`-mt-3 flex items-center gap-1 rounded-lg border ${
+											loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
+										} p-3 text-sm `}
+									>
+										<span>{`Subscription Months: Infinite`}</span>
+										<Ariakit.TooltipProvider showTimeout={0}>
+											<Ariakit.TooltipAnchor
+												render={
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 20 20"
+														fill="currentColor"
+														className="h-5 w-5"
+													>
+														<path
+															fillRule="evenodd"
+															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
+															clipRule="evenodd"
+														/>
+													</svg>
+												}
+											/>
+											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+												{`This assumes current yield (5% APR on your deposits) doesn't go down`}
+											</Ariakit.Tooltip>
+										</Ariakit.TooltipProvider>
+									</p>
+								</>
 							) : (
-								<p className="text-center text-sm text-red-500">Transaction Failed</p>
-							)
-						) : null}
-					</form>
+								<p
+									className={`-mt-3 flex items-center gap-1 rounded-lg border ${
+										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
+									} p-3 text-sm `}
+								>
+									Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
+									{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
+								</p>
+							)}
+
+							{!hydrated ? null : !isConnected || !chain ? (
+								<ConnectWallet
+									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+									chainId={optimism.id}
+								/>
+							) : chain.id !== optimism.id ? (
+								<button
+									onClick={() => switchNetwork?.(chain.id)}
+									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+								>
+									Switch Network
+								</button>
+							) : null}
+
+							<div className="flex w-full flex-wrap items-center gap-2">
+								<button
+									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+									disabled={disableApprove}
+									type="button"
+									onClick={() => {
+										approveToken?.({
+											args: [
+												LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+												parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
+											]
+										});
+									}}
+								>
+									{!hydrated
+										? "Approve"
+										: confirmingTokenApproval || waitingForApproveTxConfirmation
+											? "Confirming..."
+											: isApproved
+												? "Approved"
+												: "Approve"}
+								</button>
+
+								<button
+									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
+									disabled={disableSubscribe}
+								>
+									{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
+								</button>
+							</div>
+
+							{errorConfirmingTokenApproval ? (
+								<p className="text-center text-sm text-red-500">
+									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
+								</p>
+							) : null}
+							{errorConfirmingApproveTx ? (
+								<p className="text-center text-sm text-red-500">
+									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
+								</p>
+							) : null}
+							{errorConfirmingSubscription ? (
+								<p className="text-center text-sm text-red-500">
+									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
+								</p>
+							) : null}
+							{errorWaitingForSubscriptionTxDataOnChain ? (
+								<p className="text-center text-sm text-red-500">
+									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
+										errorWaitingForSubscriptionTxDataOnChain.message}
+								</p>
+							) : null}
+
+							{errorFetchingAllowance ? (
+								<p className="text-center text-sm text-red-500">
+									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
+								</p>
+							) : null}
+
+							{errorFetchingCurrentPeriod ? (
+								<p className="text-center text-sm text-red-500">Failed to calculate total amount to be paid</p>
+							) : null}
+
+							{subscribeTxDataOnChain ? (
+								subscribeTxDataOnChain.status === "success" ? (
+									<p className="text-center text-sm text-green-500">Transaction Success</p>
+								) : (
+									<p className="text-center text-sm text-red-500">Transaction Failed</p>
+								)
+							) : null}
+						</form>
+					</div>
 				</div>
 			</div>
 		</main>
