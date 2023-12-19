@@ -475,38 +475,67 @@ export default function Index() {
 								>
 									Switch Network
 								</button>
-							) : null}
+							) : (
+								<div className="flex flex-nowrap gap-4">
+									<div className="flex flex-col justify-between gap-1 md:-ml-12">
+										<div
+											className="h-8 w-8 rounded-full border-2 border-[var(--page-text-color-2)] bg-[var(--page-text-color-2)] first-of-type:mt-3 data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40"
+											data-disabled={
+												!hydrated ||
+												confirmingTokenApproval ||
+												waitingForApproveTxConfirmation ||
+												isApproved ||
+												confirmingSubscription ||
+												waitingForSubscriptionTxDataOnChain ||
+												amountToDeposit.length === 0
+											}
+										></div>
+										<div className="mx-auto min-h-[4px] w-[2px] flex-1 bg-[var(--page-text-color-2)] opacity-40"></div>
+										<div
+											className="mb-3 h-8 w-8 rounded-full border-2 border-[var(--page-text-color-2)] bg-[var(--page-text-color-2)] data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40"
+											data-disabled={
+												!hydrated ||
+												!isApproved ||
+												confirmingSubscription ||
+												waitingForSubscriptionTxDataOnChain ||
+												confirmingTokenApproval ||
+												waitingForApproveTxConfirmation ||
+												amountToDeposit.length === 0
+											}
+										></div>
+									</div>
+									<div className="flex flex-1 flex-col gap-6">
+										<button
+											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color-2)] p-3 text-[var(--page-text-color-2)] disabled:opacity-60"
+											disabled={disableApprove}
+											type="button"
+											onClick={() => {
+												approveToken?.({
+													args: [
+														LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+														parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
+													]
+												});
+											}}
+										>
+											{!hydrated
+												? "Approve"
+												: confirmingTokenApproval || waitingForApproveTxConfirmation
+													? "Confirming..."
+													: isApproved
+														? "Approved"
+														: "Approve"}
+										</button>
 
-							<div className="flex w-full flex-wrap items-center gap-2">
-								<button
-									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-									disabled={disableApprove}
-									type="button"
-									onClick={() => {
-										approveToken?.({
-											args: [
-												LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-												parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
-											]
-										});
-									}}
-								>
-									{!hydrated
-										? "Approve"
-										: confirmingTokenApproval || waitingForApproveTxConfirmation
-											? "Confirming..."
-											: isApproved
-												? "Approved"
-												: "Approve"}
-								</button>
-
-								<button
-									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
-									disabled={disableSubscribe}
-								>
-									{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
-								</button>
-							</div>
+										<button
+											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color-2)] p-3 text-[var(--page-text-color-2)] disabled:opacity-60"
+											disabled={disableSubscribe}
+										>
+											{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
+										</button>
+									</div>
+								</div>
+							)}
 
 							{errorConfirmingTokenApproval ? (
 								<p className="text-center text-sm text-red-500">

@@ -43,7 +43,6 @@ export const AccountMenu = ({ className }: { className?: string }) => {
 				<p className="mt-1 text-center text-sm text-black text-opacity-60 dark:text-white">{`${data?.formatted ?? 0} ${
 					data?.symbol ?? "ETH"
 				}`}</p>
-
 				<div className="mt-6 flex flex-wrap items-center justify-center gap-2">
 					<button
 						className="flex flex-1 flex-col items-center gap-1 rounded-lg bg-gray-100 p-2 text-sm dark:bg-black/20"
