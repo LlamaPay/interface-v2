@@ -363,7 +363,7 @@ export default function Index() {
 											)}
 
 											<button
-												className="text-[var(--page-bg-color)]"
+												className="text-[var(--page-text-color-2)] underline"
 												onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
 											>
 												Max
