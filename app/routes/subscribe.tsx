@@ -312,52 +312,64 @@ export default function Index() {
 				</div>
 				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
 					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 py-9 lg:mr-auto lg:px-[100px]">
-						<h1 className="mb-4 text-center text-xl font-medium">Subscribe</h1>
-
 						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
 							<label className="flex flex-col gap-1">
 								<span>Amount to deposit</span>
-								<input
-									name="amountToDeposit"
-									className={`peer w-full rounded-lg border ${
+
+								<span
+									className={`relative rounded-lg border ${
 										loaderData.textColor2 === "#000000"
 											? "border-black/[0.3] bg-black/[0.08]"
-											: "border-white/[0.3] bg-white/[0.08]"
-									} p-3 invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-500`}
-									required
-									autoComplete="off"
-									autoCorrect="off"
-									type="text"
-									pattern="^[0-9]*[.,]?[0-9]*$"
-									placeholder="0.0"
-									minLength={1}
-									maxLength={79}
-									spellCheck="false"
-									inputMode="decimal"
-									title="Enter numbers only."
-									value={amountToDeposit}
-									onChange={(e) => {
-										if (!Number.isNaN(Number(e.target.value))) {
-											setAmountToDeposit(e.target.value.trim());
-										}
-									}}
-									disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
-								/>
+											: "border-white/[0.3] bg-white/[0.08] outline-offset-2 focus-within:outline"
+									} p-3 pb-[26px]`}
+								>
+									<input
+										name="amountToDeposit"
+										className={`w-full border-none bg-transparent text-4xl !outline-none`}
+										required
+										autoComplete="off"
+										autoCorrect="off"
+										type="text"
+										pattern="^[0-9]*[.,]?[0-9]*$"
+										placeholder="0.0"
+										minLength={1}
+										maxLength={79}
+										spellCheck="false"
+										inputMode="decimal"
+										title="Enter numbers only."
+										value={amountToDeposit}
+										onChange={(e) => {
+											if (!Number.isNaN(Number(e.target.value))) {
+												setAmountToDeposit(e.target.value.trim());
+											}
+										}}
+										disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
+									/>
+									<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
+										<p className={`ml-auto flex items-center gap-1 text-xl`}>
+											<img src={DAI_OPTIMISM.img} width={16} height={16} alt="" />
+											<span>DAI</span>
+										</p>
+										<p className={`flex items-center gap-1 text-xs`}>
+											<span>Balance:</span>
+											{!hydrated || fetchingBalance ? (
+												<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
+											) : !isConnected || errorFetchingBalance ? (
+												<span className="inline-block h-4 w-[10ch]"></span>
+											) : (
+												<>
+													<span>{formatNum(balance ? +balance.formatted : null, 2) ?? "0"}</span>
+												</>
+											)}
 
-								<p className={`mt-3 flex items-center gap-1 text-sm`}>
-									<span>Balance:</span>
-									{!hydrated || fetchingBalance ? (
-										<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
-									) : !isConnected || errorFetchingBalance ? null : (
-										<>
-											<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-											<span>{(formatNum(balance ? +balance.formatted : null, 2) ?? "0") + " DAI"}</span>
-										</>
-									)}
-								</p>
-
-								<span className="mt-1 hidden text-xs text-red-500 peer-[&:not(:placeholder-shown):not(:focus):invalid]:block">
-									Enter numbers only
+											<button
+												className="text-[var(--page-bg-color)]"
+												onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
+											>
+												Max
+											</button>
+										</p>
+									</span>
 								</span>
 							</label>
 
@@ -538,42 +550,44 @@ export default function Index() {
 							)}
 
 							{errorConfirmingTokenApproval ? (
-								<p className="text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500">
 									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
 							{errorConfirmingApproveTx ? (
-								<p className="text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500">
 									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
 								</p>
 							) : null}
 							{errorConfirmingSubscription ? (
-								<p className="text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500">
 									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
 								</p>
 							) : null}
 							{errorWaitingForSubscriptionTxDataOnChain ? (
-								<p className="text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500">
 									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
 										errorWaitingForSubscriptionTxDataOnChain.message}
 								</p>
 							) : null}
 
 							{errorFetchingAllowance ? (
-								<p className="text-center text-sm text-red-500">
+								<p className="break-all text-center text-sm text-red-500">
 									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
 								</p>
 							) : null}
 
 							{errorFetchingCurrentPeriod ? (
-								<p className="text-center text-sm text-red-500">Failed to calculate total amount to be paid</p>
+								<p className="break-all text-center text-sm text-red-500">
+									Failed to calculate total amount to be paid
+								</p>
 							) : null}
 
 							{subscribeTxDataOnChain ? (
 								subscribeTxDataOnChain.status === "success" ? (
-									<p className="text-center text-sm text-green-500">Transaction Success</p>
+									<p className="break-all text-center text-sm text-green-500">Transaction Success</p>
 								) : (
-									<p className="text-center text-sm text-red-500">Transaction Failed</p>
+									<p className="break-all text-center text-sm text-red-500">Transaction Failed</p>
 								)
 							) : null}
 						</form>
