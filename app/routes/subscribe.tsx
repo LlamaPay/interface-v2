@@ -345,11 +345,7 @@ export default function Index() {
 									disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
 								/>
 
-								<p
-									className={`flex items-center gap-1 rounded-lg border ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} p-3 text-sm `}
-								>
+								<p className={`mt-3 flex items-center gap-1 text-sm`}>
 									<span>Balance:</span>
 									{!hydrated || fetchingBalance ? (
 										<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
@@ -366,11 +362,7 @@ export default function Index() {
 								</span>
 							</label>
 
-							<p
-								className={`-mt-3 flex items-center gap-1 rounded-lg border ${
-									loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-								} p-3 text-sm `}
-							>
+							<p className={`flex items-center gap-1 text-sm`}>
 								<span>Net Cost:</span>
 								{amountToDeposit.length <= 0 ? (
 									""
@@ -429,11 +421,7 @@ export default function Index() {
 							</p>
 							{expectedMonthsFuture && expectedMonthsFuture < 0 ? (
 								<>
-									<p
-										className={`-mt-3 flex items-center gap-1 rounded-lg border ${
-											loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-										} p-3 text-sm `}
-									>
+									<p className={`flex items-center gap-1 text-sm`}>
 										<span>{`Subscription Months: Infinite`}</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
 											<Ariakit.TooltipAnchor
@@ -459,11 +447,7 @@ export default function Index() {
 									</p>
 								</>
 							) : (
-								<p
-									className={`-mt-3 flex items-center gap-1 rounded-lg border ${
-										loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
-									} p-3 text-sm `}
-								>
+								<p className={`flex items-center gap-1 text-sm`}>
 									Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
 									{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
 								</p>
