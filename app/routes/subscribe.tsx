@@ -281,7 +281,7 @@ export default function Index() {
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
 					<div className="mx-auto flex max-w-[650px] flex-col px-4 py-9 lg:ml-auto lg:px-[100px]">
-						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-80">
+						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-[0.85]">
 							Subscribe to{" "}
 							<a
 								target="_blank"
@@ -297,24 +297,32 @@ export default function Index() {
 							<span className="flex items-center justify-center gap-1">
 								<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
 								<span>{loaderData.amount + " DAI"}</span>
-								<span className="mb-[2px] mt-auto text-base font-normal opacity-70">/ month</span>
+								<span className="mb-[2px] mt-auto text-base font-normal opacity-[0.85]">/ month</span>
 							</span>
 						</p>
-						<Link to="/" className="mt-10 flex items-center gap-1 text-sm underline opacity-80">
+						<Link to="/" className="mt-10 flex items-center gap-1 text-sm underline opacity-[0.85]">
 							<Icon name="cog" className="h-4 w-4 flex-shrink-0" />
 							<span className="">Manage your subscriptions</span>
 						</Link>
 						{hydrated && currentPeriod ? (
-							<>
-								<p className="ml-1 mt-10 text-sm text-[var(--page-text-color)] opacity-80">
-									Current period ends in <EndsIn deadline={currentPeriodEndsIn} /> <br /> and you will be charged{" "}
-									{formatNum(+amountChargedInstantly, 2)} DAI instantly.
-								</p>
-							</>
+							<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90">
+								<li className="list-disc">
+									Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
+								</li>
+								<li className="list-disc">{`You'll be charged ${formatNum(
+									+amountChargedInstantly,
+									2
+								)} DAI instantly to pay for remainder of the month`}</li>
+								<li className="list-disc">
+									After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
+									{`you'll be charged ${loaderData.amount} DAI, which will be repeated every 30 days`}
+								</li>
+								<li className="list-disc">{`You can withdraw all the money that hasn't been charged yet at any time`}</li>
+							</ul>
 						) : null}
 					</div>
 				</div>
-				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
+				<div className="flex-1 bg-[var(--page-bg-clior-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
 					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 py-9 lg:mr-auto lg:px-[100px]">
 						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
 							<label className="flex flex-col gap-1">
@@ -658,4 +666,27 @@ const EndsIn = ({ deadline }: { deadline: number }) => {
 	}, [deadline]);
 
 	return <>{deadlineFormatted !== "" ? deadlineFormatted : `${days}D ${hours}H ${minutes}M ${secs}S`}</>;
+};
+
+const getShortTimeFromDeadline = (deadline: number) => {
+	const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
+	let days = diffTime / (24 * 60 * 60 * 1000);
+	let hours = (days % 1) * 24;
+	let minutes = (hours % 1) * 60;
+	let secs = (minutes % 1) * 60;
+	[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
+
+	if (days) {
+		return `${days} days`;
+	}
+
+	if (hours) {
+		return `${hours} hours`;
+	}
+
+	if (minutes) {
+		return `${minutes} minutes`;
+	}
+
+	return `${secs} seconds`;
 };

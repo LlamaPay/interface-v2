@@ -78,7 +78,8 @@ export const Claim = () => {
 	} = useContractWrite({
 		address: SUB_CHAIN_LIB.contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
-		functionName: "claim"
+		functionName: "claim",
+		chainId: optimism.id
 	});
 	const {
 		data: claimTxDataOnChain,
@@ -86,7 +87,8 @@ export const Claim = () => {
 		error: errorWaitingForClaimTxDataOnChain
 	} = useWaitForTransaction({
 		hash: claimTxData?.hash,
-		enabled: claimTxData ? true : false
+		enabled: claimTxData ? true : false,
+		chainId: optimism.id
 	});
 
 	const {

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
 import { formatUnits } from "viem";
+import { optimism } from "viem/chains";
 import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
 
 import { useHydrated } from "~/hooks/useHydrated";
@@ -168,7 +169,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 			data.receiver,
 			data.accumulator,
 			data.initialShares
-		]
+		],
+		chainId: optimism.id
 	});
 
 	const {
@@ -178,6 +180,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 	} = useWaitForTransaction({
 		hash: unsubscribeTxData?.hash,
 		enabled: unsubscribeTxData ? true : false,
+		chainId: optimism.id,
 		onSuccess: (data) => {
 			if (data.status === "success") {
 				refetchBalance();
