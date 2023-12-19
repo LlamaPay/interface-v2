@@ -97,7 +97,8 @@ export default function Index() {
 		abi: erc20ABI,
 		functionName: "allowance",
 		args: address && [address, LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions],
-		enabled: address ? true : false
+		enabled: address ? true : false,
+		chainId: optimism.id
 	});
 
 	const {
@@ -108,7 +109,8 @@ export default function Index() {
 	} = useContractRead({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
-		functionName: "currentPeriod"
+		functionName: "currentPeriod",
+		chainId: optimism.id
 	});
 
 	const isApproved =
@@ -122,12 +124,14 @@ export default function Index() {
 	} = useContractWrite({
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
-		functionName: "approve"
+		functionName: "approve",
+		chainId: optimism.id
 	});
 
 	const { isLoading: waitingForApproveTxConfirmation, error: errorConfirmingApproveTx } = useWaitForTransaction({
 		hash: approveTxData?.hash,
 		enabled: approveTxData ? true : false,
+		chainId: optimism.id,
 		onSuccess(data) {
 			if (data.status === "success") {
 				refetchAllowance();
@@ -144,7 +148,8 @@ export default function Index() {
 	} = useContractWrite({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
-		functionName: "subscribe"
+		functionName: "subscribe",
+		chainId: optimism.id
 	});
 	const {
 		data: subscribeTxDataOnChain,
@@ -153,6 +158,7 @@ export default function Index() {
 	} = useWaitForTransaction({
 		hash: subscribeTxData?.hash,
 		enabled: subscribeTxData ? true : false,
+		chainId: optimism.id,
 		onSuccess(data) {
 			if (data.status === "success") {
 				window.parent.postMessage(
@@ -351,21 +357,21 @@ export default function Index() {
 										<p className={`flex items-center gap-1 text-xs`}>
 											<span>Balance:</span>
 											{!hydrated || fetchingBalance ? (
-												<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
+												<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400"></span>
 											) : !isConnected || errorFetchingBalance ? (
-												<span className="inline-block h-4 w-[10ch]"></span>
+												<span>-</span>
 											) : (
 												<>
 													<span>{formatNum(balance ? +balance.formatted : null, 2) ?? "0"}</span>
+
+													<button
+														className="text-[var(--page-text-color-2)] underline"
+														onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
+													>
+														Max
+													</button>
 												</>
 											)}
-
-											<button
-												className="text-[var(--page-text-color-2)] underline"
-												onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
-											>
-												Max
-											</button>
 										</p>
 									</span>
 								</span>
