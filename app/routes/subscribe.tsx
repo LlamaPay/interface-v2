@@ -236,7 +236,8 @@ export default function Index() {
 	const realCostFuture =
 		amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - (0.05 * claimableAmount) / 12 : null;
 	const expectedMonthsFuture = realCostFuture ? Math.floor(claimableAmount / realCostFuture) : null;
-
+	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
+	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
 	return (
 		<main
 			style={
@@ -459,7 +460,11 @@ export default function Index() {
 								</>
 							) : (
 								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
-									Subscription Ends In: {expectedMonthsFuture ? `${expectedMonthsFuture} Month, ` : ""}{" "}
+									Subscription Ends In:{" "}
+									{expectedMonthsFuture
+										? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+											`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
+										: ""}
 									{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
 								</p>
 							)}
