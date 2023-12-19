@@ -28,9 +28,6 @@ const AccountMenu = lazy(() =>
 const ConnectWallet = lazy(() =>
 	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
 );
-const NetworkMenu = lazy(() =>
-	import("~/components/Header/NetworkMenu").then((module) => ({ default: module.NetworkMenu }))
-);
 
 export const meta: MetaFunction = () => {
 	return [
@@ -374,7 +371,7 @@ export default function Index() {
 									loaderData.textColor2 === "#000000" ? "border-black/[0.15]" : "border-white/[0.15]"
 								} p-3 text-sm `}
 							>
-								<span>Real Cost:</span>
+								<span>Net Cost:</span>
 								{amountToDeposit.length <= 0 ? (
 									""
 								) : realCostFuture && realCostFuture < 0 ? (
