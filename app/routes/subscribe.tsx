@@ -324,7 +324,7 @@ export default function Index() {
 									)} DAI instantly to pay for remainder of the month`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
-										{`you'll be charged ${loaderData.amount} DAI, which will be repeated every 30 days`}
+										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, which will be repeated every 30 days`}
 									</li>
 									<li className="list-disc">{`You can withdraw all the money that hasn't been charged yet at any time`}</li>
 								</ul>
@@ -398,7 +398,7 @@ export default function Index() {
 
 							<p className={`flex items-center gap-1 text-sm`}>
 								<span>Net Cost:</span>
-								{!hydrated || amountToDeposit.length <= 0 ? (
+								{!hydrated || amountToDeposit.length <= 0 || +amountToDeposit < +loaderData.amount ? (
 									""
 								) : netCostFuture && netCostFuture < 0 ? (
 									<>
@@ -453,7 +453,11 @@ export default function Index() {
 									</>
 								)}
 							</p>
-							{hydrated && expectedMonthsFuture && expectedMonthsFuture < 0 ? (
+							{!hydrated || amountToDeposit.length <= 0 || +amountToDeposit < +loaderData.amount ? (
+								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
+									Subscription Ends In:
+								</p>
+							) : expectedMonthsFuture && expectedMonthsFuture < 0 ? (
 								<>
 									<p className={`flex items-center gap-1 text-sm`}>
 										<span>{`Subscription Months: Infinite`}</span>
