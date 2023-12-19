@@ -1,7 +1,8 @@
 import * as Ariakit from "@ariakit/react";
-import { useAccount, useBalance, useDisconnect, useEnsName } from "wagmi";
+import { useAccount, useBalance, useDisconnect } from "wagmi";
 
 import { Icon } from "~/components/Icon";
+import { useGetEnsName } from "~/queries/useGetEnsName";
 import { formatAddress } from "~/utils/formatAddress";
 
 export const AccountMenu = ({ className }: { className?: string }) => {
@@ -10,9 +11,8 @@ export const AccountMenu = ({ className }: { className?: string }) => {
 	const { address } = useAccount();
 	const { disconnect } = useDisconnect();
 	const { data } = useBalance();
-	const { data: ensName } = useEnsName({
-		address,
-		chainId: 1
+	const { data: ensName } = useGetEnsName({
+		address
 	});
 
 	return (
