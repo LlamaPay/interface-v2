@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
+import { useEnsName } from "wagmi";
 
 import { ENS_RESOLVER_ABI } from "~/lib/abi.ens-resolver";
 import { LLAMAPAY_CHAINS_LIB, MAINNET_ENS_RESOLVER } from "~/lib/constants";
@@ -27,5 +28,6 @@ const getEnsName = async ({ address }: { address?: string }) => {
 };
 
 export const useGetEnsName = ({ address }: { address?: string }) => {
-	return useQuery(["ens-name", address], () => getEnsName({ address }));
+	return useEnsName({ address: address as `0x${string}`, chainId: 1 });
+	// return useQuery(["ens-name", address], () => getEnsName({ address }));
 };

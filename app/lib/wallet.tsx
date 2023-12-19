@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { optimism } from "viem/chains";
+import { mainnet, optimism } from "viem/chains";
 import { createConfig, configureChains, WagmiConfig } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { SafeConnector } from "wagmi/connectors/safe";
@@ -11,7 +11,7 @@ import { LLAMAPAY_CHAINS_LIB } from "./constants";
 const projectId = "2b0fa925a6e30cf250c05823fa9ef890";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-	[optimism],
+	[mainnet, optimism],
 	[
 		jsonRpcProvider({
 			rpc: (chain) => ({
