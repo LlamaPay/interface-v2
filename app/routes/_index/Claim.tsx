@@ -142,7 +142,7 @@ export const Claim = () => {
 						title="Enter numbers only."
 					/>
 
-					<p className="flex items-center gap-1 rounded-lg border border-black/[0.05] p-3 text-sm dark:border-white/5">
+					<p className="flex items-center gap-1 rounded-lg text-sm">
 						<span>Claimable:</span>
 						{!hydrated || fetchingClaimables ? (
 							<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>

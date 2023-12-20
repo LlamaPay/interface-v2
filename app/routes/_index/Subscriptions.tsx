@@ -75,7 +75,7 @@ export const Subscriptions = () => {
 			) : subs.length === 0 ? (
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
-				<table className="table-auto border-collapse">
+				<table className="w-full table-auto border-collapse">
 					<thead>
 						<tr>
 							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Type</th>

@@ -60,7 +60,7 @@ export default function Index() {
 						</Ariakit.Tab>
 					</Ariakit.TabList>
 					<Ariakit.TabPanel
-						className="mt-1 overflow-x-auto p-5 md:max-w-[calc(100vw-204px-64px-4px)]"
+						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
 						tabId="subscriptions"
 					>
 						<Suspense fallback={<></>}>
@@ -68,14 +68,17 @@ export default function Index() {
 						</Suspense>
 					</Ariakit.TabPanel>
 					<Ariakit.TabPanel
-						className="mt-1 overflow-x-auto p-5 md:max-w-[calc(100vw-204px-64px-4px)]"
+						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
 						tabId="unsubscribe"
 					>
 						<Suspense fallback={<></>}>
 							{hydrated ? <Unsubscribe /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
-					<Ariakit.TabPanel className="mt-1 overflow-x-auto p-5 md:max-w-[calc(100vw-204px-64px-4px)]" tabId="claim">
+					<Ariakit.TabPanel
+						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
+						tabId="claim"
+					>
 						<Suspense fallback={<></>}>
 							{hydrated ? <Claim /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
