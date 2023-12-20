@@ -290,7 +290,7 @@ export default function Index() {
 
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
-					<div className="mx-auto flex max-w-[650px] flex-col px-4 py-9 lg:ml-auto lg:px-[100px]">
+					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 sm:pt-9 lg:ml-auto lg:px-[100px]">
 						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-[0.85]">
 							Subscribe to{" "}
 							<a
@@ -625,7 +625,7 @@ export default function Index() {
 						</form>
 
 						<div className="overflow-x-auto">
-							<table className="mt-10 border-collapse opacity-[0.85] md:min-w-[450px]">
+							<table className="mt-10 min-w-full border-collapse opacity-[0.85]">
 								<tbody>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Your Deposit</th>
