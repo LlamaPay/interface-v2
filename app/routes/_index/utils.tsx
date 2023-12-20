@@ -59,22 +59,24 @@ export const formatSubs = (data: Array<ISub>) => {
 		// const remainingSeconds = (remainingMinutes - minutes) * secondsInMinute
 		// const seconds = Math.floor(remainingSeconds)
 
-		const subDuration: Array<string> = [];
+		const subDurationFormatted: Array<string> = [];
 
 		if (days >= 30) {
 			const months = days % daysInMonth;
-			subDuration.push(`${months} ${months > 1 ? "months" : "month"}`);
-			days -= months * daysInMonth;
+			if (months > 0) {
+				subDurationFormatted.push(`${months} ${months > 1 ? "months" : "month"}`);
+				days -= months * daysInMonth;
+			}
 		}
 
 		if (days > 0) {
-			subDuration.push(`${days} ${days > 1 ? "days" : "day"}`);
+			subDurationFormatted.push(`${days} ${days > 1 ? "days" : "day"}`);
 		}
 		if (hours > 0) {
-			subDuration.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
+			subDurationFormatted.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
 		}
 		if (minutes > 0) {
-			subDuration.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
+			subDurationFormatted.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
 		}
 
 		return {
@@ -91,7 +93,8 @@ export const formatSubs = (data: Array<ISub>) => {
 			totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
 			amountPerCycle,
 			realExpiration,
-			subDuration: subDuration.join(", "),
+			subDuration: totalDays * 24 * 60 * 60,
+			subDurationFormatted: subDurationFormatted.join(", "),
 			accumulator
 		} as IFormattedSub;
 	});

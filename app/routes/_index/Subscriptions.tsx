@@ -140,7 +140,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					<span className="whitespace-nowrap">{`${data.totalAmountPaid} DAI`}</span>
 				</span>
 			</td>
-			<td className="whitespace-nowrap p-3">{data.subDuration}</td>
+			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
 			<td className="whitespace-nowrap p-3">{`${new Date(data.expirationDate * 1000).toLocaleString()}`}</td>
 			<td className="p-3">{status}</td>
 		</tr>

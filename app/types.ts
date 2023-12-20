@@ -26,6 +26,7 @@ export interface IFormattedSub {
 	totalAmountPaid: number;
 	amountPerCycle: number;
 	realExpiration: number;
-	subDuration: string;
+	subDuration: number;
+	subDurationFormatted: string;
 	accumulator: number;
 }

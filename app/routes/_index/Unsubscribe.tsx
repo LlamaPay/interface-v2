@@ -190,6 +190,10 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		}
 	});
 
+	const isExpired = (data.initialPeriod + data.periodDuration) * 1000 < new Date().getTime();
+	const cannotUnsubscribe =
+		new Date().getTime() - (data.initialPeriod + data.periodDuration) * 1000 <= data.subDuration;
+
 	return (
 		<div className="flex flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5">
 			<p className="flex flex-col">
@@ -205,10 +209,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 			</p>
 
 			<p className="flex flex-col">
-				<span className="text-xs text-[#757575]">
-					{data.expirationDate * 1000 < new Date().getTime() ? "Expired on" : "Expires On"}
-				</span>
-				<span>{`${new Date(data.expirationDate * 1000).toLocaleString()}`}</span>
+				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
+				<span>{`${new Date((data.initialPeriod + data.periodDuration) * 1000).toLocaleString()}`}</span>
 			</p>
 
 			<p className="flex flex-col">
@@ -221,7 +223,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">Duration</span>
-				<span>{`${data.subDuration}`}</span>
+				<span>{`${data.subDurationFormatted}`}</span>
 			</p>
 
 			{!data.unsubscribed && data.expirationDate * 1000 > new Date().getTime() ? (
@@ -243,7 +245,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				>
 					Unsubscribed
 				</button>
-			) : data.expirationDate * 1000 < new Date().getTime() ? (
+			) : isExpired ? (
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled
@@ -254,7 +256,12 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled={
-						!chain || chain.unsupported || !unsubscribe || confirmingUnsubscribeTx || waitingForUnsubscribeTxDataOnChain
+						!chain ||
+						chain.unsupported ||
+						!unsubscribe ||
+						confirmingUnsubscribeTx ||
+						waitingForUnsubscribeTxDataOnChain ||
+						cannotUnsubscribe
 					}
 					onClick={() => unsubscribe?.()}
 				>
