@@ -321,12 +321,12 @@ export default function Index() {
 									<li className="list-disc">{`You'll be charged ${formatNum(
 										+amountChargedInstantly,
 										2
-									)} DAI instantly to pay for remainder of the month`}</li>
+									)} DAI instantly`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
-										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, which will be repeated every 30 days`}
+										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
 									</li>
-									<li className="list-disc">{`You can withdraw all the money that hasn't been charged yet at any time`}</li>
+									<li className="list-disc">{`You can withdraw balance left at any time`}</li>
 								</ul>
 								<ExampleDepositTable />
 							</>
