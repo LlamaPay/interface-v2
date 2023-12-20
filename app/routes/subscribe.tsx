@@ -243,12 +243,14 @@ export default function Index() {
 	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
 	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
 	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
-	const netCostFuture =
-		amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - (AAVE_YIELD * claimableAmount) / 12 : null;
+	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
+	const netCostPerMonth = monthlyYield - +loaderData.amount;
+	const netCostFuture = amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - monthlyYield : null;
 	const expectedMonthsFuture = netCostFuture ? Math.floor(claimableAmount / netCostFuture) : null;
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
-
+	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
+	const hideTableColumns = amountToDeposit.length === 0 || +amountToDeposit < +loaderData.amount || !currentPeriod;
 	return (
 		<main
 			style={
@@ -328,7 +330,6 @@ export default function Index() {
 									</li>
 									<li className="list-disc">{`You can withdraw balance left at any time`}</li>
 								</ul>
-								<ExampleDepositTable />
 							</>
 						) : null}
 					</div>
@@ -622,6 +623,61 @@ export default function Index() {
 								)
 							) : null}
 						</form>
+
+						<div className="overflow-x-auto">
+							<table className="mt-10 border-collapse opacity-[0.85] md:min-w-[450px]">
+								<tbody>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Your Deposit</th>
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm opacity-80">Input Amount</td>
+										) : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
+										)}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">AAVE Yield</th>
+										{hideTableColumns ? null : <td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Monthly Yield</th>
+										{hideTableColumns ? null : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												{`${monthlyYield < 0 ? "" : "+"}`}
+												{formatNum(monthlyYield, 2)} DAI
+											</td>
+										)}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Subscription</th>
+										{hideTableColumns ? null : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">-{loaderData.amount} DAI</td>
+										)}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Net Cost</th>
+										{hideTableColumns ? null : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												{`${netCostPerMonth < 0 ? "" : "+"}`}
+												{formatNum(netCostPerMonth, 2)} DAI
+											</td>
+										)}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
+										{hideTableColumns ? null : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												{expectedMonthsFuture
+													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
+													: ""}
+												{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
+											</td>
+										)}
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -704,46 +760,4 @@ const getShortTimeFromDeadline = (deadline: number) => {
 	}
 
 	return `${secs} seconds`;
-};
-
-const ExampleDepositTable = () => {
-	const loaderData = useLoaderData<typeof loader>();
-	const amount = +loaderData.amount;
-	const claimableAmount = +amount * 2500;
-	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
-	const netCostPerMonth = monthlyYield - +amount;
-	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
-
-	return (
-		<div className="overflow-x-auto">
-			<table className="mt-10 border-collapse opacity-[0.85]">
-				<tbody>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Your Deposit</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
-					</tr>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">AAVE Yield</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>
-					</tr>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Monthly Yield</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">+{formatNum(monthlyYield, 2)} DAI</td>
-					</tr>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Subscription</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">-{amount} DAI</td>
-					</tr>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Net Cost</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">+{formatNum(netCostPerMonth, 2)} DAI</td>
-					</tr>
-					<tr className={`border-b ${borderColor}`}>
-						<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
-						<td className="whitespace-nowrap p-2 pl-6 text-sm">Infinite!</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	);
 };
