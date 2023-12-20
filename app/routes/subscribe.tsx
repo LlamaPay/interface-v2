@@ -250,7 +250,8 @@ export default function Index() {
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
 	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
-	const hideTableColumns = amountToDeposit.length === 0 || +amountToDeposit < +loaderData.amount || !currentPeriod;
+	const hideTableColumns =
+		!hydrated || amountToDeposit.length === 0 || +amountToDeposit < +loaderData.amount || !currentPeriod;
 	return (
 		<main
 			style={
@@ -290,7 +291,11 @@ export default function Index() {
 
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
-					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 sm:pt-9 lg:ml-auto lg:px-[100px]">
+					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 lg:ml-auto lg:px-[100px] lg:pt-9">
+						<button onClick={goBack} className="absolute top-4 flex items-center gap-1">
+							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
+							<span className="sr-only">Navigate back</span>
+						</button>
 						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-[0.85]">
 							Subscribe to{" "}
 							<a
@@ -316,7 +321,7 @@ export default function Index() {
 						</Link>
 						{hydrated && currentPeriod ? (
 							<>
-								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90">
+								<ul className="ml-4 mt-10 hidden list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:flex">
 									<li className="list-disc">
 										Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
 									</li>
@@ -514,7 +519,7 @@ export default function Index() {
 								</Suspense>
 							) : chain.id !== optimism.id ? (
 								<button
-									onClick={() => switchNetwork?.(chain.id)}
+									onClick={() => switchNetwork?.(optimism.id)}
 									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
 								>
 									Switch Network
@@ -624,6 +629,25 @@ export default function Index() {
 							) : null}
 						</form>
 
+						{hydrated && currentPeriod ? (
+							<>
+								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:hidden">
+									<li className="list-disc">
+										Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
+									</li>
+									<li className="list-disc">{`You'll be charged ${formatNum(
+										+amountChargedInstantly,
+										2
+									)} DAI instantly`}</li>
+									<li className="list-disc">
+										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
+										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
+									</li>
+									<li className="list-disc">{`You can withdraw balance left at any time`}</li>
+								</ul>
+							</>
+						) : null}
+
 						<div className="overflow-x-auto">
 							<table className="mt-10 min-w-full border-collapse opacity-[0.85]">
 								<tbody>
@@ -632,6 +656,12 @@ export default function Index() {
 										{hideTableColumns ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm opacity-80">Input Amount</td>
 										) : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(+amountToDeposit, 2)} DAI</td>
+										)}
+									</tr>
+									<tr className={`border-b ${borderColor}`}>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">After Instant Payment</th>
+										{hideTableColumns ? null : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
 										)}
 									</tr>
@@ -761,3 +791,37 @@ const getShortTimeFromDeadline = (deadline: number) => {
 
 	return `${secs} seconds`;
 };
+
+function goBack(e: any) {
+	const defaultLocation = "https://subscriptions.llamapay.io";
+	const oldHash = window.location.hash;
+
+	history.back(); // Try to go back
+
+	const newHash = window.location.hash;
+
+	/* If the previous page hasn't been loaded in a given time (in this case
+	 * 1000ms) the user is redirected to the default location given above.
+	 * This enables you to redirect the user to another page.
+	 *
+	 * However, you should check whether there was a referrer to the current
+	 * site. This is a good indicator for a previous entry in the history
+	 * session.
+	 *
+	 * Also you should check whether the old location differs only in the hash,
+	 * e.g. /index.html#top --> /index.html# shouldn't redirect to the default
+	 * location.
+	 */
+
+	if (newHash === oldHash && (typeof document.referrer !== "string" || document.referrer === "")) {
+		window.setTimeout(function () {
+			// redirect to default location
+			window.location.href = defaultLocation;
+		}, 1000); // set timeout in ms
+	}
+	if (e) {
+		if (e.preventDefault) e.preventDefault();
+		if (e.preventPropagation) e.preventPropagation();
+	}
+	return false; // stop event propagation and browser default event
+}

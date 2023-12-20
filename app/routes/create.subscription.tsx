@@ -20,9 +20,7 @@ export default function Create() {
 	const [receiver, setReceiver] = useState("");
 	const [amount, setAmount] = useState("");
 	const [bgColor, setBgColor] = useState("#23BF91");
-	const url = `https://subscriptions.llamapay.io/subscribe?to=${receiver}&amount=${amount}&brandColor=${encodeURIComponent(
-		bgColor
-	)}`;
+	const url = `/subscribe?to=${receiver}&amount=${amount}&brandColor=${encodeURIComponent(bgColor)}`;
 	return (
 		<main className="relative mx-auto flex w-full max-w-[450px] flex-col gap-5 px-4 py-9 md:-left-[102px]">
 			<Link to="/" className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]">
@@ -102,15 +100,13 @@ export default function Create() {
 					</span>
 				</p>
 
-				<a
-					target="_blank"
-					rel="noreferrer noopener"
-					href={url}
+				<Link
+					to={url}
 					className="flex flex-nowrap items-center justify-center gap-1 rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 				>
 					<span>Try it out</span>
 					<Icon name="arrow-up-right" className="h-4 w-4" />
-				</a>
+				</Link>
 			</form>
 		</main>
 	);
