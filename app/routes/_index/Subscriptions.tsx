@@ -78,12 +78,18 @@ export const Subscriptions = () => {
 				<table className="w-full table-auto border-collapse">
 					<thead>
 						<tr>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Type</th>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Address</th>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Total Paid</th>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Duration</th>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Expiry</th>
-							<th className="whitespace-nowrap p-3 font-normal text-[#596575] dark:text-[#838486]">Status</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+								Address
+							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+								Total Paid
+							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+								Duration
+							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Expiry</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Status</th>
 						</tr>
 					</thead>
 					<tbody>
