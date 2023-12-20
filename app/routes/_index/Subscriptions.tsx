@@ -100,7 +100,7 @@ export const Subscriptions = () => {
 const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 	const status = data.unsubscribed
 		? "Unsubscribed"
-		: data.expirationDate * 1000 < new Date().getTime()
+		: (data.initialPeriod + data.periodDuration) * 1000 < new Date().getTime()
 			? "Expired"
 			: "Active";
 

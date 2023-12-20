@@ -8,6 +8,7 @@ import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, SUBSCRIPTION_AMOUNT_DIVISOR, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { type IFormattedSub, type ISub } from "~/types";
+import { formatNum } from "~/utils/formatNum";
 
 import { SUB_CHAIN_LIB, subsContract, contract, client, formatSubs } from "./utils";
 
@@ -228,7 +229,9 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 					<span className="text-xs text-[#757575]">Available Balance</span>
 					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
 						<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-						{!fetchingBalance && balance ? <span>{`${formatUnits(balance, DAI_OPTIMISM.decimals)} DAI`}</span> : null}
+						{!fetchingBalance && balance ? (
+							<span>{`${formatNum(+formatUnits(balance, DAI_OPTIMISM.decimals), 2)} DAI`}</span>
+						) : null}
 					</span>
 				</p>
 			) : null}
