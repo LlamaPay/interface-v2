@@ -339,7 +339,7 @@ export default function Index() {
 						) : null}
 					</div>
 				</div>
-				<div className="flex-1 bg-[var(--page-bg-clior-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
+				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
 					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 py-9 lg:mr-auto lg:px-[100px]">
 						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
 							<label className="flex flex-col gap-1">
