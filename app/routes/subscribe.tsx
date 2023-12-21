@@ -323,7 +323,10 @@ export default function Index() {
 							<>
 								<ul className="ml-4 mt-10 hidden list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:flex">
 									<li className="list-disc">
-										Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
+										Current period ends in{" "}
+										<span className="tabular-nums">
+											<EndsIn deadline={currentPeriodEndsIn} />
+										</span>
 									</li>
 									<li className="list-disc">{`You'll be charged ${formatNum(
 										+amountChargedInstantly,
@@ -497,7 +500,11 @@ export default function Index() {
 										? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
 											`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
 										: ""}
-									{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
+									{amountToDeposit.length > 0 ? (
+										<span className="tabular-nums">
+											<EndsIn deadline={currentPeriodEndsIn} />
+										</span>
+									) : null}
 								</p>
 							)}
 
@@ -640,7 +647,10 @@ export default function Index() {
 							<>
 								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:hidden">
 									<li className="list-disc">
-										Current period ends in <EndsIn deadline={currentPeriodEndsIn} />
+										Current period ends in{" "}
+										<span className="tabular-nums">
+											<EndsIn deadline={currentPeriodEndsIn} />
+										</span>
 									</li>
 									<li className="list-disc">{`You'll be charged ${formatNum(
 										+amountChargedInstantly,
@@ -733,7 +743,11 @@ export default function Index() {
 													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
 														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
 													: ""}
-												{amountToDeposit.length > 0 ? <EndsIn deadline={currentPeriodEndsIn} /> : null}
+												{amountToDeposit.length > 0 ? (
+													<span className="tabular-nums">
+														<EndsIn deadline={currentPeriodEndsIn} />
+													</span>
+												) : null}
 											</td>
 										)}
 									</tr>
