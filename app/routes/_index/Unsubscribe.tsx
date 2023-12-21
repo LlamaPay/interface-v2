@@ -190,9 +190,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		}
 	});
 
-	const isExpired = (data.initialPeriod + data.periodDuration) * 1000 < new Date().getTime();
-	const cannotUnsubscribe =
-		new Date().getTime() - (data.initialPeriod + data.periodDuration) * 1000 <= data.subDuration;
+	const isExpired = data.realExpiration * 1000 < new Date().getTime();
+	const cannotUnsubscribe = new Date().getTime() - data.realExpiration * 1000 <= data.subDuration;
 
 	return (
 		<div className="flex flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5">
@@ -210,7 +209,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
-				<span>{`${new Date((data.initialPeriod + data.periodDuration) * 1000).toLocaleString()}`}</span>
+				<span>{`${new Date(data.realExpiration * 1000).toLocaleString()}`}</span>
 			</p>
 
 			<p className="flex flex-col">
