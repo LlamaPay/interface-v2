@@ -177,7 +177,7 @@ export default function Index() {
 					},
 					"*"
 				);
-				navigate("/");
+				// navigate("/");
 
 				formRef.current?.reset();
 
@@ -517,6 +517,13 @@ export default function Index() {
 										chainId={optimism.id}
 									/>
 								</Suspense>
+							) : subscribeTxDataOnChain?.status === "success" ? (
+								<button
+									disabled
+									className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:bg-[var(--page-bg-color-2)] disabled:text-[var(--page-text-color-2)] disabled:opacity-60"
+								>
+									Subscribed!
+								</button>
 							) : chain.id !== optimism.id ? (
 								<button
 									onClick={() => switchNetwork?.(optimism.id)}
