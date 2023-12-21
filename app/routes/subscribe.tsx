@@ -666,7 +666,32 @@ export default function Index() {
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">AAVE Yield</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											<span className="flex flex-nowrap items-center gap-1">
+												<span>AAVE Yield</span>
+												<Ariakit.TooltipProvider showTimeout={0}>
+													<Ariakit.TooltipAnchor
+														render={
+															<svg
+																xmlns="http://www.w3.org/2000/svg"
+																viewBox="0 0 20 20"
+																fill="currentColor"
+																className="h-5 w-5"
+															>
+																<path
+																	fillRule="evenodd"
+																	d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
+																	clipRule="evenodd"
+																/>
+															</svg>
+														}
+													/>
+													<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+														Average APY over the last 30 days
+													</Ariakit.Tooltip>
+												</Ariakit.TooltipProvider>
+											</span>
+										</th>
 										{hideTableColumns ? null : <td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
