@@ -1,6 +1,6 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
 import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
 import { formatUnits, getAddress, parseUnits } from "viem";
 import { optimism } from "viem/chains";
@@ -79,7 +79,6 @@ export default function Index() {
 	const { chain } = useNetwork();
 	const { switchNetwork } = useSwitchNetwork();
 	const hydrated = useHydrated();
-	const navigate = useNavigate();
 
 	const {
 		data: balance,
@@ -94,7 +93,8 @@ export default function Index() {
 
 	const formRef = useRef<HTMLFormElement>(null);
 
-	const [amountToDeposit, setAmountToDeposit] = useState("");
+	const [amountToDepositX, setAmountToDeposit] = useState("");
+	const amountToDeposit = useDebounce(amountToDepositX);
 
 	const {
 		data: allowance,
@@ -212,6 +212,10 @@ export default function Index() {
 			]
 		});
 	};
+	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
+	const isValidInputAmount = currentPeriod
+		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) >= amountForCurrentPeriod
+		: +amountToDeposit >= +loaderData.amount;
 
 	const disableAll = !hydrated || !address || !chain || chain.id !== optimism.id;
 	const disableApprove =
@@ -225,10 +229,10 @@ export default function Index() {
 	const disableSubscribe =
 		disableAll ||
 		amountToDeposit.length === 0 ||
-		+amountToDeposit < +loaderData.amount ||
+		!isValidInputAmount ||
 		!isApproved ||
 		!balance ||
-		+balance.formatted < +amountToDeposit ||
+		balance.value < parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) ||
 		!currentPeriod ||
 		fetchingCurrentPeriod ||
 		confirmingTokenApproval ||
@@ -240,7 +244,6 @@ export default function Index() {
 		address: loaderData.to
 	});
 
-	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
 	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
 	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
 	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
@@ -250,8 +253,7 @@ export default function Index() {
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
 	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
-	const hideTableColumns =
-		!hydrated || amountToDeposit.length === 0 || +amountToDeposit < +loaderData.amount || !currentPeriod;
+	const hideTableColumns = !hydrated || amountToDeposit.length === 0 || !isValidInputAmount || !currentPeriod;
 	return (
 		<main
 			style={
@@ -369,7 +371,7 @@ export default function Index() {
 										spellCheck="false"
 										inputMode="decimal"
 										title="Enter numbers only."
-										value={amountToDeposit}
+										value={amountToDepositX}
 										onChange={(e) => {
 											if (!Number.isNaN(Number(e.target.value))) {
 												setAmountToDeposit(e.target.value.trim());
@@ -407,7 +409,7 @@ export default function Index() {
 
 							<p className={`flex items-center gap-1 text-sm`}>
 								<span>Net Cost:</span>
-								{!hydrated || amountToDeposit.length <= 0 || +amountToDeposit < +loaderData.amount ? (
+								{!hydrated || amountToDeposit.length <= 0 || !isValidInputAmount ? (
 									""
 								) : netCostFuture && netCostFuture < 0 ? (
 									<>
@@ -462,7 +464,7 @@ export default function Index() {
 									</>
 								)}
 							</p>
-							{!hydrated || amountToDeposit.length <= 0 || +amountToDeposit < +loaderData.amount ? (
+							{!hydrated || amountToDeposit.length <= 0 || !isValidInputAmount ? (
 								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
 									Subscription Ends In:
 								</p>
@@ -494,12 +496,14 @@ export default function Index() {
 									</p>
 								</>
 							) : (
-								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
+								<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
 									Subscription Ends In:{" "}
-									{expectedMonthsFuture
-										? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-											`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
-										: ""}
+									{expectedMonthsFuture ? (
+										<span>
+											{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+												`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
+										</span>
+									) : null}
 									{amountToDeposit.length > 0 ? (
 										<span className="tabular-nums">
 											<EndsIn deadline={currentPeriodEndsIn} />
@@ -563,7 +567,8 @@ export default function Index() {
 												waitingForSubscriptionTxDataOnChain ||
 												confirmingTokenApproval ||
 												waitingForApproveTxConfirmation ||
-												amountToDeposit.length === 0
+												amountToDeposit.length === 0 ||
+												disableSubscribe
 											}
 										></div>
 									</div>
@@ -599,6 +604,10 @@ export default function Index() {
 									</div>
 								</div>
 							)}
+
+							{currentPeriod && !isValidInputAmount ? (
+								<p className="break-all text-center text-sm text-red-500">{`Amount less than cost for the current period`}</p>
+							) : null}
 
 							{hydrated && errorConfirmingTokenApproval ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-1>
@@ -678,7 +687,9 @@ export default function Index() {
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">After Instant Payment</th>
-										{hideTableColumns ? null : (
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
 										)}
 									</tr>
@@ -709,11 +720,17 @@ export default function Index() {
 												</Ariakit.TooltipProvider>
 											</span>
 										</th>
-										{hideTableColumns ? null : <td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>}
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>
+										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Monthly Yield</th>
-										{hideTableColumns ? null : (
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{`${monthlyYield < 0 ? "" : "+"}`}
 												{formatNum(monthlyYield, 2)} DAI
@@ -722,13 +739,17 @@ export default function Index() {
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Subscription</th>
-										{hideTableColumns ? null : (
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">-{loaderData.amount} DAI</td>
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Net Cost</th>
-										{hideTableColumns ? null : (
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{`${netCostPerMonth < 0 ? "" : "+"}`}
 												{formatNum(netCostPerMonth, 2)} DAI
@@ -737,7 +758,9 @@ export default function Index() {
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
-										{hideTableColumns ? null : (
+										{hideTableColumns ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{expectedMonthsFuture
 													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
@@ -870,4 +893,18 @@ function goBack(e: any) {
 		if (e.preventPropagation) e.preventPropagation();
 	}
 	return false; // stop event propagation and browser default event
+}
+
+function useDebounce<T>(value: T, delay?: number): T {
+	const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+	useEffect(() => {
+		const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [value, delay]);
+
+	return debouncedValue;
 }
