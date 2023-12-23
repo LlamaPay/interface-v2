@@ -605,7 +605,7 @@ export default function Index() {
 								</div>
 							)}
 
-							{currentPeriod && !isValidInputAmount ? (
+							{currentPeriod && !isValidInputAmount && amountToDepositX.length > 0 ? (
 								<p className="break-all text-center text-sm text-red-500">{`Amount less than cost for the current period`}</p>
 							) : null}
 
