@@ -288,7 +288,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			{unsubscribeTxDataOnChain ? (
 				unsubscribeTxDataOnChain.status === "success" ? (
-					<p className="text-center text-sm text-green-500">Transsaction Success</p>
+					<p className="text-center text-sm text-green-500">Transaction Success</p>
 				) : (
 					<p className="text-center text-sm text-red-500">Transaction Failed</p>
 				)
