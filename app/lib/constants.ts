@@ -19,7 +19,7 @@ export const LLAMAPAY_CHAINS_LIB = {
 	},
 	[optimism.id]: {
 		rpc: "https://optimism.publicnode.com",
-		contracts: { subscriptions: "0x543e186ae5c7FeA674C489F50215EE8036e87897" },
+		contracts: { subscriptions: "0x17A9a4f55E0EfC52aB13da549E54192987edC5e7" },
 		subgraphs: { subscriptions: "https://api.thegraph.com/subgraphs/name/0xngmi/llamasubs-optimism" }
 	}
 } as const;
@@ -31,7 +31,7 @@ export const DAI_OPTIMISM = {
 	img: `https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1`
 } as const;
 
-export const SUBSCRIPTION_DURATION = 30 * 24 * 60 * 60;
+export const SUBSCRIPTION_DURATION = 24 * 60 * 60;
 
 export const SUBSCRIPTION_AMOUNT_DIVISOR = parseUnits("1", DAI_OPTIMISM.decimals);
 
