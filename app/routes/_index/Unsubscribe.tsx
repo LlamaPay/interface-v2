@@ -209,7 +209,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
-				<span>{`${new Date(data.realExpiration * 1000).toLocaleString()}`}</span>
+				<span>{`${new Date(data.realExpiration * 1000).toUTCString()}`}</span>
 			</p>
 
 			<p className="flex flex-col">

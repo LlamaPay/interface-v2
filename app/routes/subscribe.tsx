@@ -624,7 +624,12 @@ export default function Index() {
 									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
 								</p>
 							) : null}
-							{hydrated && errorWaitingForSubscriptionTxDataOnChain ? (
+							{hydrated &&
+							errorWaitingForSubscriptionTxDataOnChain &&
+							!(
+								errorWaitingForSubscriptionTxDataOnChain.message.includes("hash") &&
+								errorWaitingForSubscriptionTxDataOnChain.message.includes("could not be found")
+							) ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-4>
 									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
 										errorWaitingForSubscriptionTxDataOnChain.message}
