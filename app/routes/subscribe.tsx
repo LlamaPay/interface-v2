@@ -1,8 +1,10 @@
 import * as Ariakit from "@ariakit/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { useQuery } from "@tanstack/react-query";
+import request, { gql } from "graphql-request";
 import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
-import { formatUnits, getAddress, parseUnits } from "viem";
+import { formatUnits, getAddress, parseUnits, encodeFunctionData } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -20,7 +22,10 @@ import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
+import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
+
+import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
@@ -79,6 +84,20 @@ export default function Index() {
 	const { chain } = useNetwork();
 	const { switchNetwork } = useSwitchNetwork();
 	const hydrated = useHydrated();
+
+	const {
+		data: subs,
+		isLoading: fetchingSubs,
+		error: errorFetchingSubs
+	} = useQuery(["subs", address, loaderData.to], () => getSubscriptions({ owner: address, receiver: loaderData.to }), {
+		cacheTime: 20_000,
+		refetchInterval: 20_000
+	});
+
+	const userSubscribedToSameTier =
+		subs &&
+		subs.length > 0 &&
+		`${subs[0].amountPerCycle}` === parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
 
 	const {
 		data: balance,
@@ -160,11 +179,22 @@ export default function Index() {
 		chainId: optimism.id
 	});
 	const {
+		data: subscriptionExtendTxData,
+		write: subscriptionExtend,
+		isLoading: confirmingSubscriptionExtension,
+		error: errorConfirmingSubscriptionExtension
+	} = useContractWrite({
+		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		abi: SUBSCRIPTIONS_ABI,
+		functionName: "batch",
+		chainId: optimism.id
+	});
+	const {
 		data: subscribeTxDataOnChain,
 		isLoading: waitingForSubscriptionTxDataOnChain,
 		error: errorWaitingForSubscriptionTxDataOnChain
 	} = useWaitForTransaction({
-		hash: subscribeTxData?.hash,
+		hash: subscribeTxData?.hash ?? subscriptionExtendTxData?.hash,
 		enabled: subscribeTxData ? true : false,
 		chainId: optimism.id,
 		onSuccess(data) {
@@ -203,14 +233,40 @@ export default function Index() {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-
-		subscribe?.({
-			args: [
-				loaderData.to,
-				decimalsAmountPerCycle,
-				parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod
-			]
-		});
+		if (subs && subs.length > 0) {
+			const unsusbcribe = encodeFunctionData({
+				abi: SUBSCRIPTIONS_ABI,
+				functionName: "unsubscribe",
+				args: [
+					subs[0].initialPeriod,
+					subs[0].expirationDate,
+					subs[0].amountPerCycle,
+					subs[0].receiver,
+					subs[0].accumulator,
+					subs[0].initialShares
+				]
+			});
+			const subscribeForNextPeriod = encodeFunctionData({
+				abi: SUBSCRIPTIONS_ABI,
+				functionName: "subscribeForNextPeriod",
+				args: [
+					loaderData.to,
+					decimalsAmountPerCycle,
+					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod,
+					userSubscribedToSameTier ? 0 : 0
+				]
+			});
+			const calls = [unsusbcribe, subscribeForNextPeriod];
+			// subscriptionExtend?.({ args: [0.001, calls, true] });
+		} else {
+			subscribe?.({
+				args: [
+					loaderData.to,
+					decimalsAmountPerCycle,
+					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod
+				]
+			});
+		}
 	};
 	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
 	const isValidInputAmount = currentPeriod
@@ -219,14 +275,17 @@ export default function Index() {
 
 	const disableAll = !hydrated || !address || !chain || chain.id !== optimism.id;
 	const disableApprove =
+		fetchingSubs ||
 		disableAll ||
 		isApproved ||
 		confirmingTokenApproval ||
 		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain ||
+		confirmingSubscriptionExtension ||
 		amountToDeposit.length === 0;
 	const disableSubscribe =
+		fetchingSubs ||
 		disableAll ||
 		amountToDeposit.length === 0 ||
 		!isValidInputAmount ||
@@ -238,7 +297,8 @@ export default function Index() {
 		confirmingTokenApproval ||
 		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
-		waitingForSubscriptionTxDataOnChain;
+		waitingForSubscriptionTxDataOnChain ||
+		confirmingSubscriptionExtension;
 
 	const { data: ensName } = useGetEnsName({
 		address: loaderData.to
@@ -377,7 +437,9 @@ export default function Index() {
 												setAmountToDeposit(e.target.value.trim());
 											}
 										}}
-										disabled={confirmingSubscription || waitingForSubscriptionTxDataOnChain}
+										disabled={
+											confirmingSubscription || waitingForSubscriptionTxDataOnChain || confirmingSubscriptionExtension
+										}
 									/>
 									<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
 										<p className={`ml-auto flex items-center gap-1 text-xl`}>
@@ -554,6 +616,7 @@ export default function Index() {
 												isApproved ||
 												confirmingSubscription ||
 												waitingForSubscriptionTxDataOnChain ||
+												confirmingSubscriptionExtension ||
 												amountToDeposit.length === 0
 											}
 										></div>
@@ -567,6 +630,7 @@ export default function Index() {
 												waitingForSubscriptionTxDataOnChain ||
 												confirmingTokenApproval ||
 												waitingForApproveTxConfirmation ||
+												confirmingSubscriptionExtension ||
 												amountToDeposit.length === 0 ||
 												disableSubscribe
 											}
@@ -599,7 +663,9 @@ export default function Index() {
 											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:bg-[var(--page-bg-color-2)] disabled:text-[var(--page-text-color-2)] disabled:opacity-60"
 											disabled={disableSubscribe}
 										>
-											{confirmingSubscription || waitingForSubscriptionTxDataOnChain ? "Confirming..." : "Subscribe"}
+											{confirmingSubscription || confirmingSubscriptionExtension || waitingForSubscriptionTxDataOnChain
+												? "Confirming..."
+												: "Subscribe"}
 										</button>
 									</div>
 								</div>
@@ -624,6 +690,12 @@ export default function Index() {
 									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
 								</p>
 							) : null}
+							{hydrated && errorConfirmingSubscriptionExtension ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-3>
+									{(errorConfirmingSubscriptionExtension as any)?.shortMessage ??
+										errorConfirmingSubscriptionExtension.message}
+								</p>
+							) : null}
 							{hydrated &&
 							errorWaitingForSubscriptionTxDataOnChain &&
 							!(
@@ -645,6 +717,12 @@ export default function Index() {
 							{hydrated && isConnected && errorFetchingCurrentPeriod ? (
 								<p className="break-all text-center text-sm text-red-500" data-error-6>
 									{(errorFetchingCurrentPeriod as any)?.shortMessage ?? errorFetchingCurrentPeriod.message}
+								</p>
+							) : null}
+
+							{hydrated && isConnected && errorFetchingSubs ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-7>
+									{`Failed to fetch if you are a current subscriber - ${(errorFetchingSubs as any).message ?? ""}`}
 								</p>
 							) : null}
 
@@ -912,4 +990,42 @@ function useDebounce<T>(value: T, delay?: number): T {
 	}, [value, delay]);
 
 	return debouncedValue;
+}
+
+async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?: string }) {
+	try {
+		if (!owner || !receiver) return null;
+
+		const subs = gql`
+			{
+				subs(
+					where: {
+						and: [
+							{ owner: "${owner.toLowerCase()}" },
+							{ receiver: "${receiver.toLowerCase()}" }
+						]
+					}
+					orderBy: realExpiration
+					orderDirection: desc
+				) {
+					id
+					owner
+					receiver
+					startTimestamp
+					unsubscribed
+					initialShares
+					initialPeriod
+					expirationDate
+					amountPerCycle
+					realExpiration
+					accumulator
+				}
+			}
+		`;
+		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
+
+		return formatSubs((data?.subs ?? []).filter((s) => +s.realExpiration * 1000 > new Date().getTime()));
+	} catch (error: any) {
+		throw new Error(error.message ?? "Failed to fetch subscriptions");
+	}
 }
