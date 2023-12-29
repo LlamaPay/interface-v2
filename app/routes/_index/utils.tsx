@@ -2,7 +2,7 @@ import { createPublicClient, getContract, http } from "viem";
 import { optimism } from "viem/chains";
 
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
+import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION, SUBSCRIPTION_PERIOD } from "~/lib/constants";
 import { type IFormattedSub, type ISub } from "~/types";
 
 export const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
@@ -42,14 +42,14 @@ export const formatSubs = (data: Array<ISub>) => {
 		const accumulator = +sub.accumulator;
 		const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
 		const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
-		const fullCycles = (expirationDate - initialPeriod) / SUBSCRIPTION_DURATION;
+		const fullCycles = (realExpiration - initialPeriod) / SUBSCRIPTION_DURATION;
 		const amountPaidFully = fullCycles * amountPerCycle;
 		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
 		const amountPaidPartially = partialCycles * amountPerCycle;
 
 		const totalCycles = fullCycles + partialCycles;
 
-		const totalDays = totalCycles * daysInMonth;
+		const totalDays = totalCycles * SUBSCRIPTION_PERIOD;
 
 		let days = Math.floor(totalDays);
 		const remainingHours = (totalDays - days) * hoursInDay;

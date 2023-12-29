@@ -31,7 +31,8 @@ export const DAI_OPTIMISM = {
 	img: `https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1`
 } as const;
 
-export const SUBSCRIPTION_DURATION = 24 * 60 * 60;
+export const SUBSCRIPTION_PERIOD = 1; // 1 DAY
+export const SUBSCRIPTION_DURATION = SUBSCRIPTION_PERIOD * 24 * 60 * 60;
 
 export const SUBSCRIPTION_AMOUNT_DIVISOR = parseUnits("1", DAI_OPTIMISM.decimals);
 

@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
                     { receiver: "${receiver.toLowerCase()}" }
                 ]
             }
-            orderBy: expirationDate
+            orderBy: realExpiration
             orderDirection: desc
         ) {
             id

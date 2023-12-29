@@ -75,7 +75,7 @@ async function getSubscriptions(address?: string) {
 
 		const subs = gql`
 		{
-			subs(where: { owner: "${address.toLowerCase()}" } orderBy: expirationDate orderDirection: desc ) {
+			subs(where: { owner: "${address.toLowerCase()}" } orderBy: realExpiration orderDirection: desc ) {
 				id
 				receiver
 				startTimestamp
@@ -225,7 +225,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				<span>{`${data.subDurationFormatted}`}</span>
 			</p>
 
-			{!data.unsubscribed && data.expirationDate * 1000 > new Date().getTime() ? (
+			{!data.unsubscribed && data.realExpiration * 1000 > new Date().getTime() ? (
 				<p className="flex flex-col">
 					<span className="text-xs text-[#757575]">Available Balance</span>
 					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">

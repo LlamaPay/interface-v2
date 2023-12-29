@@ -23,7 +23,7 @@ async function getSubscriptions(address?: string) {
 							{ receiver: "${address.toLowerCase()}" }
 						]
 					}
-					orderBy: expirationDate
+					orderBy: realExpiration
 					orderDirection: desc
 				) {
 					id
@@ -147,7 +147,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 				</span>
 			</td>
 			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
-			<td className="whitespace-nowrap p-3">{`${new Date(data.expirationDate * 1000).toUTCString()}`}</td>
+			<td className="whitespace-nowrap p-3">{`${new Date(data.realExpiration * 1000).toUTCString()}`}</td>
 			<td className="p-3">{status}</td>
 		</tr>
 	);
