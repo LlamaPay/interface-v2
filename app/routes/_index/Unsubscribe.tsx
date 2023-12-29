@@ -126,7 +126,7 @@ export const Unsubscribe = () => {
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
 				<div className="flex flex-col gap-4 overflow-x-auto">
-					{subs.slice(0, 1).map((sub) => (
+					{subs.map((sub) => (
 						<Sub key={sub.id} data={sub} refetchSubs={refetchSubs} />
 					))}
 				</div>
