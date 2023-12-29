@@ -98,7 +98,6 @@ export default function Index() {
 		subs &&
 		subs.length > 0 &&
 		`${subs[0].amountPerCycle}` === parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
-
 	const {
 		data: balance,
 		isLoading: fetchingBalance,
@@ -257,7 +256,7 @@ export default function Index() {
 				]
 			});
 			const calls = [unsusbcribe, subscribeForNextPeriod];
-			// subscriptionExtend?.({ args: [0.001, calls, true] });
+			subscriptionExtend?.({ args: [calls, true] });
 		} else {
 			subscribe?.({
 				args: [

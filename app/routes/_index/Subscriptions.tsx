@@ -104,11 +104,12 @@ export const Subscriptions = () => {
 };
 
 const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
-	const status = data.unsubscribed
-		? "Unsubscribed"
-		: data.realExpiration * 1000 < new Date().getTime()
-			? "Expired"
-			: "Active";
+	const status =
+		data.startTimestamp * 1000 > new Date().getTime()
+			? "Not yet started"
+			: data.realExpiration * 1000 < new Date().getTime()
+				? "Expired"
+				: "Active";
 
 	const incoming = data.receiver === address.toLowerCase();
 
@@ -148,7 +149,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 			</td>
 			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
 			<td className="whitespace-nowrap p-3">{`${new Date(data.realExpiration * 1000).toUTCString()}`}</td>
-			<td className="p-3">{status}</td>
+			<td className="whitespace-nowrap p-3">{status}</td>
 		</tr>
 	);
 };

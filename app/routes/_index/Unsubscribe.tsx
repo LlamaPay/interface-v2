@@ -126,7 +126,7 @@ export const Unsubscribe = () => {
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
 				<div className="flex flex-col gap-4 overflow-x-auto">
-					{subs.map((sub) => (
+					{subs.slice(0, 1).map((sub) => (
 						<Sub key={sub.id} data={sub} refetchSubs={refetchSubs} />
 					))}
 				</div>
@@ -153,7 +153,6 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 			}),
 		{ cacheTime: 20_000, refetchInterval: 20_000 }
 	);
-
 	const {
 		data: unsubscribeTxData,
 		write: unsubscribe,
@@ -191,10 +190,10 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 	});
 
 	const isExpired = data.realExpiration * 1000 < new Date().getTime();
-	const cannotUnsubscribe = new Date().getTime() - data.realExpiration * 1000 <= data.subDuration;
+	const cannotUnsubscribe = data.realExpiration * 1000 - new Date().getTime() <= data.subDuration;
 
 	return (
-		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 md:-left-[102px]">
+		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 xl:-left-[102px]">
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">Receiver</span>
 				<a

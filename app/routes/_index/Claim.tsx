@@ -11,7 +11,7 @@ import { DAI_OPTIMISM, SUBSCRIPTION_AMOUNT_DIVISOR, SUBSCRIPTION_DURATION } from
 import { SUB_CHAIN_LIB, subsContract, contract, client } from "./utils";
 
 const min = (a: bigint, b: bigint) => (a > b ? b : a);
-
+// TODO calculate available to claim next month
 async function calculateAvailableToClaim({
 	receiver,
 	contract,
@@ -129,7 +129,7 @@ export const Claim = () => {
 	return (
 		<>
 			<form
-				className="relative mx-auto flex w-full max-w-[450px] flex-col gap-4 md:-left-[102px]"
+				className="relative mx-auto flex w-full max-w-[450px] flex-col gap-4 xl:-left-[102px]"
 				onSubmit={handleSubmit}
 			>
 				<label className="flex flex-col gap-1">

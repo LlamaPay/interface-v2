@@ -34,7 +34,7 @@ export const formatSubs = (data: Array<ISub>) => {
 		const receiver = sub.receiver;
 		const startTimestamp = +sub.startTimestamp;
 		const unsubscribed = sub.unsubscribed;
-		const initialShares = +sub.initialShares;
+		const initialShares = sub.initialShares;
 		const initialPeriod = +sub.initialPeriod;
 		const expirationDate = +sub.expirationDate;
 		const amountPerCycle = +sub.amountPerCycle;

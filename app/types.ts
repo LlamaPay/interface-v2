@@ -18,7 +18,7 @@ export interface IFormattedSub {
 	receiver: string;
 	startTimestamp: number;
 	unsubscribed: boolean;
-	initialShares: number;
+	initialShares: string;
 	initialPeriod: number;
 	expirationDate: number;
 	periodDuration: number;
