@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { parseUnits, formatUnits } from "viem";
 import { optimism } from "viem/chains";
 import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
@@ -68,7 +69,7 @@ async function calculateAvailableToClaim({
 }
 
 export const Claim = () => {
-	const { address } = useAccount();
+	const { address, isConnected } = useAccount();
 	const { chain } = useNetwork();
 	const {
 		data: claimTxData,
@@ -122,55 +123,75 @@ export const Claim = () => {
 		form.reset();
 		refetchClaimable();
 	};
-
+	const [amountToClaim, setAmountToClaim] = useState("");
 	const hydrated = useHydrated();
 
 	return (
 		<>
-			<form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+			<form className="mx-auto flex w-full max-w-[450px] flex-col gap-4" onSubmit={handleSubmit}>
 				<label className="flex flex-col gap-1">
 					<span>Amount</span>
-					<input
-						name="amountToClaim"
-						className="peer w-full rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 dark:border-white/5 dark:bg-[#141414] invalid:[&:not(:placeholder-shown):not(:focus)]:border-red-500"
-						required
-						autoComplete="off"
-						autoCorrect="off"
-						type="text"
-						pattern="^[0-9]*[.,]?[0-9]*$"
-						placeholder="0.0"
-						minLength={1}
-						maxLength={79}
-						spellCheck="false"
-						inputMode="decimal"
-						title="Enter numbers only."
-					/>
 
-					<p className="flex items-center gap-1 rounded-lg text-sm">
-						<span>Claimable:</span>
-						{!hydrated || fetchingClaimables ? (
-							<span className="inline-block h-4 w-[10ch] animate-pulse rounded bg-gray-400"></span>
-						) : !errorFetchingClaimables ? (
-							<>
-								<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-								<span>{(claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0") + " DAI"}</span>
-							</>
-						) : null}
-					</p>
+					<span
+						className={`relative rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 pb-[26px] dark:border-white/5 dark:bg-[#141414]`}
+					>
+						<input
+							name="amountToClaim"
+							className={`w-full border-none bg-transparent text-4xl !outline-none`}
+							required
+							autoComplete="off"
+							autoCorrect="off"
+							type="text"
+							pattern="^[0-9]*[.,]?[0-9]*$"
+							placeholder="0.0"
+							minLength={1}
+							maxLength={79}
+							spellCheck="false"
+							inputMode="decimal"
+							title="Enter numbers only."
+							value={amountToClaim}
+							onChange={(e) => {
+								if (!Number.isNaN(Number(e.target.value))) {
+									setAmountToClaim(e.target.value.trim());
+								}
+							}}
+							disabled={confirmingClaimTx || waitingForClaimTxDataOnChain}
+						/>
+						<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
+							<p className={`ml-auto flex items-center gap-1 text-xl`}>
+								<img src={DAI_OPTIMISM.img} width={16} height={16} alt="" />
+								<span>DAI</span>
+							</p>
+							<p className={`flex items-center gap-1 text-xs`}>
+								<span>Claimable:</span>
+								{!hydrated || fetchingClaimables ? (
+									<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400"></span>
+								) : !isConnected || errorFetchingClaimables ? (
+									<span>-</span>
+								) : (
+									<>
+										<span>{claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0"}</span>
 
-					{hydrated && errorFetchingClaimables ? (
-						<p className="text-center text-sm text-red-500">
-							{(errorFetchingClaimables as any)?.shortMessage ??
-								(errorFetchingClaimables as any).message ??
-								"Failed to fetch amount claimable"}
-						</p>
-					) : null}
-
-					<span className="mt-1 hidden text-xs text-red-500 peer-[&:not(:placeholder-shown):not(:focus):invalid]:block">
-						Enter numbers only
+										<button
+											className="text-[var(--page-text-color-2)] underline"
+											onClick={() => setAmountToClaim(claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0")}
+										>
+											Max
+										</button>
+									</>
+								)}
+							</p>
+						</span>
 					</span>
 				</label>
 
+				{hydrated && errorFetchingClaimables ? (
+					<p className="text-center text-sm text-red-500">
+						{(errorFetchingClaimables as any)?.shortMessage ??
+							(errorFetchingClaimables as any).message ??
+							"Failed to fetch amount claimable"}
+					</p>
+				) : null}
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled={

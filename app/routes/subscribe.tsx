@@ -414,8 +414,8 @@ export default function Index() {
 									className={`relative rounded-lg border ${
 										loaderData.textColor2 === "#000000"
 											? "border-black/[0.3] bg-black/[0.08]"
-											: "border-white/[0.3] bg-white/[0.08] outline-offset-2 focus-within:outline"
-									} p-3 pb-[26px]`}
+											: "border-white/[0.3] bg-white/[0.08]"
+									} p-3 pb-[26px] outline-offset-2 focus-within:outline`}
 								>
 									<input
 										name="amountToDeposit"
