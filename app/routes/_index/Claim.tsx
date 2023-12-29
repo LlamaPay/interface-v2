@@ -72,7 +72,7 @@ export const Claim = () => {
 	const { chain } = useNetwork();
 	const {
 		data: claimTxData,
-		write: claim,
+		writeAsync: claim,
 		isLoading: confirmingClaimTx,
 		error: errorConfirmingClaimTx
 	} = useContractWrite({
@@ -94,7 +94,8 @@ export const Claim = () => {
 	const {
 		data: claimable,
 		isLoading: fetchingClaimables,
-		error: errorFetchingClaimables
+		error: errorFetchingClaimables,
+		refetch: refetchClaimable
 	} = useQuery(
 		["claimable", address],
 		() =>
@@ -114,9 +115,12 @@ export const Claim = () => {
 
 		const shares = await contract.read.convertToShares([parseUnits(form.amountToClaim.value, DAI_OPTIMISM.decimals)]);
 
-		claim?.({
+		await claim?.({
 			args: [min(claimable, shares)]
 		});
+
+		form.reset();
+		refetchClaimable();
 	};
 
 	const hydrated = useHydrated();

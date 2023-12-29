@@ -32,7 +32,7 @@ export const DAI_OPTIMISM = {
 } as const;
 
 export const SUBSCRIPTION_PERIOD = 1; // 1 DAY
-export const SUBSCRIPTION_DURATION = SUBSCRIPTION_PERIOD * 24 * 60 * 60;
+export const SUBSCRIPTION_DURATION = SUBSCRIPTION_PERIOD * 24 * 60 * 60; // in seconds
 
 export const SUBSCRIPTION_AMOUNT_DIVISOR = parseUnits("1", DAI_OPTIMISM.decimals);
 
