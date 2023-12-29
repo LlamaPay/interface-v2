@@ -194,7 +194,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 	const cannotUnsubscribe = new Date().getTime() - data.realExpiration * 1000 <= data.subDuration;
 
 	return (
-		<div className="flex flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5">
+		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 md:-left-[102px]">
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">Receiver</span>
 				<a

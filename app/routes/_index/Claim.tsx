@@ -128,7 +128,10 @@ export const Claim = () => {
 
 	return (
 		<>
-			<form className="mx-auto flex w-full max-w-[450px] flex-col gap-4" onSubmit={handleSubmit}>
+			<form
+				className="relative mx-auto flex w-full max-w-[450px] flex-col gap-4 md:-left-[102px]"
+				onSubmit={handleSubmit}
+			>
 				<label className="flex flex-col gap-1">
 					<span>Amount</span>
 
