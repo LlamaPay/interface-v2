@@ -157,7 +157,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		data: unsubscribeTxData,
 		write: unsubscribe,
 		isLoading: confirmingUnsubscribeTx,
-		error: errorConfirmingUnsubscribeTx
+		error: errorConfirmingUnsubscribeTx,
+		reset
 	} = useContractWrite({
 		address: SUB_CHAIN_LIB.contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
@@ -185,6 +186,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 			if (data.status === "success") {
 				refetchBalance();
 				refetchSubs();
+				reset();
 			}
 		}
 	});
