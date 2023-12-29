@@ -61,22 +61,26 @@ export const formatSubs = (data: Array<ISub>) => {
 
 		const subDurationFormatted: Array<string> = [];
 
-		if (days >= 30) {
-			const months = days % daysInMonth;
-			if (months > 0) {
-				subDurationFormatted.push(`${months} ${months > 1 ? "months" : "month"}`);
-				days -= months * daysInMonth;
+		if (startTimestamp === expirationDate) {
+			subDurationFormatted.push("-");
+		} else {
+			if (days >= 30) {
+				const months = days % daysInMonth;
+				if (months > 0) {
+					subDurationFormatted.push(`${months} ${months > 1 ? "months" : "month"}`);
+					days -= months * daysInMonth;
+				}
 			}
-		}
 
-		if (days > 0) {
-			subDurationFormatted.push(`${days} ${days > 1 ? "days" : "day"}`);
-		}
-		if (hours > 0) {
-			subDurationFormatted.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
-		}
-		if (minutes > 0) {
-			subDurationFormatted.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
+			if (days > 0) {
+				subDurationFormatted.push(`${days} ${days > 1 ? "days" : "day"}`);
+			}
+			if (hours > 0) {
+				subDurationFormatted.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
+			}
+			if (minutes > 0) {
+				subDurationFormatted.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
+			}
 		}
 
 		return {

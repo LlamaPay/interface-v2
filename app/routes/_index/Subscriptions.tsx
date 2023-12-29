@@ -105,11 +105,13 @@ export const Subscriptions = () => {
 
 const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 	const status =
-		data.startTimestamp * 1000 > new Date().getTime()
-			? "Not yet started"
-			: data.realExpiration * 1000 < new Date().getTime()
-				? "Expired"
-				: "Active";
+		data.startTimestamp === data.realExpiration
+			? "Cancelled"
+			: data.startTimestamp * 1000 > new Date().getTime()
+				? "Not yet started"
+				: data.realExpiration * 1000 < new Date().getTime()
+					? "Expired"
+					: "Active";
 
 	const incoming = data.receiver === address.toLowerCase();
 
