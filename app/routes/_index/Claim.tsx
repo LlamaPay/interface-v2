@@ -23,16 +23,16 @@ async function calculateAvailableToClaim({
 }) {
 	if (!receiver) return null;
 
-	const currentTimestamp = Date.now() / 1e3;
+	const currentTimestamp = Math.floor(Date.now() / 1e3);
 
 	const receiverBalance = await contract.read.receiverBalances([receiver]);
 
 	// eslint-disable-next-line
-	let [balance, amountPerPeriod, lastUpdate] = receiverBalance;
+	let [balance, amountPerPeriod, lastUpdate]: [bigint, bigint, bigint] = receiverBalance;
 
-	const periodBoundary = currentTimestamp - SUBSCRIPTION_DURATION;
+	const periodBoundary = BigInt(currentTimestamp) - BigInt(SUBSCRIPTION_DURATION);
 
-	if (lastUpdate <= periodBoundary && lastUpdate != 0n) {
+	if (lastUpdate <= BigInt(periodBoundary) && lastUpdate != 0n) {
 		const periods = [];
 		for (let period = lastUpdate; period <= periodBoundary; period += BigInt(SUBSCRIPTION_DURATION)) {
 			periods.push(period);
@@ -59,11 +59,11 @@ async function calculateAvailableToClaim({
 		periodShares.forEach((shares: any, i: number) => {
 			const finalShares = !shares || shares === 0n ? currentSharePrice : shares;
 			amountPerPeriod -= receiverAmountToExpire[i] ?? 0n;
-			balance += BigInt(amountPerPeriod * finalShares) / SUBSCRIPTION_AMOUNT_DIVISOR;
+			balance += BigInt(amountPerPeriod * finalShares) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
 		});
 	}
 
-	const claimable = await contract.read.convertToAssets([balance]);
+	const claimable: bigint = await contract.read.convertToAssets([balance]);
 
 	return claimable;
 }

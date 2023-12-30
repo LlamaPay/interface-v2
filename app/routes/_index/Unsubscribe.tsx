@@ -16,28 +16,27 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 	if (!sub) return null;
 	const initialShares = BigInt(sub.initialShares);
 
-	const currentTimestamp = Date.now() / 1e3;
+	const currentTimestamp = BigInt(Math.floor(Date.now() / 1e3));
 
 	if (+sub.expirationDate > currentTimestamp) {
 		// eslint-disable-next-line
-		let [sharesAccumulator, currentPeriod] = await Promise.all([
+		let [sharesAccumulator, currentPeriod]: [bigint, bigint] = await Promise.all([
 			contract.read.sharesAccumulator(),
 			contract.read.currentPeriod()
 		]);
 
-		if (Number(currentPeriod.toString()) + SUBSCRIPTION_DURATION < currentTimestamp) {
-			const shares = await contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]);
-			sharesAccumulator +=
-				BigInt(Math.floor((currentTimestamp - Number(currentPeriod.toString())) / SUBSCRIPTION_DURATION)) * shares;
+		if (currentPeriod + BigInt(SUBSCRIPTION_DURATION) < currentTimestamp) {
+			const shares: bigint = await contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]);
+			sharesAccumulator += ((currentTimestamp - BigInt(currentPeriod)) / BigInt(SUBSCRIPTION_DURATION)) * shares;
 		}
 
 		const sharesPaid =
-			((BigInt(sharesAccumulator.toString()) - BigInt(sub.accumulator)) * BigInt(sub.amountPerCycle)) /
-			BigInt(SUBSCRIPTION_AMOUNT_DIVISOR.toString());
+			((sharesAccumulator - BigInt(sub.accumulator)) * BigInt(sub.amountPerCycle)) /
+			BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
 
 		const sharesLeft = initialShares - sharesPaid;
 
-		const balance = await contract.read.convertToAssets([sharesLeft]);
+		const balance: bigint = await contract.read.convertToAssets([sharesLeft]);
 
 		return balance;
 	} else {
@@ -47,7 +46,7 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 			periods.push(period);
 		}
 
-		const [currentSharePrice, periodShares] = await Promise.all([
+		const [currentSharePrice, periodShares]: [bigint, Array<bigint>] = await Promise.all([
 			contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]),
 			client
 				.multicall({
@@ -63,10 +62,8 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 			subsetAccumulator += finalShares;
 		});
 
-		const balance = await contract.read.convertToAssets([
-			initialShares -
-				(BigInt(subsetAccumulator.toString()) * BigInt(sub.amountPerCycle)) /
-					BigInt(SUBSCRIPTION_AMOUNT_DIVISOR.toString())
+		const balance: bigint = await contract.read.convertToAssets([
+			initialShares - (subsetAccumulator * BigInt(sub.amountPerCycle)) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR)
 		]);
 		return balance;
 	}
