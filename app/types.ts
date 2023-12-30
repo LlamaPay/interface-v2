@@ -12,21 +12,10 @@ export interface ISub {
 	accumulator: string;
 }
 
-export interface IFormattedSub {
-	id: string;
-	owner: string;
-	receiver: string;
-	startTimestamp: number;
-	unsubscribed: boolean;
-	initialShares: string;
-	initialPeriod: number;
-	expirationDate: number;
+export interface IFormattedSub extends ISub {
 	periodDuration: number;
 	fullPeriodStartingTime: number;
 	totalAmountPaid: number;
-	amountPerCycle: number;
-	realExpiration: number;
 	subDuration: number;
 	subDurationFormatted: string;
-	accumulator: number;
 }

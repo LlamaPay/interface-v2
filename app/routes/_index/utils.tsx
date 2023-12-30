@@ -29,17 +29,11 @@ const minutesInHour = 60;
 
 export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
-		const id = sub.id;
-		const owner = sub.owner;
-		const receiver = sub.receiver;
 		const startTimestamp = +sub.startTimestamp;
-		const unsubscribed = sub.unsubscribed;
-		const initialShares = sub.initialShares;
 		const initialPeriod = +sub.initialPeriod;
 		const expirationDate = +sub.expirationDate;
 		const amountPerCycle = +sub.amountPerCycle;
 		const realExpiration = +sub.realExpiration;
-		const accumulator = +sub.accumulator;
 		const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
 		const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
 		const fullCycles = (realExpiration - initialPeriod) / SUBSCRIPTION_DURATION;
@@ -84,22 +78,12 @@ export const formatSubs = (data: Array<ISub>) => {
 		}
 
 		return {
-			id,
-			owner,
-			receiver,
-			startTimestamp,
-			unsubscribed,
-			initialShares,
-			initialPeriod,
-			expirationDate,
+			...sub,
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
 			totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
-			amountPerCycle,
-			realExpiration,
 			subDuration: totalDays * 24 * 60 * 60,
-			subDurationFormatted: subDurationFormatted.join(", "),
-			accumulator
+			subDurationFormatted: subDurationFormatted.join(", ")
 		} as IFormattedSub;
 	});
 };

@@ -23,7 +23,7 @@ async function calculateAvailableToClaim({
 }) {
 	if (!receiver) return null;
 
-	const currentTimestamp = new Date().getTime() / 1000;
+	const currentTimestamp = Date.now() / 1e3;
 
 	const receiverBalance = await contract.read.receiverBalances([receiver]);
 

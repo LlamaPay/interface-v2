@@ -1024,7 +1024,7 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
 		return formatSubs(
-			(data?.subs ?? []).filter((s) => +s.realExpiration * 1000 > new Date().getTime() && s.unsubscribed === false)
+			(data?.subs ?? []).filter((s) => +s.realExpiration > Date.now() / 1e3 && s.unsubscribed === false)
 		);
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");

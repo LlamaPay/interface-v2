@@ -12,12 +12,13 @@ import { formatNum } from "~/utils/formatNum";
 
 import { SUB_CHAIN_LIB, subsContract, contract, client, formatSubs } from "./utils";
 
-async function calculateSubBalance({ sub, contract, client }: { sub: any; contract: any; client: any }) {
+async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedSub; contract: any; client: any }) {
 	if (!sub) return null;
+	const initialShares = BigInt(sub.initialShares);
 
 	const currentTimestamp = Date.now() / 1e3;
 
-	if (sub.expirationDate > currentTimestamp) {
+	if (+sub.expirationDate > currentTimestamp) {
 		// eslint-disable-next-line
 		let [sharesAccumulator, currentPeriod] = await Promise.all([
 			contract.read.sharesAccumulator(),
@@ -31,10 +32,10 @@ async function calculateSubBalance({ sub, contract, client }: { sub: any; contra
 		}
 
 		const sharesPaid =
-			((Number(sharesAccumulator.toString()) - sub.accumulator) * sub.amountPerCycle) /
-			Number(SUBSCRIPTION_AMOUNT_DIVISOR.toString());
+			((BigInt(sharesAccumulator.toString()) - BigInt(sub.accumulator)) * BigInt(sub.amountPerCycle)) /
+			BigInt(SUBSCRIPTION_AMOUNT_DIVISOR.toString());
 
-		const sharesLeft = sub.initialShares - sharesPaid;
+		const sharesLeft = initialShares - sharesPaid;
 
 		const balance = await contract.read.convertToAssets([sharesLeft]);
 
@@ -42,7 +43,7 @@ async function calculateSubBalance({ sub, contract, client }: { sub: any; contra
 	} else {
 		const periods = [];
 
-		for (let period = sub.initialPeriod; period < sub.expirationDate; period += SUBSCRIPTION_DURATION) {
+		for (let period = +sub.initialPeriod; period < +sub.expirationDate; period += SUBSCRIPTION_DURATION) {
 			periods.push(period);
 		}
 
@@ -61,9 +62,11 @@ async function calculateSubBalance({ sub, contract, client }: { sub: any; contra
 			const finalShares = !shares || shares === 0n ? currentSharePrice : shares;
 			subsetAccumulator += finalShares;
 		});
+
 		const balance = await contract.read.convertToAssets([
-			sub.initialShares -
-				(Number(subsetAccumulator.toString()) * sub.amountPerCycle) / Number(SUBSCRIPTION_AMOUNT_DIVISOR.toString())
+			initialShares -
+				(BigInt(subsetAccumulator.toString()) * BigInt(sub.amountPerCycle)) /
+					BigInt(SUBSCRIPTION_AMOUNT_DIVISOR.toString())
 		]);
 		return balance;
 	}
@@ -191,8 +194,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		}
 	});
 
-	const isExpired = data.realExpiration * 1000 < new Date().getTime();
-	const cannotUnsubscribe = data.realExpiration * 1000 - new Date().getTime() <= data.subDuration;
+	const isExpired = +data.realExpiration * 1000 < Date.now();
+	const cannotUnsubscribe = +data.realExpiration * 1000 - Date.now() <= data.subDuration;
 
 	return (
 		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 xl:-left-[102px]">
@@ -210,7 +213,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
-				<span>{`${new Date(data.realExpiration * 1000).toUTCString()}`}</span>
+				<span>{`${new Date(+data.realExpiration * 1000).toUTCString()}`}</span>
 			</p>
 
 			<p className="flex flex-col">
@@ -226,7 +229,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				<span>{`${data.subDurationFormatted}`}</span>
 			</p>
 
-			{!data.unsubscribed && data.realExpiration * 1000 > new Date().getTime() ? (
+			{!data.unsubscribed && +data.realExpiration * 1000 > Date.now() ? (
 				<p className="flex flex-col">
 					<span className="text-xs text-[#757575]">Available Balance</span>
 					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">

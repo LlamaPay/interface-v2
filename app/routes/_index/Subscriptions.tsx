@@ -107,9 +107,9 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 	const status =
 		data.startTimestamp === data.realExpiration
 			? "Cancelled"
-			: data.startTimestamp * 1000 > new Date().getTime()
+			: +data.startTimestamp > Date.now() / 1e3
 				? "Not yet started"
-				: data.realExpiration * 1000 < new Date().getTime()
+				: +data.realExpiration < Date.now() / 1e3
 					? "Expired"
 					: "Active";
 
@@ -150,7 +150,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 				</span>
 			</td>
 			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
-			<td className="whitespace-nowrap p-3">{`${new Date(data.realExpiration * 1000).toUTCString()}`}</td>
+			<td className="whitespace-nowrap p-3">{`${new Date(+data.realExpiration * 1000).toUTCString()}`}</td>
 			<td className="whitespace-nowrap p-3">{status}</td>
 		</tr>
 	);
