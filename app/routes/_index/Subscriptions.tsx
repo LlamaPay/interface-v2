@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
+import { formatUnits } from "viem";
+import { optimism } from "viem/chains";
 import { useAccount } from "wagmi";
 
 import incomingImg from "~/assets/icons/incoming.svg";
 import outgoingImg from "~/assets/icons/outgoing.svg";
+import { EndsIn } from "~/components/EndsIn";
+import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
 import { type IFormattedSub, type ISub } from "~/types";
@@ -37,6 +41,7 @@ async function getSubscriptions(address?: string) {
 					amountPerCycle
 					realExpiration
 					accumulator
+					creationTx
 				}
 			}
 		`;
@@ -82,14 +87,19 @@ export const Subscriptions = () => {
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 								Address
 							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 								Total Paid
 							</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 								Duration
 							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+								Time Left
+							</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Expiry</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Status</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -146,12 +156,34 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 			<td className="p-3">
 				<span className="flex flex-nowrap items-center gap-1">
 					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
+					<span className="whitespace-nowrap">{`${formatUnits(
+						BigInt(data.amountPerCycle),
+						DAI_OPTIMISM.decimals
+					)} DAI / month`}</span>
+				</span>
+			</td>
+			<td className="p-3">
+				<span className="flex flex-nowrap items-center gap-1">
+					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 					<span className="whitespace-nowrap">{`${data.totalAmountPaid} DAI`}</span>
 				</span>
 			</td>
 			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
-			<td className="whitespace-nowrap p-3">{`${new Date(+data.realExpiration * 1000).toUTCString()}`}</td>
+			<td className="whitespace-nowrap p-3 tabular-nums">
+				{status === "Active" ? <EndsIn deadline={+data.realExpiration * 1000} /> : "-"}
+			</td>
+			<td className="whitespace-nowrap p-3">{`${new Date(+data.realExpiration * 1000).toLocaleString()}`}</td>
 			<td className="whitespace-nowrap p-3">{status}</td>
+			<td className="whitespace-nowrap p-3 text-center">
+				<a
+					href={`${optimism.blockExplorers.etherscan.url}/tx/${data.creationTx}`}
+					target="_blank"
+					rel="noreferrer noopener"
+				>
+					<Icon name="external-link" className="h-4 w-4" />
+					<span className="sr-only">link to transaction on chain</span>
+				</a>
+			</td>
 		</tr>
 	);
 };

@@ -10,6 +10,7 @@ export interface ISub {
 	amountPerCycle: string;
 	realExpiration: string;
 	accumulator: string;
+	creationTx: string;
 }
 
 export interface IFormattedSub extends ISub {

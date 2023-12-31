@@ -86,6 +86,7 @@ async function getSubscriptions(address?: string) {
                 amountPerCycle
                 realExpiration
 				accumulator
+				creationTx
 			}
 		}
 	`;
@@ -210,7 +211,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			<p className="flex flex-col">
 				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
-				<span>{`${new Date(+data.realExpiration * 1000).toUTCString()}`}</span>
+				<span>{`${new Date(+data.realExpiration * 1000).toLocaleString()}`}</span>
 			</p>
 
 			<p className="flex flex-col">
@@ -228,7 +229,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 			{!data.unsubscribed && +data.realExpiration * 1000 > Date.now() ? (
 				<p className="flex flex-col">
-					<span className="text-xs text-[#757575]">Available Balance</span>
+					<span className="text-xs text-[#757575]">Claimable if unsubscribed</span>
 					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
 						<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 						{!fetchingBalance && balance ? (
@@ -238,7 +239,14 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				</p>
 			) : null}
 
-			{data.unsubscribed ? (
+			{data.subDurationFormatted === "-" ? (
+				<button
+					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+					disabled
+				>
+					Cancelled
+				</button>
+			) : data.unsubscribed ? (
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled

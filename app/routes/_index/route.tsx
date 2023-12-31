@@ -15,7 +15,7 @@ const Unsubscribe = lazy(() => import("./Unsubscribe").then((module) => ({ defau
 export default function Index() {
 	const hydrated = useHydrated();
 	return (
-		<main className="flex flex-col gap-5 px-4 py-9 md:-left-[102px]">
+		<main className="flex flex-col gap-5 px-4 py-9 md:-left-[102px] md:pr-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
 				{links.map((l) => (
 					<Link

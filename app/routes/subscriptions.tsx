@@ -37,6 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             amountPerCycle
             realExpiration
             accumulator
+            creationTx
         }
     }
 `;

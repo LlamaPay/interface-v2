@@ -31,7 +31,6 @@ export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
 		const startTimestamp = +sub.startTimestamp;
 		const initialPeriod = +sub.initialPeriod;
-		const expirationDate = +sub.expirationDate;
 		const amountPerCycle = +sub.amountPerCycle;
 		const realExpiration = +sub.realExpiration;
 		const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
@@ -55,25 +54,25 @@ export const formatSubs = (data: Array<ISub>) => {
 
 		const subDurationFormatted: Array<string> = [];
 
-		if (startTimestamp === expirationDate) {
+		if (startTimestamp === realExpiration) {
 			subDurationFormatted.push("-");
 		} else {
 			if (days >= 30) {
 				const months = days % daysInMonth;
 				if (months > 0) {
-					subDurationFormatted.push(`${months} ${months > 1 ? "months" : "month"}`);
+					subDurationFormatted.push(`${months}M`);
 					days -= months * daysInMonth;
 				}
 			}
 
 			if (days > 0) {
-				subDurationFormatted.push(`${days} ${days > 1 ? "days" : "day"}`);
+				subDurationFormatted.push(`${days}D`);
 			}
 			if (hours > 0) {
-				subDurationFormatted.push(`${hours} ${hours > 1 ? "hours" : "hour"}`);
+				subDurationFormatted.push(`${hours}H`);
 			}
 			if (minutes > 0) {
-				subDurationFormatted.push(`${minutes} ${minutes > 1 ? "minutes" : "minute"}`);
+				subDurationFormatted.push(`${minutes}m`);
 			}
 		}
 
@@ -83,7 +82,7 @@ export const formatSubs = (data: Array<ISub>) => {
 			fullPeriodStartingTime,
 			totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
 			subDuration: totalDays * 24 * 60 * 60,
-			subDurationFormatted: subDurationFormatted.join(", ")
+			subDurationFormatted: subDurationFormatted.join(" ")
 		} as IFormattedSub;
 	});
 };

@@ -17,6 +17,7 @@ import {
 	useWaitForTransaction
 } from "wagmi";
 
+import { EndsIn } from "~/components/EndsIn";
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
@@ -893,34 +894,6 @@ function getTextColor(color: string) {
 	return luminance < 140 ? "#ffffff" : "#000000";
 }
 
-const EndsIn = ({ deadline }: { deadline: number }) => {
-	const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
-	let days = diffTime / (24 * 60 * 60 * 1000);
-	let hours = (days % 1) * 24;
-	let minutes = (hours % 1) * 60;
-	let secs = (minutes % 1) * 60;
-	[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
-
-	const [deadlineFormatted, setDeadline] = useState<string>("");
-
-	useEffect(() => {
-		const id = setInterval(() => {
-			const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
-			let days = diffTime / (24 * 60 * 60 * 1000);
-			let hours = (days % 1) * 24;
-			let minutes = (hours % 1) * 60;
-			let secs = (minutes % 1) * 60;
-			[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
-
-			setDeadline(`${days}D ${hours}H ${minutes}M ${secs < 10 ? "0" : ""}${secs}S`);
-		}, 1000);
-
-		return () => clearInterval(id);
-	}, [deadline]);
-
-	return <>{deadlineFormatted !== "" ? deadlineFormatted : `${days}D ${hours}H ${minutes}M ${secs}S`}</>;
-};
-
 const getShortTimeFromDeadline = (deadline: number) => {
 	const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
 	let days = diffTime / (24 * 60 * 60 * 1000);
@@ -1019,6 +992,7 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 					amountPerCycle
 					realExpiration
 					accumulator
+					creationTx
 				}
 			}
 		`;
