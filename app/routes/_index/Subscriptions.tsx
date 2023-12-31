@@ -91,9 +91,11 @@ export const Subscriptions = () => {
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 								<span className="flex flex-nowrap items-center gap-1">
-									<span>Total Paid</span>
+									<span className="whitespace-nowrap">Total Paid</span>
 									<Ariakit.TooltipProvider showTimeout={0}>
-										<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-4 w-4" />} />
+										<Ariakit.TooltipAnchor
+											render={<Icon name="question-mark-circle" className="h-4 w-4 flex-shrink-0" />}
+										/>
 										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 											Total paid is different from total deposited, remaining balance can be withdrawn at anytime
 										</Ariakit.Tooltip>
