@@ -410,7 +410,7 @@ export default function Index() {
 								<span>Amount to deposit</span>
 
 								<span
-									className={`relative rounded-lg border ${
+									className={`relative isolate rounded-lg border ${
 										loaderData.textColor2 === "#000000"
 											? "border-black/[0.3] bg-black/[0.08]"
 											: "border-white/[0.3] bg-white/[0.08]"
@@ -418,7 +418,7 @@ export default function Index() {
 								>
 									<input
 										name="amountToDeposit"
-										className={`w-full border-none bg-transparent text-4xl !outline-none`}
+										className={`relative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none`}
 										required
 										autoComplete="off"
 										autoCorrect="off"
@@ -456,6 +456,7 @@ export default function Index() {
 													<span>{formatNum(balance ? +balance.formatted : null, 2) ?? "0"}</span>
 
 													<button
+														type="button"
 														className="text-[var(--page-text-color-2)] underline"
 														onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
 													>

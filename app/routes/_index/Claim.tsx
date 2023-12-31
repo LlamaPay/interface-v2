@@ -136,11 +136,11 @@ export const Claim = () => {
 					<span>Amount</span>
 
 					<span
-						className={`relative rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 pb-[26px] dark:border-white/5 dark:bg-[#141414]`}
+						className={`relative isolate rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 pb-[26px] dark:border-white/5 dark:bg-[#141414]`}
 					>
 						<input
 							name="amountToClaim"
-							className={`w-full border-none bg-transparent text-4xl !outline-none`}
+							className={`relative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none`}
 							required
 							autoComplete="off"
 							autoCorrect="off"
@@ -176,6 +176,7 @@ export const Claim = () => {
 										<span>{claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0"}</span>
 
 										<button
+											type="button"
 											className="text-[var(--page-text-color-2)] underline"
 											onClick={() => setAmountToClaim(claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0")}
 										>
