@@ -95,7 +95,8 @@ export default function Index() {
 		refetchInterval: 20_000
 	});
 
-	const userSubscribedToSameTier =
+	const isUserAlreadySubscribed = subs && subs.length > 0;
+	const isUserSubscribedToSameTier =
 		subs &&
 		subs.length > 0 &&
 		`${subs[0].amountPerCycle}` === parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
@@ -253,7 +254,7 @@ export default function Index() {
 					loaderData.to,
 					decimalsAmountPerCycle,
 					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod,
-					userSubscribedToSameTier ? 0 : 0
+					isUserSubscribedToSameTier ? 0 : 0
 				]
 			});
 			const calls = [unsusbcribe, subscribeForNextPeriod];
@@ -272,6 +273,9 @@ export default function Index() {
 	const isValidInputAmount = currentPeriod
 		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) >= amountForCurrentPeriod
 		: +amountToDeposit >= +loaderData.amount;
+	const isValidInputAmountX = currentPeriod
+		? parseUnits(amountToDepositX, DAI_OPTIMISM.decimals) >= amountForCurrentPeriod
+		: +amountToDepositX >= +loaderData.amount;
 
 	const disableAll = !hydrated || !address || !chain || chain.id !== optimism.id;
 	const disableApprove =
@@ -390,10 +394,16 @@ export default function Index() {
 											<EndsIn deadline={currentPeriodEndsIn} />
 										</span>
 									</li>
-									<li className="list-disc">{`You'll be charged ${formatNum(
-										+amountChargedInstantly,
-										2
-									)} DAI instantly`}</li>
+									{isUserAlreadySubscribed ? (
+										isUserSubscribedToSameTier ? null : (
+											<li className="list-disc">TODO</li>
+										)
+									) : (
+										<li className="list-disc">{`You'll be charged ${formatNum(
+											+amountChargedInstantly,
+											2
+										)} DAI instantly`}</li>
+									)}
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
 										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
@@ -478,24 +488,9 @@ export default function Index() {
 									<>
 										<span>Free</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor
-												render={
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														viewBox="0 0 20 20"
-														fill="currentColor"
-														className="h-5 w-5"
-													>
-														<path
-															fillRule="evenodd"
-															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-															clipRule="evenodd"
-														/>
-													</svg>
-												}
-											/>
+											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-												{`This assumes current yield (5% APR on your deposits) doesn't go down`}
+												{`This assumes current yield (${AAVE_YIELD}% APR on your deposits) doesn't go down`}
 											</Ariakit.Tooltip>
 										</Ariakit.TooltipProvider>
 									</>
@@ -504,22 +499,7 @@ export default function Index() {
 										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
 										<span>{`${formatNum(netCostFuture, 2) ?? 0} DAI per month`}</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor
-												render={
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														viewBox="0 0 20 20"
-														fill="currentColor"
-														className="h-5 w-5"
-													>
-														<path
-															fillRule="evenodd"
-															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-															clipRule="evenodd"
-														/>
-													</svg>
-												}
-											/>
+											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 												{`You will earn 5% APR on your deposits`}
 											</Ariakit.Tooltip>
@@ -536,28 +516,36 @@ export default function Index() {
 									<p className={`flex items-center gap-1 text-sm`}>
 										<span>{`Subscription Months: Infinite`}</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor
-												render={
-													<svg
-														xmlns="http://www.w3.org/2000/svg"
-														viewBox="0 0 20 20"
-														fill="currentColor"
-														className="h-5 w-5"
-													>
-														<path
-															fillRule="evenodd"
-															d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-															clipRule="evenodd"
-														/>
-													</svg>
-												}
-											/>
+											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 												{`This assumes current yield (5% APR on your deposits) doesn't go down`}
 											</Ariakit.Tooltip>
 										</Ariakit.TooltipProvider>
 									</p>
 								</>
+							) : isUserAlreadySubscribed ? (
+								isUserSubscribedToSameTier ? (
+									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+										You are already subscribed to this user, your subscription will be extended by{" "}
+										{Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+										{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
+									</p>
+								) : (
+									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+										Subscription Ends In:{" "}
+										{expectedMonthsFuture ? (
+											<span>
+												{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+													`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
+											</span>
+										) : null}
+										{amountToDeposit.length > 0 ? (
+											<span className="tabular-nums">
+												<EndsIn deadline={currentPeriodEndsIn} />
+											</span>
+										) : null}
+									</p>
+								)
 							) : (
 								<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
 									Subscription Ends In:{" "}
@@ -672,7 +660,7 @@ export default function Index() {
 								</div>
 							)}
 
-							{currentPeriod && !isValidInputAmount && amountToDepositX.length > 0 ? (
+							{currentPeriod && !isValidInputAmountX && amountToDepositX.length > 0 ? (
 								<p className="break-all text-center text-sm text-red-500">{`Amount less than cost for the current period`}</p>
 							) : null}
 
@@ -782,22 +770,7 @@ export default function Index() {
 											<span className="flex flex-nowrap items-center gap-1">
 												<span>AAVE Yield</span>
 												<Ariakit.TooltipProvider showTimeout={0}>
-													<Ariakit.TooltipAnchor
-														render={
-															<svg
-																xmlns="http://www.w3.org/2000/svg"
-																viewBox="0 0 20 20"
-																fill="currentColor"
-																className="h-5 w-5"
-															>
-																<path
-																	fillRule="evenodd"
-																	d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.061-1.061 3 3 0 112.871 5.026v.345a.75.75 0 01-1.5 0v-.5c0-.72.57-1.172 1.081-1.287A1.5 1.5 0 108.94 6.94zM10 15a1 1 0 100-2 1 1 0 000 2z"
-																	clipRule="evenodd"
-																/>
-															</svg>
-														}
-													/>
+													<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
 													<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 														Average APY over the last 30 days
 													</Ariakit.Tooltip>
