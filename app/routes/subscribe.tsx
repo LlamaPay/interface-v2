@@ -86,6 +86,7 @@ export default function Index() {
 	const { switchNetwork } = useSwitchNetwork();
 	const hydrated = useHydrated();
 
+	// get current subscriptions of user where user is already subscribed to receiver on same/different tier
 	const {
 		data: subs,
 		isLoading: fetchingSubs,
@@ -95,11 +96,13 @@ export default function Index() {
 		refetchInterval: 20_000
 	});
 
-	const isUserAlreadySubscribed = subs && subs.length > 0;
+	const isUserAlreadyASubscriber = subs && subs.length > 0;
 	const isUserSubscribedToSameTier =
 		subs &&
 		subs.length > 0 &&
 		`${subs[0].amountPerCycle}` === parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
+
+	// get current DAI balance of user
 	const {
 		data: balance,
 		isLoading: fetchingBalance,
@@ -113,9 +116,10 @@ export default function Index() {
 
 	const formRef = useRef<HTMLFormElement>(null);
 
-	const [amountToDepositX, setAmountToDeposit] = useState("");
-	const amountToDeposit = useDebounce(amountToDepositX);
+	const [amountToDepositNotDebounced, setAmountToDeposit] = useState("");
+	const amountToDeposit = useDebounce(amountToDepositNotDebounced);
 
+	// get current DAI allowance of user
 	const {
 		data: allowance,
 		error: errorFetchingAllowance,
@@ -128,7 +132,7 @@ export default function Index() {
 		enabled: address ? true : false,
 		chainId: optimism.id
 	});
-
+	// get current period from contract
 	const {
 		data: currentPeriod,
 		isLoading: fetchingCurrentPeriod,
@@ -141,9 +145,9 @@ export default function Index() {
 		chainId: optimism.id
 	});
 
+	// check if input amount is gte to allowance
 	const isApproved =
 		allowance && amountToDeposit.length > 0 ? allowance >= parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) : false;
-
 	const {
 		data: approveTxData,
 		write: approveToken,
@@ -155,7 +159,6 @@ export default function Index() {
 		functionName: "approve",
 		chainId: optimism.id
 	});
-
 	const { isLoading: waitingForApproveTxConfirmation, error: errorConfirmingApproveTx } = useWaitForTransaction({
 		hash: approveTxData?.hash,
 		enabled: approveTxData ? true : false,
@@ -190,7 +193,6 @@ export default function Index() {
 		functionName: "batch",
 		chainId: optimism.id
 	});
-
 	const {
 		data: subscribeTxDataOnChain,
 		isLoading: waitingForSubscriptionTxDataOnChain,
@@ -220,21 +222,47 @@ export default function Index() {
 		}
 	});
 
+	// amount per cycle from url query params
 	const amountPerCycle = loaderData.amount;
 	const decimalsAmountPerCycle = parseUnits(amountPerCycle, DAI_OPTIMISM.decimals);
+	// duration of current period where user cannot claim money deposited
 	const currentTime = BigInt(Math.floor(Date.now() / 1e3));
-	let timeDiff = 0n,
-		amountForCurrentPeriod = 0n;
+
+	// calculate time left in current cycle
+	let timeLeftInCurrentCycle = 0n;
 	if (currentPeriod) {
-		timeDiff = (currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
-		while (timeDiff < 0) {
-			timeDiff += BigInt(SUBSCRIPTION_DURATION);
+		timeLeftInCurrentCycle = (currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
+		while (timeLeftInCurrentCycle < 0) {
+			timeLeftInCurrentCycle += BigInt(SUBSCRIPTION_DURATION);
 		}
-		amountForCurrentPeriod = (decimalsAmountPerCycle * timeDiff) / BigInt(SUBSCRIPTION_DURATION);
+	}
+	const newCost = decimalsAmountPerCycle;
+	// cost of subscription if user is already a subscriber
+	const oldCost = isUserAlreadyASubscriber ? BigInt(subs[0].amountPerCycle) : 0n;
+	// if user is updtaing their subscription tier, calculate amount to be paid instantly
+	let instantPayment =
+		isUserAlreadyASubscriber && newCost > oldCost
+			? ((newCost - oldCost) * timeLeftInCurrentCycle) / BigInt(SUBSCRIPTION_DURATION)
+			: 0n;
+
+	let amountForCurrentPeriod = 0n;
+	if (currentPeriod) {
+		if (isUserAlreadyASubscriber) {
+			// if users current subscription hasn't started , instant payment should be 0
+			if (subs?.[0]?.startTimestamp ? +subs[0].startTimestamp > Date.now() / 1e3 : false) {
+				instantPayment = 0n;
+				amountForCurrentPeriod = 0n;
+			} else {
+				amountForCurrentPeriod = instantPayment;
+			}
+		} else {
+			amountForCurrentPeriod = (decimalsAmountPerCycle * timeLeftInCurrentCycle) / BigInt(SUBSCRIPTION_DURATION);
+		}
 	}
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+		// if user is an existing subscriber , use batch to call unsubscribe() and subscribeForNextPeriod() to extend the current subscription
 		if (subs && subs.length > 0) {
 			const unsusbcribe = encodeFunctionData({
 				abi: SUBSCRIPTIONS_ABI,
@@ -256,7 +284,7 @@ export default function Index() {
 					loaderData.to,
 					decimalsAmountPerCycle,
 					subs[0].balanceLeft + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals),
-					isUserSubscribedToSameTier ? 0 : 0
+					instantPayment
 				]
 			});
 			const calls = [unsusbcribe, subscribeForNextPeriod];
@@ -271,13 +299,16 @@ export default function Index() {
 			});
 		}
 	};
+	// amount that cannot be claimed once subscribed
 	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
+	// amount is only valid if its gte to amount charged instantly
 	const isValidInputAmount = currentPeriod
-		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) >= amountForCurrentPeriod
+		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) + (subs?.[0]?.balanceLeft ?? 0n) >= amountForCurrentPeriod
 		: +amountToDeposit >= +loaderData.amount;
-	const isValidInputAmountX = currentPeriod
-		? parseUnits(amountToDepositX, DAI_OPTIMISM.decimals) >= amountForCurrentPeriod
-		: +amountToDepositX >= +loaderData.amount;
+	const isValidInputAmountNotDebounced = currentPeriod
+		? parseUnits(amountToDepositNotDebounced, DAI_OPTIMISM.decimals) + (subs?.[0]?.balanceLeft ?? 0n) >=
+			amountForCurrentPeriod
+		: +amountToDepositNotDebounced >= +loaderData.amount;
 
 	const disableAll = !hydrated || !address || !chain || chain.id !== optimism.id;
 	const disableApprove =
@@ -294,7 +325,7 @@ export default function Index() {
 		fetchingSubs ||
 		disableAll ||
 		amountToDeposit.length === 0 ||
-		!isValidInputAmount ||
+		!isValidInputAmountNotDebounced ||
 		!isApproved ||
 		!balance ||
 		balance.value < parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) ||
@@ -310,21 +341,29 @@ export default function Index() {
 		address: loaderData.to
 	});
 
-	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
-
+	// durattion of current period where user cannot claim money deposited
+	const currentPeriodEndsIn = Number(String(currentTime + timeLeftInCurrentCycle)) * 1e3;
+	// if user is an existing subscriber, include claimable balance in current subscription
 	const amountAfterDepositing = +formatUnits(subs?.[0]?.balanceLeft ?? 0n, DAI_OPTIMISM.decimals) + +amountToDeposit;
-	const claimableAmount = amountAfterDepositing - (isUserAlreadySubscribed ? 0 : +amountChargedInstantly);
-	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
+	// subtract amount charged instantly from claimable amount
+	const claimableAmount = +formatUnits(
+		(subs?.[0]?.balanceLeft ?? 0n) + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod,
+		DAI_OPTIMISM.decimals
+	);
 
+	// montly yield is based only on claimable amount
+	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
+	// net cost per month for user
 	const netCostPerMonth = monthlyYield - +loaderData.amount;
 	const netCostFuture = currentPeriod ? loaderData.amount - monthlyYield : null;
-
+	// expected subscription duration after depositing
 	const expectedMonthsFuture = netCostFuture ? Math.floor(claimableAmount / netCostFuture) : null;
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
 
 	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
 	const hideTableColumns = !hydrated || amountToDeposit.length === 0 || !isValidInputAmount || !currentPeriod;
+
 	return (
 		<main
 			style={
@@ -364,7 +403,7 @@ export default function Index() {
 
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
-					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 lg:ml-auto lg:px-[100px] lg:pt-9">
+					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 lg:ml-auto lg:px-[100px]">
 						<button onClick={goBack} className="absolute top-4 flex items-center gap-1">
 							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
 							<span className="sr-only">Navigate back</span>
@@ -395,18 +434,29 @@ export default function Index() {
 						{hydrated && currentPeriod ? (
 							<>
 								<ul className="ml-4 mt-10 hidden list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:flex">
+									{isUserAlreadyASubscriber ? (
+										<>
+											<li className="list-disc">You are an existing subscriber</li>
+											{isUserSubscribedToSameTier ? (
+												<li className="list-disc">You are extending your subscription</li>
+											) : (
+												<li className="list-disc">
+													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
+													to {loaderData.amount} DAI per month
+												</li>
+											)}
+										</>
+									) : null}
 									<li className="list-disc">
 										Current period ends in{" "}
 										<span className="tabular-nums">
 											<EndsIn deadline={currentPeriodEndsIn} />
 										</span>
 									</li>
-									{isUserAlreadySubscribed ? null : (
-										<li className="list-disc">{`You'll be charged ${formatNum(
-											+amountChargedInstantly,
-											2
-										)} DAI instantly`}</li>
-									)}
+									<li className="list-disc">{`You'll be charged ${formatNum(
+										+amountChargedInstantly,
+										2
+									)} DAI instantly`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
 										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
@@ -418,7 +468,7 @@ export default function Index() {
 					</div>
 				</div>
 				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
-					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 py-9 lg:mr-auto lg:px-[100px]">
+					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 pb-9 pt-9 lg:mr-auto lg:px-[100px] lg:pt-24">
 						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
 							<label className="flex flex-col gap-1">
 								<span>Amount to deposit</span>
@@ -444,7 +494,7 @@ export default function Index() {
 										spellCheck="false"
 										inputMode="decimal"
 										title="Enter numbers only."
-										value={amountToDepositX}
+										value={amountToDepositNotDebounced}
 										onChange={(e) => {
 											if (!Number.isNaN(Number(e.target.value))) {
 												setAmountToDeposit(e.target.value.trim());
@@ -526,30 +576,44 @@ export default function Index() {
 										</Ariakit.TooltipProvider>
 									</p>
 								</>
-							) : isUserAlreadySubscribed ? (
+							) : isUserAlreadyASubscriber ? (
 								isUserSubscribedToSameTier ? (
-									<ul className="flex list-disc flex-col gap-2 text-sm">
-										<li className="list-disc">You are already susbcribed to this user</li>
-										<li className="list-disc">
-											Your subscription will be extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
-											{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
-										</li>
-									</ul>
-								) : (
 									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
-										Subscription Ends In:{" "}
-										{expectedMonthsFuture ? (
-											<span>
-												{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-													`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
-											</span>
-										) : null}
-										{amountToDeposit.length > 0 ? (
-											<span className="tabular-nums">
-												<EndsIn deadline={currentPeriodEndsIn} />
-											</span>
-										) : null}
+										Subscription Duration: Extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+										{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
 									</p>
+								) : (
+									<>
+										{subs && subs[0].startTimestamp && +subs[0].startTimestamp > Date.now() / 1e3 ? (
+											expectedMonthsFuture ? (
+												<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+													Subscription Duration:{" "}
+													{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}`}
+												</p>
+											) : (
+												<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+													Subscription Duration: Extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+													{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
+												</p>
+											)
+										) : (
+											<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+												Subscription Ends In:{" "}
+												{expectedMonthsFuture ? (
+													<span>
+														{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+															`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
+													</span>
+												) : null}
+												{amountToDeposit.length > 0 ? (
+													<span className="tabular-nums">
+														<EndsIn deadline={currentPeriodEndsIn} />
+													</span>
+												) : null}
+											</p>
+										)}
+									</>
 								)
 							) : (
 								<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
@@ -666,7 +730,7 @@ export default function Index() {
 								</div>
 							)}
 
-							{currentPeriod && !isValidInputAmountX && amountToDepositX.length > 0 ? (
+							{currentPeriod && !isValidInputAmountNotDebounced && amountToDepositNotDebounced.length > 0 ? (
 								<p className="break-all text-center text-sm text-red-500">{`Amount less than cost for the current period`}</p>
 							) : null}
 
@@ -733,18 +797,29 @@ export default function Index() {
 						{hydrated && currentPeriod ? (
 							<>
 								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:hidden">
+									{isUserAlreadyASubscriber ? (
+										<>
+											<li className="list-disc">You are an existing subscriber</li>
+											{isUserSubscribedToSameTier ? (
+												<li className="list-disc">You are extending your subscription</li>
+											) : (
+												<li className="list-disc">
+													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
+													to {loaderData.amount} DAI per month
+												</li>
+											)}
+										</>
+									) : null}
 									<li className="list-disc">
 										Current period ends in{" "}
 										<span className="tabular-nums">
 											<EndsIn deadline={currentPeriodEndsIn} />
 										</span>
 									</li>
-									{isUserAlreadySubscribed ? null : (
-										<li className="list-disc">{`You'll be charged ${formatNum(
-											+amountChargedInstantly,
-											2
-										)} DAI instantly`}</li>
-									)}
+									<li className="list-disc">{`You'll be charged ${formatNum(
+										+amountChargedInstantly,
+										2
+									)} DAI instantly`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
 										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
@@ -782,7 +857,7 @@ export default function Index() {
 											</td>
 										)}
 									</tr>
-									{isUserAlreadySubscribed ? null : (
+									{isUserAlreadyASubscriber ? null : (
 										<tr className={`border-b ${borderColor}`}>
 											<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
 												After Instant Payment
@@ -846,11 +921,14 @@ export default function Index() {
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
 										{hideTableColumns ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
-										) : isUserAlreadySubscribed ? (
+										) : isUserAlreadyASubscriber ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
-												{`Extended by ${Math.trunc(+amountToDeposit / loaderData.amount)} ${
-													+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"
-												}`}
+												{expectedMonthsFuture
+													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
+														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}`
+													: `Extended by ${Math.trunc(+amountToDeposit / loaderData.amount)} ${
+															+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"
+														}`}
 											</td>
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
@@ -1007,7 +1085,10 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
 		return formatSubs(
-			(data?.subs ?? []).filter((s) => +s.realExpiration > Date.now() / 1e3 && s.unsubscribed === false)
+			(data?.subs ?? []).filter(
+				(s) =>
+					+s.realExpiration > Date.now() / 1e3 && s.unsubscribed === false && +s.startTimestamp !== +s.realExpiration
+			)
 		);
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
