@@ -310,32 +310,27 @@ export default function Index() {
 			amountForCurrentPeriod
 		: +amountToDepositNotDebounced >= +loaderData.amount;
 
-	const disableAll = !hydrated || !address || !chain || chain.id !== optimism.id;
-	const disableApprove =
-		fetchingSubs ||
-		disableAll ||
-		isApproved ||
+	const disableAll =
+		!hydrated ||
+		!address ||
+		!chain ||
+		chain.id !== optimism.id ||
 		confirmingTokenApproval ||
 		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
 		waitingForSubscriptionTxDataOnChain ||
 		confirmingSubscriptionExtension ||
-		amountToDeposit.length === 0;
-	const disableSubscribe =
 		fetchingSubs ||
+		amountToDeposit.length === 0;
+	const disableApprove = disableAll || isApproved;
+	const disableSubscribe =
 		disableAll ||
-		amountToDeposit.length === 0 ||
 		!isValidInputAmountNotDebounced ||
 		!isApproved ||
 		!balance ||
 		balance.value < parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) ||
 		!currentPeriod ||
-		fetchingCurrentPeriod ||
-		confirmingTokenApproval ||
-		waitingForApproveTxConfirmation ||
-		confirmingSubscription ||
-		waitingForSubscriptionTxDataOnChain ||
-		confirmingSubscriptionExtension;
+		fetchingCurrentPeriod;
 
 	const { data: ensName } = useGetEnsName({
 		address: loaderData.to
