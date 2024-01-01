@@ -194,7 +194,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 
 	const isExpired = +data.realExpiration * 1000 < Date.now();
 	const cannotUnsubscribe = +data.realExpiration * 1000 - Date.now() <= data.subDuration;
-
+	const isUnsubscribed = data.unsubscribed || unsubscribeTxDataOnChain?.status === "success" ? true : false;
 	return (
 		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 xl:-left-[102px]">
 			<p className="flex flex-col">
@@ -227,7 +227,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				<span>{`${data.subDurationFormatted}`}</span>
 			</p>
 
-			{!data.unsubscribed && +data.realExpiration * 1000 > Date.now() ? (
+			{!isUnsubscribed && +data.realExpiration * 1000 > Date.now() ? (
 				<p className="flex flex-col">
 					<span className="text-xs text-[#757575]">Claimable if unsubscribed</span>
 					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
@@ -246,7 +246,7 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 				>
 					Cancelled
 				</button>
-			) : data.unsubscribed ? (
+			) : isUnsubscribed ? (
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled

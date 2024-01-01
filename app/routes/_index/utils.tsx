@@ -79,7 +79,8 @@ export const formatSubs = (data: Array<ISub>) => {
 			...sub,
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
-			totalAmountPaid: +((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
+			balanceLeft: BigInt(amountPaidFully),
+			totalAmountPaid: ((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
 			subDuration: totalDays * 24 * 60 * 60,
 			subDurationFormatted: subDurationFormatted.join(" ")
 		} as IFormattedSub;

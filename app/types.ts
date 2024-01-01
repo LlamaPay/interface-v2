@@ -16,7 +16,8 @@ export interface ISub {
 export interface IFormattedSub extends ISub {
 	periodDuration: number;
 	fullPeriodStartingTime: number;
-	totalAmountPaid: number;
+	balanceLeft: bigint;
+	totalAmountPaid: string;
 	subDuration: number;
 	subDurationFormatted: string;
 }

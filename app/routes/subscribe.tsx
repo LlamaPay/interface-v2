@@ -4,7 +4,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import request, { gql } from "graphql-request";
 import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
-import { formatUnits, getAddress, parseUnits, encodeFunctionData } from "viem";
+import { formatUnits, getAddress, parseUnits, encodeFunctionData, maxInt256 } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -76,7 +76,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	return { to: getAddress(to), amount, bgColor, textColor, bgColor2, textColor2 };
 }
 
-const AAVE_YIELD = 0.0052;
+const AAVE_YIELD = 0.052;
 
 export default function Index() {
 	const loaderData: any = useLoaderData();
@@ -190,13 +190,14 @@ export default function Index() {
 		functionName: "batch",
 		chainId: optimism.id
 	});
+
 	const {
 		data: subscribeTxDataOnChain,
 		isLoading: waitingForSubscriptionTxDataOnChain,
 		error: errorWaitingForSubscriptionTxDataOnChain
 	} = useWaitForTransaction({
 		hash: subscribeTxData?.hash ?? subscriptionExtendTxData?.hash,
-		enabled: subscribeTxData ? true : false,
+		enabled: subscribeTxData ?? subscriptionExtendTxData ? true : false,
 		chainId: optimism.id,
 		onSuccess(data) {
 			if (data.status === "success") {
@@ -247,13 +248,14 @@ export default function Index() {
 					subs[0].initialShares
 				]
 			});
+
 			const subscribeForNextPeriod = encodeFunctionData({
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "subscribeForNextPeriod",
 				args: [
 					loaderData.to,
 					decimalsAmountPerCycle,
-					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod,
+					subs[0].balanceLeft + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals),
 					isUserSubscribedToSameTier ? 0 : 0
 				]
 			});
@@ -264,7 +266,7 @@ export default function Index() {
 				args: [
 					loaderData.to,
 					decimalsAmountPerCycle,
-					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod
+					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod // amountForFuture
 				]
 			});
 		}
@@ -309,13 +311,18 @@ export default function Index() {
 	});
 
 	const currentPeriodEndsIn = Number(String(currentTime + timeDiff)) * 1e3;
-	const claimableAmount = +amountToDeposit - +amountChargedInstantly;
+
+	const amountAfterDepositing = +formatUnits(subs?.[0]?.balanceLeft ?? 0n, DAI_OPTIMISM.decimals) + +amountToDeposit;
+	const claimableAmount = amountAfterDepositing - (isUserAlreadySubscribed ? 0 : +amountChargedInstantly);
 	const monthlyYield = (claimableAmount * AAVE_YIELD) / 12;
+
 	const netCostPerMonth = monthlyYield - +loaderData.amount;
-	const netCostFuture = amountToDeposit.length > 0 && currentPeriod ? loaderData.amount - monthlyYield : null;
+	const netCostFuture = currentPeriod ? loaderData.amount - monthlyYield : null;
+
 	const expectedMonthsFuture = netCostFuture ? Math.floor(claimableAmount / netCostFuture) : null;
 	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
+
 	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
 	const hideTableColumns = !hydrated || amountToDeposit.length === 0 || !isValidInputAmount || !currentPeriod;
 	return (
@@ -394,11 +401,7 @@ export default function Index() {
 											<EndsIn deadline={currentPeriodEndsIn} />
 										</span>
 									</li>
-									{isUserAlreadySubscribed ? (
-										isUserSubscribedToSameTier ? null : (
-											<li className="list-disc">TODO</li>
-										)
-									) : (
+									{isUserAlreadySubscribed ? null : (
 										<li className="list-disc">{`You'll be charged ${formatNum(
 											+amountChargedInstantly,
 											2
@@ -525,11 +528,13 @@ export default function Index() {
 								</>
 							) : isUserAlreadySubscribed ? (
 								isUserSubscribedToSameTier ? (
-									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
-										You are already subscribed to this user, your subscription will be extended by{" "}
-										{Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
-										{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
-									</p>
+									<ul className="flex list-disc flex-col gap-2 text-sm">
+										<li className="list-disc">You are already susbcribed to this user</li>
+										<li className="list-disc">
+											Your subscription will be extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+											{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
+										</li>
+									</ul>
 								) : (
 									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
 										Subscription Ends In:{" "}
@@ -595,7 +600,7 @@ export default function Index() {
 								</button>
 							) : (
 								<div className="flex flex-nowrap gap-4">
-									<div className="flex flex-col justify-between gap-1 md:-ml-12">
+									<div className="flex flex-col justify-between gap-1 lg:-ml-12">
 										<div
 											className="h-8 w-8 rounded-full border-2 border-[var(--page-text-color-2)] bg-[var(--page-text-color-2)] first-of-type:mt-3 data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40"
 											data-disabled={
@@ -634,7 +639,8 @@ export default function Index() {
 												approveToken?.({
 													args: [
 														LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-														parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
+														// parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
+														maxInt256
 													]
 												});
 											}}
@@ -733,10 +739,12 @@ export default function Index() {
 											<EndsIn deadline={currentPeriodEndsIn} />
 										</span>
 									</li>
-									<li className="list-disc">{`You'll be charged ${formatNum(
-										+amountChargedInstantly,
-										2
-									)} DAI instantly`}</li>
+									{isUserAlreadySubscribed ? null : (
+										<li className="list-disc">{`You'll be charged ${formatNum(
+											+amountChargedInstantly,
+											2
+										)} DAI instantly`}</li>
+									)}
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
 										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
@@ -754,17 +762,38 @@ export default function Index() {
 										{hideTableColumns ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm opacity-80">Input Amount</td>
 										) : (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(+amountToDeposit, 2)} DAI</td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												<span className="flex flex-nowrap items-center gap-1">
+													<span className="whitespace-nowrap">{formatNum(amountAfterDepositing, 2)} DAI</span>{" "}
+													{subs && subs.length > 0 && subs[0].balanceLeft !== 0n ? (
+														<Ariakit.TooltipProvider showTimeout={0}>
+															<Ariakit.TooltipAnchor
+																render={<Icon name="question-mark-circle" className="h-5 w-5" />}
+															/>
+															<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+																{`Includes remaining balance from current subscription (${formatUnits(
+																	subs[0].balanceLeft,
+																	DAI_OPTIMISM.decimals
+																)} DAI)`}
+															</Ariakit.Tooltip>
+														</Ariakit.TooltipProvider>
+													) : null}
+												</span>
+											</td>
 										)}
 									</tr>
-									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">After Instant Payment</th>
-										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
-										) : (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
-										)}
-									</tr>
+									{isUserAlreadySubscribed ? null : (
+										<tr className={`border-b ${borderColor}`}>
+											<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+												After Instant Payment
+											</th>
+											{hideTableColumns ? (
+												<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											) : (
+												<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
+											)}
+										</tr>
+									)}
 									<tr className={`border-b ${borderColor}`}>
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
 											<span className="flex flex-nowrap items-center gap-1">
@@ -780,7 +809,7 @@ export default function Index() {
 										{hideTableColumns ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
 										) : (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm">5.2%</td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">{`${AAVE_YIELD * 100}%`}</td>
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
@@ -817,6 +846,12 @@ export default function Index() {
 										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
 										{hideTableColumns ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+										) : isUserAlreadySubscribed ? (
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												{`Extended by ${Math.trunc(+amountToDeposit / loaderData.amount)} ${
+													+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"
+												}`}
+											</td>
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{expectedMonthsFuture
