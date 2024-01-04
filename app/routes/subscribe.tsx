@@ -203,14 +203,6 @@ export default function Index() {
 		chainId: optimism.id,
 		onSuccess(data) {
 			if (data.status === "success") {
-				window.parent.postMessage(
-					{
-						subscribed: true,
-						totalDeposited: amountToDeposit,
-						expectedMonthsLength: expectedMonthsFuture
-					},
-					"*"
-				);
 				// navigate("/");
 
 				formRef.current?.reset();
