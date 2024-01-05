@@ -424,9 +424,7 @@ export default function Index() {
 									{isUserAlreadyASubscriber ? (
 										<>
 											<li className="list-disc">You are an existing subscriber</li>
-											{isUserSubscribedToSameTier ? (
-												<li className="list-disc">You are extending your subscription</li>
-											) : (
+											{isUserSubscribedToSameTier ? null : (
 												<li className="list-disc">
 													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
 													to {loaderData.amount} DAI per month
@@ -787,9 +785,7 @@ export default function Index() {
 									{isUserAlreadyASubscriber ? (
 										<>
 											<li className="list-disc">You are an existing subscriber</li>
-											{isUserSubscribedToSameTier ? (
-												<li className="list-disc">You are extending your subscription</li>
-											) : (
+											{isUserSubscribedToSameTier ? null : (
 												<li className="list-disc">
 													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
 													to {loaderData.amount} DAI per month
