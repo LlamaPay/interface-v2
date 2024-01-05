@@ -20,7 +20,7 @@
 	}
 
 	body {
-		@apply isolate grid min-h-screen grid-cols-1 grid-rows-[auto,1fr] bg-[#FAFFFE] text-black dark:bg-[#1d1d1d] dark:text-white md:grid-cols-[204px,1fr];
+		@apply isolate grid min-h-screen grid-cols-1 grid-rows-[auto,1fr] overflow-x-hidden bg-[#FAFFFE] text-black dark:bg-[#1d1d1d] dark:text-white md:grid-cols-[204px,1fr];
 	}
 
 	button {
