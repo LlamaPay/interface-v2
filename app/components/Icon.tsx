@@ -1,15 +1,14 @@
-import { forwardRef, type SVGProps } from "react";
+import { type ForwardedRef, forwardRef, type SVGProps } from "react";
 
 import spriteHref from "~/assets/icons/sprite.svg";
 
-export const Icon = forwardRef(function Icon({
-	name,
-	...props
-}: SVGProps<SVGSVGElement> & {
+type IconProps = SVGProps<SVGSVGElement> & {
 	name: string;
-}) {
+};
+
+export const Icon = forwardRef(function Icon({ name, ...props }: IconProps, ref: ForwardedRef<SVGSVGElement>) {
 	return (
-		<svg {...props}>
+		<svg ref={ref} {...props}>
 			<use href={`${spriteHref}#${name}`} />
 		</svg>
 	);
