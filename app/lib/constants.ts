@@ -9,8 +9,6 @@ export const createJsonRpcProvider = (api: string) =>
 		})
 	});
 
-export const LLAMAPAY_CHAINS = [mainnet];
-
 export const LLAMAPAY_CHAINS_LIB = {
 	[mainnet.id]: {
 		rpc: "https://rpc.ankr.com/eth",
@@ -19,7 +17,7 @@ export const LLAMAPAY_CHAINS_LIB = {
 	},
 	[optimism.id]: {
 		rpc: "https://optimism.publicnode.com",
-		contracts: { subscriptions: "0x17A9a4f55E0EfC52aB13da549E54192987edC5e7" },
+		contracts: { subscriptions: "0x8B6473801e466E543BAf0cB6c7Ea1C9321C3C816" },
 		subgraphs: { subscriptions: "https://api.thegraph.com/subgraphs/name/0xngmi/llamasubs-optimism" }
 	}
 } as const;
@@ -31,7 +29,7 @@ export const DAI_OPTIMISM = {
 	img: `https://token-icons.llamao.fi/icons/tokens/10/0xda10009cbd5d07dd0cecc66161fc93d7c9000da1`
 } as const;
 
-export const SUBSCRIPTION_PERIOD = 1; // 1 DAY
+export const SUBSCRIPTION_PERIOD = 30; // 1 DAY
 export const SUBSCRIPTION_DURATION = SUBSCRIPTION_PERIOD * 24 * 60 * 60; // in seconds
 
 export const SUBSCRIPTION_AMOUNT_DIVISOR = parseUnits("1", DAI_OPTIMISM.decimals);
