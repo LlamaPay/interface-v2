@@ -10,7 +10,6 @@ const defaultSelectedId = "subscriptions";
 
 const Claim = lazy(() => import("./Claim").then((module) => ({ default: module.Claim })));
 const Subscriptions = lazy(() => import("./Subscriptions").then((module) => ({ default: module.Subscriptions })));
-const Unsubscribe = lazy(() => import("./Unsubscribe").then((module) => ({ default: module.Unsubscribe })));
 
 export default function Index() {
 	const hydrated = useHydrated();
@@ -48,12 +47,6 @@ export default function Index() {
 						</Ariakit.Tab>
 						<Ariakit.Tab
 							className="group flex flex-nowrap items-center gap-1 border-b border-b-transparent pb-3 text-sm font-medium data-[active-item]:border-b-[#13785a] data-[active-item]:text-[#13785a] dark:data-[active-item]:border-b-[#21B58A] dark:data-[active-item]:text-[#21B58A]"
-							id="unsubscribe"
-						>
-							<span>Unsubscribe</span>
-						</Ariakit.Tab>
-						<Ariakit.Tab
-							className="group flex flex-nowrap items-center gap-1 border-b border-b-transparent pb-3 text-sm font-medium data-[active-item]:border-b-[#13785a] data-[active-item]:text-[#13785a] dark:data-[active-item]:border-b-[#21B58A] dark:data-[active-item]:text-[#21B58A]"
 							id="claim"
 						>
 							<span>Claim</span>
@@ -65,14 +58,6 @@ export default function Index() {
 					>
 						<Suspense fallback={<></>}>
 							{hydrated ? <Subscriptions /> : <p className="text-center text-sm">Loading...</p>}
-						</Suspense>
-					</Ariakit.TabPanel>
-					<Ariakit.TabPanel
-						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
-						tabId="unsubscribe"
-					>
-						<Suspense fallback={<></>}>
-							{hydrated ? <Unsubscribe /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 					<Ariakit.TabPanel

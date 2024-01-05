@@ -1,5 +1,4 @@
 import * as Ariakit from "@ariakit/react";
-import { Link } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
 import { formatUnits } from "viem";
@@ -14,6 +13,7 @@ import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
 import { type IFormattedSub, type ISub } from "~/types";
 
+import { Unsubscribe } from "./Unsubscribe";
 import { SUB_CHAIN_LIB, formatSubs } from "./utils";
 
 async function getSubscriptions(address?: string) {
@@ -82,7 +82,7 @@ export const Subscriptions = () => {
 			) : subs.length === 0 ? (
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
-				<table className="w-full table-auto border-collapse">
+				<table className="border-collapse">
 					<thead>
 						<tr>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
@@ -111,6 +111,10 @@ export const Subscriptions = () => {
 							</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Expiry</th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Status</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+								Claimables
+							</th>
+							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
 						</tr>
@@ -137,7 +141,6 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					: "Active";
 
 	const incoming = data.receiver === address.toLowerCase();
-	const canSubscribe = (status === "Not yet started" || status === "Active") && !data.unsubscribed;
 
 	return (
 		<tr>
@@ -188,21 +191,15 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 			</td>
 			<td className="whitespace-nowrap p-3">{`${new Date(+data.realExpiration * 1000).toLocaleString()}`}</td>
 			<td className="whitespace-nowrap p-3">{status}</td>
-			<td className="px-3 py-1">
-				{incoming && !canSubscribe ? (
-					<></>
-				) : (
-					<Link
-						to={`/subscribe?to=${data.receiver}&amount=${formatUnits(
-							BigInt(data.amountPerCycle),
-							DAI_OPTIMISM.decimals
-						)}`}
-						className="whitespace-nowrap rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					>
-						Top up
-					</Link>
-				)}
-			</td>
+			{incoming ? (
+				<>
+					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
+				</>
+			) : (
+				<Unsubscribe data={data} />
+			)}
 			<td className="whitespace-nowrap p-3 text-center">
 				<a
 					href={`${optimism.blockExplorers.etherscan.url}/tx/${data.creationTx}`}

@@ -15,6 +15,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NProgress from "nprogress";
 import { useEffect, useMemo } from "react";
+import { Toaster } from "react-hot-toast";
 
 import interFont from "~/assets/fonts/InterVariable.woff2";
 import { Header } from "~/components/Header";
@@ -120,6 +121,7 @@ function App() {
 				)}
 				<Outlet />
 				<ThemeBody ssrTheme={Boolean(data.theme)} />
+				<Toaster position="top-right" reverseOrder={false} />
 				<ScrollRestoration />
 				<Scripts />
 				<LiveReload />

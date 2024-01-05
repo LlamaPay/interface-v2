@@ -1,16 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { request, gql } from "graphql-request";
+import * as Ariakit from "@ariakit/react";
+import { Link } from "@remix-run/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { formatUnits } from "viem";
 import { optimism } from "viem/chains";
-import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
+import { useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
 
-import { useHydrated } from "~/hooks/useHydrated";
+import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, SUBSCRIPTION_AMOUNT_DIVISOR, SUBSCRIPTION_DURATION } from "~/lib/constants";
-import { type IFormattedSub, type ISub } from "~/types";
+import { type IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, subsContract, contract, client, formatSubs } from "./utils";
+import { SUB_CHAIN_LIB, subsContract, contract, client } from "./utils";
 
 async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedSub; contract: any; client: any }) {
 	if (!sub) return null;
@@ -69,74 +71,7 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 	}
 }
 
-async function getSubscriptions(address?: string) {
-	try {
-		if (!address) return null;
-
-		const subs = gql`
-		{
-			subs(where: { owner: "${address.toLowerCase()}" } orderBy: realExpiration orderDirection: desc ) {
-				id
-				receiver
-				startTimestamp
-				unsubscribed
-				initialShares
-				initialPeriod
-				expirationDate
-                amountPerCycle
-                realExpiration
-				accumulator
-				creationTx
-			}
-		}
-	`;
-		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
-
-		return formatSubs(data?.subs ?? []);
-	} catch (error: any) {
-		throw new Error(error.message ?? "Failed to fetch subscriptions");
-	}
-}
-
-export const Unsubscribe = () => {
-	const { address } = useAccount();
-
-	const {
-		data: subs,
-		isLoading: fetchingSubs,
-		error: errorFetchingSubs,
-		refetch: refetchSubs
-	} = useQuery(["subs", address], () => getSubscriptions(address), {
-		cacheTime: 20_000,
-		refetchInterval: 20_000
-	});
-
-	const hydrated = useHydrated();
-
-	return (
-		<>
-			{!hydrated || fetchingSubs ? (
-				<p className="text-center text-sm">Loading...</p>
-			) : !address ? (
-				<p className="text-center text-sm">Connect wallet to view your subscriptions</p>
-			) : errorFetchingSubs || !subs ? (
-				<p className="text-center text-sm text-red-500">
-					{(errorFetchingSubs as any)?.message ?? "Failed to fetch subscriptions"}
-				</p>
-			) : subs.length === 0 ? (
-				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
-			) : (
-				<div className="flex flex-col gap-4 overflow-x-auto">
-					{subs.map((sub) => (
-						<Sub key={sub.id} data={sub} refetchSubs={refetchSubs} />
-					))}
-				</div>
-			)}
-		</>
-	);
-};
-
-const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => void }) => {
+export const Unsubscribe = ({ data }: { data: IFormattedSub }) => {
 	const { chain } = useNetwork();
 
 	const {
@@ -175,6 +110,8 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		chainId: optimism.id
 	});
 
+	const queryClient = useQueryClient();
+
 	const {
 		data: unsubscribeTxDataOnChain,
 		isLoading: waitingForUnsubscribeTxDataOnChain,
@@ -185,9 +122,12 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 		chainId: optimism.id,
 		onSuccess: (data) => {
 			if (data.status === "success") {
+				toast.success("Transaction Success", { id: "tx-success" + data.transactionHash });
 				refetchBalance();
-				refetchSubs();
 				reset();
+				queryClient.invalidateQueries();
+			} else {
+				toast.error("Transaction Failed", { id: "tx-failed" + data.transactionHash });
 			}
 		}
 	});
@@ -195,113 +135,73 @@ const Sub = ({ data, refetchSubs }: { data: IFormattedSub; refetchSubs: () => vo
 	const isExpired = +data.realExpiration * 1000 < Date.now();
 	const cannotUnsubscribe = +data.realExpiration * 1000 - Date.now() <= data.subDuration;
 	const isUnsubscribed = data.unsubscribed || unsubscribeTxDataOnChain?.status === "success" ? true : false;
+	if (errorConfirmingUnsubscribeTx) {
+		const msg = (errorConfirmingUnsubscribeTx as any)?.shortMessage ?? errorConfirmingUnsubscribeTx.message;
+		toast.error(msg, { id: "error-confirming-unsub-tx" + (unsubscribeTxData?.hash ?? "") });
+	}
+	if (errorWaitingForUnsubscribeTxDataOnChain) {
+		const msg =
+			(errorWaitingForUnsubscribeTxDataOnChain as any)?.shortMessage ?? errorWaitingForUnsubscribeTxDataOnChain.message;
+		toast.error(msg, { id: "error-confirming-unsub-tx" + (unsubscribeTxData?.hash ?? "") });
+	}
 	return (
-		<div className="relative mx-auto flex w-full max-w-[450px] flex-col gap-2 rounded-lg border border-black/5 p-4 dark:border-white/5 xl:-left-[102px]">
-			<p className="flex flex-col">
-				<span className="text-xs text-[#757575]">Receiver</span>
-				<a
-					target="_blank"
-					rel="noopene noreferrer"
-					href={`https://optimistic.etherscan.io/address/${data.receiver}`}
-					className="underline"
-				>
-					{data.receiver.slice(0, 4) + "..." + data.receiver.slice(-4)}
-				</a>
-			</p>
-
-			<p className="flex flex-col">
-				<span className="text-xs text-[#757575]">{isExpired ? "Expired on" : "Expires On"}</span>
-				<span>{`${new Date(+data.realExpiration * 1000).toLocaleString()}`}</span>
-			</p>
-
-			<p className="flex flex-col">
-				<span className="text-xs text-[#757575]">Total Paid</span>
-				<span className="flex flex-nowrap items-center gap-1">
-					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-					<span>{`${data.totalAmountPaid} DAI`}</span>
-				</span>
-			</p>
-
-			<p className="flex flex-col">
-				<span className="text-xs text-[#757575]">Duration</span>
-				<span>{`${data.subDurationFormatted}`}</span>
-			</p>
-
-			{!isUnsubscribed && +data.realExpiration * 1000 > Date.now() ? (
-				<p className="flex flex-col">
-					<span className="text-xs text-[#757575]">Claimable if unsubscribed</span>
-					<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
-						<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-						{!fetchingBalance && balance ? (
-							<span>{`${formatNum(+formatUnits(balance, DAI_OPTIMISM.decimals), 2)} DAI`}</span>
-						) : null}
-					</span>
-				</p>
-			) : null}
-
-			{data.subDurationFormatted === "-" ? (
-				<button
-					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					disabled
-				>
-					Cancelled
-				</button>
-			) : isUnsubscribed ? (
-				<button
-					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					disabled
-				>
-					Unsubscribed
-				</button>
-			) : isExpired ? (
-				<button
-					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					disabled
-				>
-					Expired
-				</button>
-			) : (
-				<button
-					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					disabled={
-						!chain ||
-						chain.unsupported ||
-						!unsubscribe ||
-						confirmingUnsubscribeTx ||
-						waitingForUnsubscribeTxDataOnChain ||
-						cannotUnsubscribe
-					}
-					onClick={() => unsubscribe?.()}
-				>
-					{confirmingUnsubscribeTx || waitingForUnsubscribeTxDataOnChain ? "Confirming..." : "Unsubscribe"}
-				</button>
-			)}
-
-			{errorFetchingBalance ? (
-				<p className="text-center text-sm text-red-500">
-					{(errorFetchingBalance as any)?.message ?? "Failed to fetch available balance"}
-				</p>
-			) : null}
-
-			{errorConfirmingUnsubscribeTx ? (
-				<p className="text-center text-sm text-red-500">
-					{(errorConfirmingUnsubscribeTx as any)?.shortMessage ?? errorConfirmingUnsubscribeTx.message}
-				</p>
-			) : null}
-			{errorWaitingForUnsubscribeTxDataOnChain ? (
-				<p className="text-center text-sm text-red-500">
-					{(errorWaitingForUnsubscribeTxDataOnChain as any)?.shortMessage ??
-						errorWaitingForUnsubscribeTxDataOnChain.message}
-				</p>
-			) : null}
-
-			{unsubscribeTxDataOnChain ? (
-				unsubscribeTxDataOnChain.status === "success" ? (
-					<p className="text-center text-sm text-green-500">Transaction Success</p>
-				) : (
-					<p className="text-center text-sm text-red-500">Transaction Failed</p>
-				)
-			) : null}
-		</div>
+		<>
+			<td className="p-3 text-center">
+				{!isUnsubscribed && +data.realExpiration * 1000 > Date.now() ? (
+					<>
+						<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
+							<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
+							{!fetchingBalance && balance ? (
+								<span className="whitespace-nowrap">{`${formatNum(
+									+formatUnits(balance, DAI_OPTIMISM.decimals),
+									2
+								)} DAI`}</span>
+							) : null}
+							{errorFetchingBalance ? (
+								<Ariakit.TooltipProvider showTimeout={0}>
+									<Ariakit.TooltipAnchor
+										render={<Icon name="exclamation-circle" className="h-5 w-5 flex-shrink-0 text-red-500" />}
+									/>
+									<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+										{(errorFetchingBalance as any)?.message ?? "Failed to fetch available balance"}
+									</Ariakit.Tooltip>
+								</Ariakit.TooltipProvider>
+							) : null}
+						</span>
+					</>
+				) : null}
+			</td>
+			<td className="px-3 py-1">
+				{!isUnsubscribed && +data.realExpiration * 1000 > Date.now() ? (
+					<Link
+						to={`/subscribe?to=${data.receiver}&amount=${formatUnits(
+							BigInt(data.amountPerCycle),
+							DAI_OPTIMISM.decimals
+						)}`}
+						className="whitespace-nowrap rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+					>
+						Top up
+					</Link>
+				) : null}
+			</td>
+			<td className="px-3 py-1">
+				{data.subDurationFormatted === "-" ? null : isUnsubscribed ? null : isExpired ? null : (
+					<button
+						className="rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+						disabled={
+							!chain ||
+							chain.unsupported ||
+							!unsubscribe ||
+							confirmingUnsubscribeTx ||
+							waitingForUnsubscribeTxDataOnChain ||
+							cannotUnsubscribe
+						}
+						onClick={() => unsubscribe?.()}
+					>
+						{confirmingUnsubscribeTx || waitingForUnsubscribeTxDataOnChain ? "Confirming..." : "Unsubscribe"}
+					</button>
+				)}
+			</td>
+		</>
 	);
 };

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { parseUnits, formatUnits } from "viem";
 import { optimism } from "viem/chains";
 import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
@@ -125,6 +126,21 @@ export const Claim = () => {
 	};
 	const [amountToClaim, setAmountToClaim] = useState("");
 	const hydrated = useHydrated();
+	if (errorConfirmingClaimTx) {
+		const msg = (errorConfirmingClaimTx as any)?.shortMessage ?? errorConfirmingClaimTx.message;
+		toast.error(msg, { id: "error-confirming-unsub-tx" + (claimTxData?.hash ?? "") });
+	}
+	if (errorWaitingForClaimTxDataOnChain) {
+		const msg = (errorWaitingForClaimTxDataOnChain as any)?.shortMessage ?? errorWaitingForClaimTxDataOnChain.message;
+		toast.error(msg, { id: "error-confirming-unsub-tx" + (claimTxData?.hash ?? "") });
+	}
+	if (claimTxDataOnChain) {
+		if (claimTxDataOnChain.status === "success") {
+			toast.success("Transaction Success", { id: "tx-success" + claimTxDataOnChain.transactionHash });
+		} else {
+			toast.error("Transaction Failed", { id: "tx-failed" + claimTxDataOnChain.transactionHash });
+		}
+	}
 
 	return (
 		<>
@@ -209,25 +225,6 @@ export const Claim = () => {
 				>
 					{confirmingClaimTx || waitingForClaimTxDataOnChain ? "Confirming..." : "Claim"}
 				</button>
-
-				{errorConfirmingClaimTx ? (
-					<p className="text-center text-sm text-red-500">
-						{(errorConfirmingClaimTx as any)?.shortMessage ?? errorConfirmingClaimTx.message}
-					</p>
-				) : null}
-				{errorWaitingForClaimTxDataOnChain ? (
-					<p className="text-center text-sm text-red-500">
-						{(errorWaitingForClaimTxDataOnChain as any)?.shortMessage ?? errorWaitingForClaimTxDataOnChain.message}
-					</p>
-				) : null}
-
-				{claimTxDataOnChain ? (
-					claimTxDataOnChain.status === "success" ? (
-						<p className="text-center text-sm text-green-500">Transaction Success</p>
-					) : (
-						<p className="text-center text-sm text-red-500">Transaction Failed</p>
-					)
-				) : null}
 			</form>
 		</>
 	);
