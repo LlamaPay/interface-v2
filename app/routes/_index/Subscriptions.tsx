@@ -1,7 +1,7 @@
 import * as Ariakit from "@ariakit/react";
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
-import { formatUnits } from "viem";
+import { formatUnits, getAddress } from "viem";
 import { optimism } from "viem/chains";
 import { useAccount } from "wagmi";
 
@@ -11,6 +11,7 @@ import { EndsIn } from "~/components/EndsIn";
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
+import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type IFormattedSub, type ISub } from "~/types";
 
 import { Unsubscribe } from "./Unsubscribe";
@@ -142,33 +143,26 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 
 	const incoming = data.receiver === address.toLowerCase();
 
+	const subAddress = incoming ? data.owner : data.receiver;
+
+	const { data: ensName } = useGetEnsName({
+		address: getAddress(subAddress)
+	});
+
 	return (
 		<tr>
 			<td className="p-3">
 				{incoming ? <img src={incomingImg} alt="incoming" /> : <img src={outgoingImg} alt="outgoing" />}
 			</td>
 			<td className="p-3">
-				{incoming ? (
-					data.owner ? (
-						<a
-							target="_blank"
-							rel="noopene noreferrer"
-							href={`https://optimistic.etherscan.io/address/${data.owner}`}
-							className="underline"
-						>
-							{data.owner.slice(0, 4) + "..." + data.owner.slice(-4)}
-						</a>
-					) : null
-				) : data.receiver ? (
-					<a
-						target="_blank"
-						rel="noopene noreferrer"
-						href={`https://optimistic.etherscan.io/address/${data.receiver}`}
-						className="underline"
-					>
-						{data.receiver.slice(0, 4) + "..." + data.receiver.slice(-4)}
-					</a>
-				) : null}
+				<a
+					target="_blank"
+					rel="noopene noreferrer"
+					href={`https://optimistic.etherscan.io/address/${subAddress}`}
+					className="underline"
+				>
+					{ensName ?? subAddress.slice(0, 4) + "..." + subAddress.slice(-4)}
+				</a>
 			</td>
 			<td className="p-3">
 				<span className="flex flex-nowrap items-center gap-1">
