@@ -8,6 +8,7 @@ import { useAccount, useContractWrite, useNetwork, useWaitForTransaction } from 
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { DAI_OPTIMISM, SUBSCRIPTION_AMOUNT_DIVISOR, SUBSCRIPTION_DURATION } from "~/lib/constants";
+import { formatNum } from "~/utils/formatNum";
 
 import { SUB_CHAIN_LIB, subsContract, contract, client } from "./utils";
 
@@ -24,49 +25,83 @@ async function calculateAvailableToClaim({
 }) {
 	if (!receiver) return null;
 
-	const currentTimestamp = Math.floor(Date.now() / 1e3);
+	try {
+		const currentTimestamp = Math.floor(Date.now() / 1e3);
 
-	const receiverBalance = await contract.read.receiverBalances([receiver]);
+		const receiverBalance = await contract.read.receiverBalances([receiver]);
 
-	// eslint-disable-next-line
-	let [balance, amountPerPeriod, lastUpdate]: [bigint, bigint, bigint] = receiverBalance;
+		// eslint-disable-next-line
+		let [balance, amountPerPeriod, lastUpdate]: [bigint, bigint, bigint] = receiverBalance;
 
-	const periodBoundary = BigInt(currentTimestamp) - BigInt(SUBSCRIPTION_DURATION);
+		const periodBoundary = BigInt(currentTimestamp) - BigInt(SUBSCRIPTION_DURATION);
 
-	if (lastUpdate <= BigInt(periodBoundary) && lastUpdate != 0n) {
-		const periods = [];
-		for (let period = lastUpdate; period <= periodBoundary; period += BigInt(SUBSCRIPTION_DURATION)) {
-			periods.push(period);
+		if (lastUpdate <= BigInt(periodBoundary) && lastUpdate != 0n) {
+			const periods = [];
+			for (let period = lastUpdate; period <= periodBoundary; period += BigInt(SUBSCRIPTION_DURATION)) {
+				periods.push(period);
+			}
+
+			const [currentSharePrice, periodShares, receiverAmountToExpire] = await Promise.all([
+				contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]),
+				client
+					.multicall({
+						contracts: periods.map((p) => ({ ...subsContract, functionName: "sharesPerPeriod", args: [p] }))
+					})
+					.then((data: any) => data.map((x: any) => x.result)),
+				client
+					.multicall({
+						contracts: periods.map((p) => ({
+							...subsContract,
+							functionName: "receiverAmountToExpire",
+							args: [receiver, p]
+						}))
+					})
+					.then((data: any) => data.map((x: any) => x.result))
+			]);
+
+			periodShares.forEach((shares: any, i: number) => {
+				const finalShares = !shares || shares === 0n ? currentSharePrice : shares;
+				amountPerPeriod -= receiverAmountToExpire[i] ?? 0n;
+				balance += BigInt(amountPerPeriod * finalShares) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
+			});
 		}
 
-		const [currentSharePrice, periodShares, receiverAmountToExpire] = await Promise.all([
-			contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]),
-			client
-				.multicall({
-					contracts: periods.map((p) => ({ ...subsContract, functionName: "sharesPerPeriod", args: [p] }))
-				})
-				.then((data: any) => data.map((x: any) => x.result)),
-			client
-				.multicall({
-					contracts: periods.map((p) => ({
-						...subsContract,
-						functionName: "receiverAmountToExpire",
-						args: [receiver, p]
-					}))
-				})
-				.then((data: any) => data.map((x: any) => x.result))
-		]);
+		const claimable: bigint = await contract.read.convertToAssets([balance]);
 
-		periodShares.forEach((shares: any, i: number) => {
-			const finalShares = !shares || shares === 0n ? currentSharePrice : shares;
-			amountPerPeriod -= receiverAmountToExpire[i] ?? 0n;
-			balance += BigInt(amountPerPeriod * finalShares) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
-		});
+		return claimable;
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : "Failed to fetch claimables");
 	}
+}
 
-	const claimable: bigint = await contract.read.convertToAssets([balance]);
+async function calculateAvailableToClaimNextMonth({
+	receiver,
+	contract,
+	client
+}: {
+	receiver?: string;
+	contract: any;
+	client: any;
+}) {
+	if (!receiver) return null;
+	try {
+		const receiverBalance = await contract.read.receiverBalances([receiver]);
+		// eslint-disable-next-line
+		let [balance, amountPerPeriod, lastUpdate]: [bigint, bigint, bigint] = receiverBalance;
+		if (lastUpdate === 0n) {
+			return 0n;
+		}
+		let currentPeriod: bigint = await contract.read.currentPeriod();
 
-	return claimable;
+		let totalForNextMonth = amountPerPeriod;
+		while (currentPeriod < Date.now() / 1e3) {
+			totalForNextMonth -= await contract.read.receiverAmountToExpire([receiver, currentPeriod]);
+			currentPeriod += BigInt(SUBSCRIPTION_DURATION);
+		}
+		return totalForNextMonth;
+	} catch (error) {
+		throw new Error(error instanceof Error ? error.message : "Failed to fetch claimables next month");
+	}
 }
 
 export const Claim = () => {
@@ -102,6 +137,16 @@ export const Claim = () => {
 		["claimable", address],
 		() =>
 			calculateAvailableToClaim({
+				receiver: address,
+				contract,
+				client
+			}),
+		{ cacheTime: 20_000, refetchInterval: 20_000 }
+	);
+	const { data: claimableNextMonth, isLoading: fetchingClaimablesNextMonth } = useQuery(
+		["claimable-next-month", address],
+		() =>
+			calculateAvailableToClaimNextMonth({
 				receiver: address,
 				contract,
 				client
@@ -189,7 +234,11 @@ export const Claim = () => {
 									<span>-</span>
 								) : (
 									<>
-										<span>{claimable ? formatUnits(claimable, DAI_OPTIMISM.decimals) : "0"}</span>
+										<span>
+											{typeof claimable === "bigint"
+												? formatNum(formatUnits(claimable, DAI_OPTIMISM.decimals), 2)
+												: "-"}
+										</span>
 
 										<button
 											type="button"
@@ -212,6 +261,22 @@ export const Claim = () => {
 							"Failed to fetch amount claimable"}
 					</p>
 				) : null}
+
+				<p className={`flex items-center gap-1 text-xs`}>
+					<span>Claimable Next Month:</span>
+					{!hydrated || fetchingClaimablesNextMonth ? (
+						<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400"></span>
+					) : !isConnected || errorFetchingClaimables ? (
+						<span>-</span>
+					) : (
+						<span>
+							{typeof claimableNextMonth === "bigint"
+								? formatNum(formatUnits(claimableNextMonth, DAI_OPTIMISM.decimals), 2) + " DAI"
+								: "-"}
+						</span>
+					)}
+				</p>
+
 				<button
 					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled={
