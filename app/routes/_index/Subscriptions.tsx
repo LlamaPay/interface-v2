@@ -117,32 +117,13 @@ export const Subscriptions = () => {
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									<span className="flex flex-nowrap items-center gap-1">
-										<span className="whitespace-nowrap">Total Paid</span>
-										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor
-												render={<Icon name="question-mark-circle" className="h-4 w-4 flex-shrink-0" />}
-											/>
-											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-												Total paid is different from total deposited, remaining balance can be withdrawn at anytime
-											</Ariakit.Tooltip>
-										</Ariakit.TooltipProvider>
-									</span>
-								</th>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Duration
-								</th>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Time Left
-								</th>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Expiry
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Status
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Claimables
+									Balance
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
@@ -223,17 +204,10 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					)} DAI / month`}</span>
 				</span>
 			</td>
-			<td className="p-3">
-				<span className="flex flex-nowrap items-center gap-1">
-					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-					<span className="whitespace-nowrap">{`${data.totalAmountPaid} DAI`}</span>
-				</span>
-			</td>
-			<td className="whitespace-nowrap p-3">{data.subDurationFormatted}</td>
 			<td className="whitespace-nowrap p-3 tabular-nums">
-				{status === "Active" ? <EndsIn deadline={+data.realExpiration * 1000} /> : "-"}
+				{status === "Active" ? <p title={`Expiry: ${new Date(+data.realExpiration * 1000).toLocaleString()}`}>
+					<EndsIn deadline={+data.realExpiration * 1000} /></p> : "-"}
 			</td>
-			<td className="whitespace-nowrap p-3">{`${new Date(+data.realExpiration * 1000).toLocaleString()}`}</td>
 			<td className="whitespace-nowrap p-3">{status}</td>
 			{incoming ? (
 				<>

@@ -22,11 +22,6 @@ export const contract: any = getContract({
 	publicClient: client as any
 });
 
-const daysInMonth = 30;
-const hoursInDay = 24;
-const minutesInHour = 60;
-// const secondsInMinute = 60;
-
 export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
 		const startTimestamp = +sub.startTimestamp;
@@ -38,51 +33,18 @@ export const formatSubs = (data: Array<ISub>) => {
 		const fullCycles = (realExpiration - fullPeriodStartingTime) / SUBSCRIPTION_DURATION;
 		const amountPaidFully = fullCycles * amountPerCycle;
 		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
-		const amountPaidPartially = partialCycles * amountPerCycle;
 		const totalCycles = fullCycles + partialCycles;
 
 		const totalDays = totalCycles * SUBSCRIPTION_PERIOD;
-
-		let days = Math.floor(totalDays);
-		const remainingHours = (totalDays - days) * hoursInDay;
-		const hours = Math.floor(remainingHours);
-		const remainingMinutes = (remainingHours - hours) * minutesInHour;
-		const minutes = Math.floor(remainingMinutes);
 		// const remainingSeconds = (remainingMinutes - minutes) * secondsInMinute
 		// const seconds = Math.floor(remainingSeconds)
-
-		const subDurationFormatted: Array<string> = [];
-
-		if (startTimestamp === realExpiration) {
-			subDurationFormatted.push("-");
-		} else {
-			if (days >= 30) {
-				const months = days % daysInMonth;
-				if (months > 0) {
-					subDurationFormatted.push(`${months}M`);
-					days -= months * daysInMonth;
-				}
-			}
-
-			if (days > 0) {
-				subDurationFormatted.push(`${days}D`);
-			}
-			if (hours > 0) {
-				subDurationFormatted.push(`${hours}H`);
-			}
-			if (minutes > 0) {
-				subDurationFormatted.push(`${minutes}m`);
-			}
-		}
 
 		return {
 			...sub,
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
 			balanceLeft: BigInt(amountPaidFully),
-			totalAmountPaid: ((amountPaidPartially + amountPaidFully) / 10 ** DAI_OPTIMISM.decimals).toFixed(2),
 			subDuration: totalDays * 24 * 60 * 60,
-			subDurationFormatted: subDurationFormatted.join(" ")
 		} as IFormattedSub;
 	});
 };
