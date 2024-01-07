@@ -1,6 +1,7 @@
 import * as Ariakit from "@ariakit/react";
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
+import { useState } from "react";
 import { formatUnits, getAddress } from "viem";
 import { optimism } from "viem/chains";
 import { useAccount } from "wagmi";
@@ -70,6 +71,29 @@ export const Subscriptions = () => {
 
 	const hydrated = useHydrated();
 
+	const [snapshotDate, setSnapshotDate] = useState<string>("");
+
+	const downloadActiveSubs = () => {
+		if (subs && snapshotDate !== "" && address) {
+			const snapshotTimestamp = new Date(snapshotDate).getTime();
+			const activeSubs = subs.filter(
+				(sub) =>
+					sub.startTimestamp !== sub.realExpiration &&
+					+sub.startTimestamp <= snapshotTimestamp / 1e3 &&
+					+sub.realExpiration >= snapshotTimestamp / 1e3
+			);
+			const rows = [["Address", "Amount per month"]];
+			activeSubs.forEach((sub) => {
+				const incoming = sub.receiver === address.toLowerCase();
+				rows.push([
+					incoming ? sub.owner : sub.receiver,
+					formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals)
+				]);
+			});
+
+			download(`subscriptions-snapshot-${snapshotDate}.csv`, rows.map((r) => r.join(",")).join("\n"));
+		}
+	};
 	return (
 		<>
 			{!hydrated || fetchingSubs ? (
@@ -83,49 +107,75 @@ export const Subscriptions = () => {
 			) : subs.length === 0 ? (
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
-				<table className="border-collapse">
-					<thead>
-						<tr>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-								Address
-							</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-								<span className="flex flex-nowrap items-center gap-1">
-									<span className="whitespace-nowrap">Total Paid</span>
-									<Ariakit.TooltipProvider showTimeout={0}>
-										<Ariakit.TooltipAnchor
-											render={<Icon name="question-mark-circle" className="h-4 w-4 flex-shrink-0" />}
-										/>
-										<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-											Total paid is different from total deposited, remaining balance can be withdrawn at anytime
-										</Ariakit.Tooltip>
-									</Ariakit.TooltipProvider>
-								</span>
-							</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-								Duration
-							</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-								Time Left
-							</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Expiry</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Status</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-								Claimables
-							</th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
-							<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
-						</tr>
-					</thead>
-					<tbody>
-						{subs.map((sub) => (
-							<Sub key={sub.id} data={sub} address={address} />
-						))}
-					</tbody>
-				</table>
+				<>
+					<table className="border-collapse">
+						<thead>
+							<tr>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Address
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									<span className="flex flex-nowrap items-center gap-1">
+										<span className="whitespace-nowrap">Total Paid</span>
+										<Ariakit.TooltipProvider showTimeout={0}>
+											<Ariakit.TooltipAnchor
+												render={<Icon name="question-mark-circle" className="h-4 w-4 flex-shrink-0" />}
+											/>
+											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+												Total paid is different from total deposited, remaining balance can be withdrawn at anytime
+											</Ariakit.Tooltip>
+										</Ariakit.TooltipProvider>
+									</span>
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Duration
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Time Left
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Expiry
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Status
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Claimables
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
+							</tr>
+						</thead>
+						<tbody>
+							{subs.map((sub) => (
+								<Sub key={sub.id} data={sub} address={address} />
+							))}
+						</tbody>
+					</table>
+					<form className="flex flex-wrap items-end gap-4 text-sm">
+						<label className="mt-5 flex flex-col gap-1">
+							<span>Snapshot</span>
+							<input
+								type="date"
+								name="snapshot"
+								value={snapshotDate}
+								onChange={(e) => setSnapshotDate(e.target.value)}
+								className="rounded-lg border border-black/[0.15] bg-[#ffffff] p-1 dark:border-white/5 dark:bg-[#141414]"
+							/>
+						</label>
+						<button
+							type="button"
+							className="rounded-lg border border-black/[0.15] bg-[#13785a] p-1 px-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/5 dark:bg-[#23BF91] dark:text-black"
+							onClick={downloadActiveSubs}
+							disabled={snapshotDate === ""}
+						>
+							Download
+						</button>
+					</form>
+				</>
 			)}
 		</>
 	);
@@ -207,3 +257,16 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 		</tr>
 	);
 };
+
+function download(filename: string, text: string) {
+	const element = document.createElement("a");
+	element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
+	element.setAttribute("download", filename);
+
+	element.style.display = "none";
+	document.body.appendChild(element);
+
+	element.click();
+
+	document.body.removeChild(element);
+}
