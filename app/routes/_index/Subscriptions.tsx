@@ -73,25 +73,26 @@ export const Subscriptions = () => {
 
 	const [snapshotDate, setSnapshotDate] = useState<string>("");
 
-	const downloadActiveSubs = () => {
-		if (subs && snapshotDate !== "" && address) {
-			const snapshotTimestamp = new Date(snapshotDate).getTime();
+	const downloadActiveSubs = (selectedSnapshotDate:string) => {
+		if (subs && selectedSnapshotDate !== "" && address) {
+			const snapshotTimestamp = new Date(selectedSnapshotDate).getTime();
 			const activeSubs = subs.filter(
 				(sub) =>
-					sub.startTimestamp !== sub.realExpiration &&
 					+sub.startTimestamp <= snapshotTimestamp / 1e3 &&
 					+sub.realExpiration >= snapshotTimestamp / 1e3
 			);
 			const rows = [["Address", "Amount per month"]];
 			activeSubs.forEach((sub) => {
 				const incoming = sub.receiver === address.toLowerCase();
-				rows.push([
-					incoming ? sub.owner : sub.receiver,
-					formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals)
-				]);
+				if(incoming){
+					rows.push([
+						incoming ? sub.owner : sub.receiver,
+						formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals)
+					]);
+				}
 			});
 
-			download(`subscriptions-snapshot-${snapshotDate}.csv`, rows.map((r) => r.join(",")).join("\n"));
+			download(`subscriptions-snapshot-${selectedSnapshotDate}.csv`, rows.map((r) => r.join(",")).join("\n"));
 		}
 	};
 	return (
@@ -150,10 +151,18 @@ export const Subscriptions = () => {
 						<button
 							type="button"
 							className="rounded-lg border border-black/[0.15] bg-[#13785a] p-1 px-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/5 dark:bg-[#23BF91] dark:text-black"
-							onClick={downloadActiveSubs}
+							onClick={()=>downloadActiveSubs(snapshotDate)}
 							disabled={snapshotDate === ""}
 						>
 							Download
+						</button>
+
+						<button
+							type="button"
+							className="rounded-lg border border-black/[0.15] bg-[#13785a] p-1 px-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/5 dark:bg-[#23BF91] dark:text-black"
+							onClick={()=>downloadActiveSubs(new Date().toUTCString())}
+						>
+							Download current snapshot
 						</button>
 					</form>
 				</>
