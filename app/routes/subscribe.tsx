@@ -688,8 +688,7 @@ export default function Index() {
 												approveToken?.({
 													args: [
 														LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-														// parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
-														maxInt256
+														parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
 													]
 												});
 											}}
