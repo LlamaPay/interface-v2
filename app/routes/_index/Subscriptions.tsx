@@ -64,7 +64,6 @@ export const Subscriptions = () => {
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs
 	} = useQuery(["subs", address], () => getSubscriptions(address), {
-		cacheTime: 20_000,
 		refetchInterval: 20_000
 	});
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { encodeFunctionData, formatUnits, parseUnits } from "viem";
 import { optimism } from "viem/chains";
-import { useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
+import { erc20ABI, useAccount, useContractRead, useContractWrite, useNetwork, useWaitForTransaction } from "wagmi";
 
 import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
@@ -73,6 +73,7 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 }
 
 export const ManageSub = ({ data }: { data: IFormattedSub }) => {
+	const { address } = useAccount();
 	const { chain } = useNetwork();
 	const queryClient = useQueryClient();
 
@@ -89,7 +90,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 				client,
 				sub: data
 			}),
-		{ cacheTime: 20_000, refetchInterval: 20_000 }
+		{ refetchInterval: 20_000 }
 	);
 
 	// UNSUBSCRIBE
@@ -145,7 +146,8 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	const {
 		data: withdrawTxData,
 		write: withdrawBalanceFromSub,
-		isLoading: confirmingWithdrawal
+		isLoading: confirmingWithdrawal,
+		error: errorConfirmingWithdrawal
 	} = useContractWrite({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
@@ -156,29 +158,29 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 			toast.error(msg, { id: "error-confirming-withdraw-tx" + (withdrawTxData?.hash ?? "") });
 		}
 	});
-	const { isLoading: confirmingWithdrawalTxOnChain } = useWaitForTransaction({
+	const {
+		data: withdrawTxDataOnChain,
+		isLoading: confirmingWithdrawalTxOnChain,
+		error: errorConfirmingWithdrawTxDataOnChain
+	} = useWaitForTransaction({
 		hash: withdrawTxData?.hash,
 		enabled: withdrawTxData ? true : false,
 		chainId: optimism.id,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, { id: "error-confirming-withdraw-tx-on-chain" + (withdrawTxData?.hash ?? "") });
-		},
 		onSuccess: (data) => {
 			if (data.status === "success") {
 				toast.success("Transaction Success", { id: "tx-success" + data.transactionHash });
 				refetchBalance();
 				reset();
 				queryClient.invalidateQueries();
-			} else {
-				toast.error("Transaction Failed", { id: "tx-failed" + data.transactionHash });
+				withdrawDialog.toggle();
 			}
 		}
 	});
+
 	const [amountToWithdraw, setAmountToWithdraw] = useState("");
 	const amountToDeposit = (balance ?? 0n) - parseUnits(amountToWithdraw, DAI_OPTIMISM.decimals);
-	const disableWithdrawal = amountToDeposit <= 0n;
-	const handleWithdrawal = async (e: React.FormEvent<HTMLFormElement>) => {
+	const disableWithdrawal = amountToDeposit < 0n;
+	const handleWithdrawal = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const unsusbcribe = encodeFunctionData({
 			abi: SUBSCRIPTIONS_ABI,
@@ -192,21 +194,59 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 				data.initialShares
 			]
 		});
-		const shares = await contract.read.convertToShares([amountToDeposit]);
-		const claim = encodeFunctionData({
-			abi: SUBSCRIPTIONS_ABI,
-			functionName: "claim",
-			args: [min(amountToDeposit, shares)]
-		});
+
 		const subscribeForNextPeriod = encodeFunctionData({
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "subscribeForNextPeriod",
 			args: [data.receiver, data.amountPerCycle, amountToDeposit, 0n]
 		});
-		const calls = [unsusbcribe, claim, subscribeForNextPeriod];
+		const calls = [unsusbcribe, subscribeForNextPeriod];
 		withdrawBalanceFromSub?.({ args: [calls, true] });
 	};
 
+	// TOKEN APPROVAL
+	// get current DAI allowance of user
+	const {
+		data: allowance,
+		error: errorFetchingAllowance,
+		refetch: refetchAllowance
+	} = useContractRead({
+		address: DAI_OPTIMISM.address,
+		abi: erc20ABI,
+		functionName: "allowance",
+		args: address && [address, LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions],
+		enabled: address ? true : false,
+		chainId: optimism.id
+	});
+	// check if input amount is gte to allowance
+	const isApproved = allowance ? allowance >= amountToDeposit : false;
+	console.log({ isApproved });
+	const {
+		data: approveTxData,
+		write: approveToken,
+		isLoading: confirmingTokenApproval,
+		error: errorConfirmingTokenApproval
+	} = useContractWrite({
+		address: DAI_OPTIMISM.address,
+		abi: erc20ABI,
+		functionName: "approve",
+		chainId: optimism.id
+	});
+	const {
+		data: approveTxDataOnChain,
+		isLoading: waitingForApproveTxConfirmation,
+		error: errorConfirmingApproveTx
+	} = useWaitForTransaction({
+		hash: approveTxData?.hash,
+		enabled: approveTxData ? true : false,
+		chainId: optimism.id,
+		onSuccess(data) {
+			if (data.status === "success") {
+				refetchAllowance();
+			}
+		}
+	});
+	console.log({ allowance });
 	// Hide table cells if sub expired/cancelled/unsubscribed
 	if (isUnsubscribed || isExpired) {
 		return (
@@ -338,18 +378,121 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 								</span>
 							</label>
 
-							<button
-								className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-								disabled={
-									!chain ||
-									chain.id !== optimism.id ||
-									confirmingWithdrawal ||
-									confirmingWithdrawalTxOnChain ||
-									disableWithdrawal
-								}
-							>
-								{confirmingWithdrawal || confirmingWithdrawalTxOnChain ? "Confirming..." : "Withdraw"}
-							</button>
+							<div className="flex flex-nowrap gap-4">
+								<div className="flex flex-col justify-between gap-1">
+									<div
+										className="h-8 w-8 rounded-full border-2 border-black bg-black first-of-type:mt-3 data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40 dark:border-white dark:bg-white"
+										data-disabled={
+											!chain ||
+											chain.id !== optimism.id ||
+											confirmingWithdrawal ||
+											confirmingWithdrawalTxOnChain ||
+											disableWithdrawal ||
+											confirmingTokenApproval ||
+											waitingForApproveTxConfirmation ||
+											isApproved ||
+											amountToWithdraw.length === 0
+										}
+									></div>
+									<div className="mx-auto min-h-[4px] w-[2px] flex-1 bg-black opacity-40 dark:bg-white"></div>
+									<div
+										className="mb-3 h-8 w-8 rounded-full border-2 border-black bg-black data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40 dark:border-white dark:bg-white"
+										data-disabled={
+											!chain ||
+											chain.id !== optimism.id ||
+											confirmingWithdrawal ||
+											confirmingWithdrawalTxOnChain ||
+											disableWithdrawal ||
+											confirmingTokenApproval ||
+											waitingForApproveTxConfirmation ||
+											!isApproved ||
+											amountToWithdraw.length === 0
+										}
+									></div>
+								</div>
+								<div className="flex flex-1 flex-col gap-6">
+									<button
+										className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+										disabled={
+											!chain ||
+											chain.id !== optimism.id ||
+											confirmingWithdrawal ||
+											confirmingWithdrawalTxOnChain ||
+											disableWithdrawal ||
+											confirmingTokenApproval ||
+											waitingForApproveTxConfirmation ||
+											isApproved ||
+											amountToWithdraw.length === 0
+										}
+										type="button"
+										onClick={() => {
+											approveToken?.({
+												args: [LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions, amountToDeposit]
+											});
+										}}
+									>
+										{confirmingTokenApproval || waitingForApproveTxConfirmation
+											? "Confirming..."
+											: isApproved
+												? "Approved"
+												: "Approve"}
+									</button>
+
+									<button
+										className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+										disabled={
+											!chain ||
+											chain.id !== optimism.id ||
+											confirmingWithdrawal ||
+											confirmingWithdrawalTxOnChain ||
+											disableWithdrawal ||
+											confirmingTokenApproval ||
+											waitingForApproveTxConfirmation ||
+											!isApproved ||
+											amountToWithdraw.length === 0
+										}
+									>
+										{confirmingWithdrawal || confirmingWithdrawalTxOnChain ? "Confirming..." : "Withdraw"}
+									</button>
+								</div>
+							</div>
+
+							{errorFetchingAllowance ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
+								</p>
+							) : null}
+							{errorConfirmingTokenApproval ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
+								</p>
+							) : null}
+							{errorConfirmingApproveTx ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
+								</p>
+							) : null}
+							{errorConfirmingWithdrawTxDataOnChain ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									{(errorConfirmingWithdrawTxDataOnChain as any)?.shortMessage ??
+										errorConfirmingWithdrawTxDataOnChain.message}
+								</p>
+							) : null}
+							{errorConfirmingWithdrawal ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									{(errorConfirmingWithdrawal as any)?.shortMessage ?? errorConfirmingWithdrawal.message}
+								</p>
+							) : null}
+							{withdrawTxDataOnChain?.status === "reverted" ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									Transaction Reverted
+								</p>
+							) : null}
+							{approveTxDataOnChain?.status === "reverted" ? (
+								<p className="break-all text-center text-sm text-red-500" data-error-5>
+									Transaction Reverted
+								</p>
+							) : null}
 						</form>
 					</Ariakit.Dialog>
 				</div>
@@ -373,5 +516,3 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		</>
 	);
 };
-
-const min = (a: bigint, b: bigint) => (a > b ? b : a);

@@ -92,7 +92,6 @@ export default function Index() {
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs
 	} = useQuery(["subs", address, loaderData.to], () => getSubscriptions({ owner: address, receiver: loaderData.to }), {
-		cacheTime: 20_000,
 		refetchInterval: 20_000
 	});
 

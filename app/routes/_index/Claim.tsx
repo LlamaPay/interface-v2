@@ -151,7 +151,7 @@ export const Claim = () => {
 				contract,
 				client
 			}),
-		{ cacheTime: 20_000, refetchInterval: 20_000 }
+		{ refetchInterval: 20_000 }
 	);
 	const { data: claimableNextMonth, isLoading: fetchingClaimablesNextMonth } = useQuery(
 		["claimable-next-month", address],
@@ -161,7 +161,7 @@ export const Claim = () => {
 				contract,
 				client
 			}),
-		{ cacheTime: 20_000, refetchInterval: 20_000 }
+		{ refetchInterval: 20_000 }
 	);
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
