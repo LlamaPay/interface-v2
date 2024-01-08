@@ -1,4 +1,3 @@
-import * as Ariakit from "@ariakit/react";
 import { useQuery } from "@tanstack/react-query";
 import { request, gql } from "graphql-request";
 import { useState } from "react";
@@ -73,18 +72,16 @@ export const Subscriptions = () => {
 
 	const [snapshotDate, setSnapshotDate] = useState<string>("");
 
-	const downloadActiveSubs = (selectedSnapshotDate:string) => {
+	const downloadActiveSubs = (selectedSnapshotDate: string) => {
 		if (subs && selectedSnapshotDate !== "" && address) {
 			const snapshotTimestamp = new Date(selectedSnapshotDate).getTime();
 			const activeSubs = subs.filter(
-				(sub) =>
-					+sub.startTimestamp <= snapshotTimestamp / 1e3 &&
-					+sub.realExpiration >= snapshotTimestamp / 1e3
+				(sub) => +sub.startTimestamp <= snapshotTimestamp / 1e3 && +sub.realExpiration >= snapshotTimestamp / 1e3
 			);
 			const rows = [["Address", "Amount per month"]];
 			activeSubs.forEach((sub) => {
 				const incoming = sub.receiver === address.toLowerCase();
-				if(incoming){
+				if (incoming) {
 					rows.push([
 						incoming ? sub.owner : sub.receiver,
 						formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals)
@@ -109,7 +106,7 @@ export const Subscriptions = () => {
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
 				<>
-					<table className="border-collapse">
+					<table className="w-full border-collapse">
 						<thead>
 							<tr>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
@@ -151,7 +148,7 @@ export const Subscriptions = () => {
 						<button
 							type="button"
 							className="rounded-lg border border-black/[0.15] bg-[#13785a] p-1 px-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/5 dark:bg-[#23BF91] dark:text-black"
-							onClick={()=>downloadActiveSubs(snapshotDate)}
+							onClick={() => downloadActiveSubs(snapshotDate)}
 							disabled={snapshotDate === ""}
 						>
 							Download
@@ -160,7 +157,7 @@ export const Subscriptions = () => {
 						<button
 							type="button"
 							className="rounded-lg border border-black/[0.15] bg-[#13785a] p-1 px-2 text-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/5 dark:bg-[#23BF91] dark:text-black"
-							onClick={()=>downloadActiveSubs(new Date().toUTCString())}
+							onClick={() => downloadActiveSubs(new Date().toUTCString())}
 						>
 							Download current snapshot
 						</button>
@@ -213,9 +210,17 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					)} DAI / month`}</span>
 				</span>
 			</td>
-			<td className="whitespace-nowrap p-3 tabular-nums">
-				{status === "Active" ? <p title={`Expiry: ${new Date(+data.realExpiration * 1000).toLocaleString()}`}>
-					<EndsIn deadline={+data.realExpiration * 1000} /></p> : "-"}
+			<td className="p-3">
+				{status === "Active" ? (
+					<p
+						className="whitespace-nowrap tabular-nums"
+						title={`Expiry: ${new Date(+data.realExpiration * 1000).toLocaleString()}`}
+					>
+						<EndsIn deadline={+data.realExpiration * 1000} />
+					</p>
+				) : (
+					"-"
+				)}
 			</td>
 			<td className="whitespace-nowrap p-3">{status}</td>
 			{incoming ? (
