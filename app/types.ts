@@ -19,5 +19,4 @@ export interface IFormattedSub extends ISub {
 	balanceLeft: bigint;
 	totalAmountPaid: string;
 	subDuration: number;
-	subDurationFormatted: string;
 }

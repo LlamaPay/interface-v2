@@ -110,22 +110,32 @@ export const Claim = () => {
 	const {
 		data: claimTxData,
 		writeAsync: claim,
-		isLoading: confirmingClaimTx,
-		error: errorConfirmingClaimTx
+		isLoading: confirmingClaimTx
 	} = useContractWrite({
 		address: SUB_CHAIN_LIB.contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "claim",
-		chainId: optimism.id
+		chainId: optimism.id,
+		onError: (err) => {
+			const msg = (err as any)?.shortMessage ?? err.message;
+			toast.error(msg, { id: "error-confirming-claim-tx" + (claimTxData?.hash ?? "") });
+		}
 	});
-	const {
-		data: claimTxDataOnChain,
-		isLoading: waitingForClaimTxDataOnChain,
-		error: errorWaitingForClaimTxDataOnChain
-	} = useWaitForTransaction({
+	const { isLoading: waitingForClaimTxDataOnChain } = useWaitForTransaction({
 		hash: claimTxData?.hash,
 		enabled: claimTxData ? true : false,
-		chainId: optimism.id
+		chainId: optimism.id,
+		onError: (err) => {
+			const msg = (err as any)?.shortMessage ?? err.message;
+			toast.error(msg, { id: "error-confirming-claim-tx-on-chain" + (claimTxData?.hash ?? "") });
+		},
+		onSuccess: (data) => {
+			if (data.status === "success") {
+				toast.success("Transaction Success", { id: "tx-success" + data.transactionHash });
+			} else {
+				toast.error("Transaction Failed", { id: "tx-failed" + data.transactionHash });
+			}
+		}
 	});
 
 	const {
@@ -171,21 +181,6 @@ export const Claim = () => {
 	};
 	const [amountToClaim, setAmountToClaim] = useState("");
 	const hydrated = useHydrated();
-	if (errorConfirmingClaimTx) {
-		const msg = (errorConfirmingClaimTx as any)?.shortMessage ?? errorConfirmingClaimTx.message;
-		toast.error(msg, { id: "error-confirming-unsub-tx" + (claimTxData?.hash ?? "") });
-	}
-	if (errorWaitingForClaimTxDataOnChain) {
-		const msg = (errorWaitingForClaimTxDataOnChain as any)?.shortMessage ?? errorWaitingForClaimTxDataOnChain.message;
-		toast.error(msg, { id: "error-confirming-unsub-tx" + (claimTxData?.hash ?? "") });
-	}
-	if (claimTxDataOnChain) {
-		if (claimTxDataOnChain.status === "success") {
-			toast.success("Transaction Success", { id: "tx-success" + claimTxDataOnChain.transactionHash });
-		} else {
-			toast.error("Transaction Failed", { id: "tx-failed" + claimTxDataOnChain.transactionHash });
-		}
-	}
 
 	return (
 		<>

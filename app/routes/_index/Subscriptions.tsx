@@ -14,7 +14,7 @@ import { DAI_OPTIMISM } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type IFormattedSub, type ISub } from "~/types";
 
-import { Unsubscribe } from "./Unsubscribe";
+import { ManageSub } from "./ManageSub";
 import { SUB_CHAIN_LIB, formatSubs } from "./utils";
 
 async function getSubscriptions(address?: string) {
@@ -92,6 +92,7 @@ export const Subscriptions = () => {
 			download(`subscriptions-snapshot-${selectedSnapshotDate}.csv`, rows.map((r) => r.join(",")).join("\n"));
 		}
 	};
+
 	return (
 		<>
 			{!hydrated || fetchingSubs ? (
@@ -123,6 +124,7 @@ export const Subscriptions = () => {
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Balance
 								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
@@ -188,7 +190,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 
 	return (
 		<tr>
-			<td className="p-3">
+			<td className="p-3" title={incoming ? "Incoming" : "Outgoing"}>
 				{incoming ? <img src={incomingImg} alt="incoming" /> : <img src={outgoingImg} alt="outgoing" />}
 			</td>
 			<td className="p-3">
@@ -228,9 +230,10 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					<td className="whitespace-nowrap p-3 text-center"></td>
 					<td className="whitespace-nowrap p-3 text-center"></td>
 					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
 				</>
 			) : (
-				<Unsubscribe data={data} />
+				<ManageSub data={data} />
 			)}
 			<td className="whitespace-nowrap p-3 text-center">
 				<a

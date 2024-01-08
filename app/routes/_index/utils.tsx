@@ -2,7 +2,7 @@ import { createPublicClient, getContract, http } from "viem";
 import { optimism } from "viem/chains";
 
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION, SUBSCRIPTION_PERIOD } from "~/lib/constants";
+import { LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION, SUBSCRIPTION_PERIOD } from "~/lib/constants";
 import { type IFormattedSub, type ISub } from "~/types";
 
 export const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
@@ -44,7 +44,7 @@ export const formatSubs = (data: Array<ISub>) => {
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
 			balanceLeft: BigInt(amountPaidFully),
-			subDuration: totalDays * 24 * 60 * 60,
+			subDuration: totalDays * 24 * 60 * 60
 		} as IFormattedSub;
 	});
 };
