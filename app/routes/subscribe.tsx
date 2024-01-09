@@ -1,10 +1,10 @@
 import * as Ariakit from "@ariakit/react";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { defer, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
+import { Await, Link, useLoaderData } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import request, { gql } from "graphql-request";
 import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
-import { formatUnits, getAddress, parseUnits, encodeFunctionData, maxInt256 } from "viem";
+import { formatUnits, getAddress, parseUnits, encodeFunctionData } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -61,6 +61,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		throw new Response("Not Found", { status: 404 });
 	}
 
+	const verification = fetch(`https://verify.sealed.art/verification/${to}`)
+		.then((res) => res.json())
+		.catch(() => null);
+
 	const bgColor = typeof brandColor === "string" ? decodeURIComponent(brandColor) : "#23BF91";
 	const textColor = getTextColor(bgColor);
 	const bgColor2 =
@@ -73,7 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					: "#ffffff";
 	const textColor2 = bgColor2 === "#ffffff" ? "#000000" : "#ffffff";
 
-	return { to: getAddress(to), amount, bgColor, textColor, bgColor2, textColor2 };
+	return defer({ to: getAddress(to), amount, bgColor, textColor, bgColor2, textColor2, verification });
 }
 
 const AAVE_YIELD = 0.052;
@@ -394,17 +398,37 @@ export default function Index() {
 							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
 							<span className="sr-only">Navigate back</span>
 						</button>
-						<h1 className="text-lg font-medium text-[var(--page-text-color)] opacity-[0.85]">
-							Subscribe to{" "}
-							<a
-								target="_blank"
-								rel="noreferrer noopener"
-								href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
-								className="underline"
-								suppressHydrationWarning
-							>
-								{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
-							</a>
+						<h1 className="flex flex-wrap items-center gap-1 text-lg font-medium text-[var(--page-text-color)] opacity-[0.85]">
+							<span>Subscribe to</span>
+							<span className="flex flex-nowrap gap-2">
+								<a
+									target="_blank"
+									rel="noreferrer noopener"
+									href={`https://optimistic.etherscan.io/address/${loaderData.to}`}
+									className="underline"
+									suppressHydrationWarning
+								>
+									{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
+								</a>
+								<Suspense fallback={<></>}>
+									<Await resolve={loaderData.verification} errorElement={<></>}>
+										{(verification) => (
+											<>
+												{verification?.twitterUsername ? (
+													<a
+														href={`https://twitter.com/${verification.twitterUsername}`}
+														target="_blank"
+														rel="noreferrer noopener"
+														className="flex items-center"
+													>
+														<Icon name="twitter" className="relative -bottom-[1px] h-4 w-4" />
+													</a>
+												) : null}
+											</>
+										)}
+									</Await>
+								</Suspense>
+							</span>
 						</h1>
 						<p className="mr-auto mt-1 text-4xl font-semibold">
 							<span className="flex items-center justify-center gap-1">
