@@ -94,7 +94,8 @@ export default function Index() {
 	const {
 		data: subs,
 		isLoading: fetchingSubs,
-		error: errorFetchingSubs
+		error: errorFetchingSubs,
+		refetch: refetchSubs
 	} = useQuery(["subs", address, loaderData.to], () => getSubscriptions({ owner: address, receiver: loaderData.to }), {
 		refetchInterval: 20_000
 	});
@@ -121,7 +122,8 @@ export default function Index() {
 
 	const [amountToDepositNotDebounced, setAmountToDeposit] = useState("");
 	const amountToDeposit = useDebounce(amountToDepositNotDebounced);
-
+	const amountToDepositActually =
+		(subs && subs.length > 0 ? subs[0].balanceLeft : 0n) + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals);
 	// get current DAI allowance of user
 	const {
 		data: allowance,
@@ -149,8 +151,7 @@ export default function Index() {
 	});
 
 	// check if input amount is gte to allowance
-	const isApproved =
-		allowance && amountToDeposit.length > 0 ? allowance >= parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) : false;
+	const isApproved = allowance && amountToDeposit.length > 0 ? allowance >= amountToDepositActually : false;
 	const {
 		data: approveTxData,
 		write: approveToken,
@@ -213,6 +214,7 @@ export default function Index() {
 				refetchBalance();
 				refetchAllowance();
 				refetchCurrentPeriod();
+				refetchSubs();
 			}
 		}
 	});
@@ -275,14 +277,9 @@ export default function Index() {
 			const subscribeForNextPeriod = encodeFunctionData({
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "subscribeForNextPeriod",
-				args: [
-					loaderData.to,
-					decimalsAmountPerCycle,
-					subs[0].balanceLeft + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals),
-					instantPayment
-				]
+				args: [loaderData.to, decimalsAmountPerCycle, amountToDepositActually, instantPayment]
 			});
-			const calls = [unsusbcribe, subscribeForNextPeriod];
+			const calls = [...(subs[0].unsubscribed ? [] : [unsusbcribe]), subscribeForNextPeriod];
 			subscriptionExtend?.({ args: [calls, true] });
 		} else {
 			subscribe?.({
@@ -709,10 +706,7 @@ export default function Index() {
 											type="button"
 											onClick={() => {
 												approveToken?.({
-													args: [
-														LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-														parseUnits(amountToDeposit, DAI_OPTIMISM.decimals)
-													]
+													args: [LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions, amountToDepositActually]
 												});
 											}}
 										>
@@ -1090,10 +1084,7 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
 		return formatSubs(
-			(data?.subs ?? []).filter(
-				(s) =>
-					+s.realExpiration > Date.now() / 1e3 && s.unsubscribed === false && +s.startTimestamp !== +s.realExpiration
-			)
+			(data?.subs ?? []).filter((s) => +s.realExpiration > Date.now() / 1e3 && +s.startTimestamp !== +s.realExpiration)
 		);
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");

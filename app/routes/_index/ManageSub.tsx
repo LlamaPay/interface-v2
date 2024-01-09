@@ -220,7 +220,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	});
 	// check if input amount is gte to allowance
 	const isApproved = allowance ? allowance >= amountToDeposit : false;
-	console.log({ isApproved });
+
 	const {
 		data: approveTxData,
 		write: approveToken,
@@ -246,7 +246,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 			}
 		}
 	});
-	console.log({ allowance });
+
 	// Hide table cells if sub expired/cancelled/unsubscribed
 	if (isUnsubscribed || isExpired) {
 		return (
