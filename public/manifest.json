@@ -2,7 +2,7 @@
   "name": "LlamaPay",
   "short_name": "LlamaPay",
   "description": "Automate transactions and stream them by the second.",
-  "iconPath": "/favicon.svg",
+  "iconPath": "/icon.svg",
   "icons": [
     { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
