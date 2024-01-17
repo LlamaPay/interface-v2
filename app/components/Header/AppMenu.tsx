@@ -1,5 +1,6 @@
 import * as Ariakit from "@ariakit/react";
 import type { MenuItemProps, MenuButtonProps } from "@ariakit/react";
+import { Link } from "@remix-run/react";
 import { type ReactNode, forwardRef } from "react";
 import { mainnet, optimism } from "viem/chains";
 import { useAccount, useDisconnect, useEnsName, useNetwork, useSwitchNetwork } from "wagmi";
@@ -32,7 +33,9 @@ export const AppMenu = () => {
 			}
 			className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:hidden"
 		>
-			<Ariakit.MenuDescription className="p-4">{ensName ?? formatAddress(address)}</Ariakit.MenuDescription>
+			<Ariakit.MenuDescription className="w-full p-2 text-left">
+				{ensName ?? formatAddress(address)}
+			</Ariakit.MenuDescription>
 
 			<Menu label="Switch Network" className="p-2">
 				{chains.map((chainx) => {
@@ -56,8 +59,15 @@ export const AppMenu = () => {
 					);
 				})}
 			</Menu>
-
-			<MenuItem onClick={() => disconnect?.()} className="p-4">
+			<MenuItem render={<Link to="/" />} className="w-full p-2 text-left" data-active={location.pathname === "/"}>
+				Dashboard
+			</MenuItem>
+			<MenuItem render={<a href="https://docs.llamapay.io/">Docs</a>} className="w-full p-2 text-left" />
+			<MenuItem
+				render={<a href="https://github.com/banteg/ape-llamapay">Gnosis Safe</a>}
+				className="w-full p-2 text-left"
+			/>
+			<MenuItem onClick={() => disconnect?.()} className="w-full p-2 text-left">
 				Disconnect
 			</MenuItem>
 		</Menu>
@@ -87,7 +97,7 @@ const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu({ label, childr
 			<Ariakit.Menu
 				gutter={8}
 				shift={menu.parent ? -9 : 0}
-				className="flex flex-col items-center gap-1 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-1 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:hidden"
+				className="z-10 flex flex-col items-center gap-1 rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-1 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[#242424] dark:text-white md:hidden"
 			>
 				{children}
 			</Ariakit.Menu>

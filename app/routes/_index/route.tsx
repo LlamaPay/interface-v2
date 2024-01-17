@@ -14,7 +14,7 @@ const Subscriptions = lazy(() => import("./Subscriptions").then((module) => ({ d
 export default function Index() {
 	const hydrated = useHydrated();
 	return (
-		<main className="flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
+		<main className="isolate flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
 				{links.map((l) => (
 					<Link
