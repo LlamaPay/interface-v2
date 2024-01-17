@@ -111,7 +111,7 @@ function App() {
 				<ThemeHead ssrTheme={Boolean(data.theme)} />
 			</head>
 			<body>
-				{location.pathname.startsWith("/subscribe") ? (
+				{location.pathname === "/subscribe" ? (
 					<></>
 				) : (
 					<>

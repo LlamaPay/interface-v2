@@ -12,6 +12,13 @@ export const Nav = () => {
 			>
 				Dashboard
 			</Link>
+			<Link
+				to="/subscribe-to"
+				className="font-semibold text-black data-[active=true]:text-[#13785a] dark:text-white dark:data-[active=true]:text-[#23BF91]"
+				data-active={location.pathname === "/subscribe-to"}
+			>
+				Subscribe
+			</Link>
 			{/* <Link
 				to="/incoming"
 				className="font-semibold text-black data-[active=true]:text-[#13785a] dark:text-white dark:data-[active=true]:text-[#23BF91]"

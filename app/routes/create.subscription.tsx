@@ -1,20 +1,8 @@
-import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { useState } from "react";
 
 import { Icon } from "~/components/Icon";
 import { DAI_OPTIMISM } from "~/lib/constants";
-
-export const meta: MetaFunction = () => {
-	return [
-		{ title: "Subscriptions - LlamaPay" },
-		{
-			name: "description",
-			content:
-				"Recurring subscriptions while having subscribers also earn yield on their deposits through ERC4626-compatible vaults."
-		}
-	];
-};
 
 export default function Create() {
 	const [receiver, setReceiver] = useState("");

@@ -1,5 +1,5 @@
 import * as Ariakit from "@ariakit/react";
-import { defer, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
+import { defer, type LoaderFunctionArgs } from "@remix-run/node";
 import { Await, Link, useLoaderData } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import request, { gql } from "graphql-request";
@@ -34,17 +34,6 @@ const AccountMenu = lazy(() =>
 const ConnectWallet = lazy(() =>
 	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
 );
-
-export const meta: MetaFunction = () => {
-	return [
-		{ title: "Subscriptions - LlamaPay" },
-		{
-			name: "description",
-			content:
-				"Recurring subscriptions while having subscribers also earn yield on their deposits through ERC4626-compatible vaults."
-		}
-	];
-};
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const searchParams = new URL(request.url).searchParams;

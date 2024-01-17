@@ -62,6 +62,13 @@ export const AppMenu = () => {
 			<MenuItem render={<Link to="/" />} className="w-full p-2 text-left" data-active={location.pathname === "/"}>
 				Dashboard
 			</MenuItem>
+			<MenuItem
+				render={<Link to="/subscribe-to" />}
+				className="w-full p-2 text-left"
+				data-active={location.pathname === "/subscribe-to"}
+			>
+				Subscribe
+			</MenuItem>
 			<MenuItem render={<a href="https://docs.llamapay.io/">Docs</a>} className="w-full p-2 text-left" />
 			<MenuItem
 				render={<a href="https://github.com/banteg/ape-llamapay">Gnosis Safe</a>}
