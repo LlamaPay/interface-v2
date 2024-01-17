@@ -1,5 +1,13 @@
 {
   "name": "LlamaPay",
+  "short_name": "LlamaPay",
   "description": "Automate transactions and stream them by the second.",
-  "iconPath": "/favicons/favicon.svg"
+  "iconPath": "/favicon.svg",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
 }
