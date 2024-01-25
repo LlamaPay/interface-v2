@@ -1,10 +1,17 @@
 import * as Ariakit from "@ariakit/react";
 import { Link } from "@remix-run/react";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useMemo } from "react";
+import { formatUnits } from "viem";
+import { useAccount, useQuery } from "wagmi";
 
+import incomingImg from "~/assets/icons/incoming.svg";
+import outgoingImg from "~/assets/icons/outgoing.svg";
 import spriteHref from "~/assets/icons/sprite2.svg";
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
+import { DAI_OPTIMISM } from "~/lib/constants";
+
+import { getSubscriptions } from "./data";
 
 const defaultSelectedId = "subscriptions";
 
@@ -13,14 +20,44 @@ const Subscriptions = lazy(() => import("./Subscriptions").then((module) => ({ d
 
 export default function Index() {
 	const hydrated = useHydrated();
+	const { address, isConnected } = useAccount();
+
+	const {
+		data: subs,
+		isLoading: fetchingSubs,
+		error: errorFetchingSubs
+	} = useQuery(["subs", address], () => getSubscriptions(address), {
+		refetchInterval: 20_000
+	});
+
+	const { totalEarnings, totalExpenditure } = useMemo(() => {
+		if (!subs || !address) {
+			return { totalEarnings: "0", totalExpenditure: "0" };
+		}
+		const snapshotTimestamp = new Date().getTime();
+		const activeSubs = subs.filter(
+			(sub) => +sub.startTimestamp <= snapshotTimestamp / 1e3 && +sub.realExpiration >= snapshotTimestamp / 1e3
+		);
+		const totalEarnings = activeSubs.reduce((acc, curr) => {
+			return (acc += curr.receiver === address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
+		}, 0n);
+		const totalExpenditure = activeSubs.reduce((acc, curr) => {
+			return (acc += curr.receiver !== address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
+		}, 0n);
+		return {
+			totalEarnings: formatUnits(totalEarnings, DAI_OPTIMISM.decimals),
+			totalExpenditure: formatUnits(totalExpenditure, DAI_OPTIMISM.decimals)
+		};
+	}, [subs, address]);
+
 	return (
 		<main className="isolate flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
-			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
+			<div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
 				{links.map((l) => (
 					<Link
 						to={l.to}
 						key={l.to}
-						className="flex flex-nowrap items-center gap-2 rounded-lg border border-black/5  bg-[#FCFFFE] p-3 shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]"
+						className="flex flex-nowrap items-center gap-2 rounded-lg border border-black/5 bg-[#FCFFFE] p-3  shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] hover:border-black dark:border-white/5 dark:bg-[#1a1a1a] dark:hover:border-white"
 					>
 						<svg className="h-8 w-8">
 							<use href={`${spriteHref}#${l.iconId}`} />
@@ -32,6 +69,32 @@ export default function Index() {
 						<Icon name="arrow-right" className="ml-4 h-4 w-4" />
 					</Link>
 				))}
+				<div className="flex flex-col gap-1 rounded-lg border border-black/5 bg-[#FCFFFE]  p-3 text-sm shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]">
+					<p className="flex items-center gap-1">
+						<img src={incomingImg} alt="incoming" />
+						<span>Earnings : </span>
+						{isConnected && subs ? (
+							<span className="flex flex-nowrap items-center gap-1">
+								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
+								<span className="whitespace-nowrap">
+									<strong>{totalEarnings}</strong> DAI / month
+								</span>
+							</span>
+						) : null}
+					</p>
+					<p className="flex items-center gap-1">
+						<img src={outgoingImg} alt="incoming" />
+						<span>Expenses : </span>
+						{isConnected && subs ? (
+							<span className="flex flex-nowrap items-center gap-1">
+								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
+								<span className="whitespace-nowrap">
+									<strong>{totalExpenditure}</strong> DAI / month
+								</span>
+							</span>
+						) : null}
+					</p>
+				</div>
 			</div>
 			<div className="rounded-lg border border-black/5 bg-[#FCFFFE] shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]">
 				<Ariakit.TabProvider defaultSelectedId={defaultSelectedId}>

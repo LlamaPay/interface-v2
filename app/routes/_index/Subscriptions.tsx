@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { request, gql } from "graphql-request";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { formatUnits, getAddress } from "viem";
 import { optimism } from "viem/chains";
 import { useAccount } from "wagmi";
@@ -12,49 +11,10 @@ import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
-import { type IFormattedSub, type ISub } from "~/types";
+import { type IFormattedSub } from "~/types";
 
+import { getSubscriptions } from "./data";
 import { ManageSub } from "./ManageSub";
-import { SUB_CHAIN_LIB, formatSubs } from "./utils";
-
-async function getSubscriptions(address?: string) {
-	try {
-		if (!address) return null;
-
-		const subs = gql`
-			{
-				subs(
-					where: {
-						or: [
-							{ owner: "${address.toLowerCase()}" },
-							{ receiver: "${address.toLowerCase()}" }
-						]
-					}
-					orderBy: realExpiration
-					orderDirection: desc
-				) {
-					id
-					owner
-					receiver
-					startTimestamp
-					unsubscribed
-					initialShares
-					initialPeriod
-					expirationDate
-					amountPerCycle
-					realExpiration
-					accumulator
-					creationTx
-				}
-			}
-		`;
-		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
-
-		return formatSubs(data?.subs ?? []);
-	} catch (error: any) {
-		throw new Error(error.message ?? "Failed to fetch subscriptions");
-	}
-}
 
 export const Subscriptions = () => {
 	const { address } = useAccount();
@@ -66,26 +26,6 @@ export const Subscriptions = () => {
 	} = useQuery(["subs", address], () => getSubscriptions(address), {
 		refetchInterval: 20_000
 	});
-
-	const { totalEarnings, totalExpenditure } = useMemo(() => {
-		if (!subs || !address) {
-			return { totalEarnings: "0", totalExpenditure: "0" };
-		}
-		const snapshotTimestamp = new Date().getTime();
-		const activeSubs = subs.filter(
-			(sub) => +sub.startTimestamp <= snapshotTimestamp / 1e3 && +sub.realExpiration >= snapshotTimestamp / 1e3
-		);
-		const totalEarnings = activeSubs.reduce((acc, curr) => {
-			return (acc += curr.receiver === address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
-		}, 0n);
-		const totalExpenditure = activeSubs.reduce((acc, curr) => {
-			return (acc += curr.receiver !== address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
-		}, 0n);
-		return {
-			totalEarnings: formatUnits(totalEarnings, DAI_OPTIMISM.decimals),
-			totalExpenditure: formatUnits(totalExpenditure, DAI_OPTIMISM.decimals)
-		};
-	}, [subs, address]);
 
 	const hydrated = useHydrated();
 
@@ -126,26 +66,6 @@ export const Subscriptions = () => {
 				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
 				<>
-					<div className="mb-5 flex flex-wrap items-center gap-4">
-						<p className="flex gap-2 rounded-lg border border-green-500 p-2">
-							<span>Total Earnings : </span>
-							<span className="flex flex-nowrap items-center gap-1">
-								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-								<span className="whitespace-nowrap">
-									<strong>{totalEarnings}</strong> DAI / month
-								</span>
-							</span>
-						</p>
-						<p className="flex gap-2 rounded-lg border border-red-500 p-2">
-							<span>Total Expenses : </span>
-							<span className="flex flex-nowrap items-center gap-1">
-								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-								<span className="whitespace-nowrap">
-									<strong>{totalExpenditure}</strong> DAI / month
-								</span>
-							</span>
-						</p>
-					</div>
 					<table className="w-full border-collapse">
 						<thead>
 							<tr>
