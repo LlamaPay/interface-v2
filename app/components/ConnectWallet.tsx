@@ -43,11 +43,10 @@ export const ConnectWallet = ({ className, chainId = optimism.id }: { className:
 				<Ariakit.DialogHeading className="text-center text-lg font-semibold">Connect Wallet</Ariakit.DialogHeading>
 
 				<button
-					className="absolute right-6 top-[26px] flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-black/20"
+					className="absolute right-6 top-[26px] flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-black dark:bg-black/20 dark:text-white"
 					onClick={dialog.toggle}
 				>
 					<Icon className="h-4 w-4 flex-shrink-0" name="x-icon" />
-
 					<span className="sr-only">Close Dialog</span>
 				</button>
 
@@ -56,7 +55,12 @@ export const ConnectWallet = ({ className, chainId = optimism.id }: { className:
 						<li key={connector.id} className="flex items-center">
 							<button
 								disabled={!connector.ready}
-								onClick={() => connect({ connector, chainId })}
+								onClick={() => {
+									connect({ connector, chainId });
+									if (!error) {
+										dialog.toggle();
+									}
+								}}
 								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20"
 							>
 								{isLoading && pendingConnector?.id === connector.id ? (
