@@ -216,6 +216,7 @@ export default function Index() {
 				refetchSubs();
 				if (loaderData.closeAfterPayment === "true") {
 					window.close();
+					window?.opener?.postMessage("payment_success", "*");
 				}
 			}
 		}
