@@ -215,8 +215,8 @@ export default function Index() {
 				refetchCurrentPeriod();
 				refetchSubs();
 				if (loaderData.closeAfterPayment === "true") {
-					window.close();
 					window?.opener?.postMessage("payment_success", "*");
+					window.close();
 				}
 			}
 		}
