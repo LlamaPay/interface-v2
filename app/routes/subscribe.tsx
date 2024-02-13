@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const to = searchParams.get("to");
 	const amount = searchParams.get("amount");
 	const brandColor = searchParams.get("brandColor");
+	const closeAfterPayment = searchParams.get("closeAfterPayment");
 	if (
 		typeof to !== "string" ||
 		typeof amount !== "string" ||
@@ -66,7 +67,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					: "#ffffff";
 	const textColor2 = bgColor2 === "#ffffff" ? "#000000" : "#ffffff";
 
-	return defer({ to: getAddress(to), amount, bgColor, textColor, bgColor2, textColor2, verification });
+	return defer({
+		to: getAddress(to),
+		amount,
+		bgColor,
+		textColor,
+		bgColor2,
+		textColor2,
+		verification,
+		closeAfterPayment
+	});
 }
 
 const AAVE_YIELD = 0.052;
@@ -204,6 +214,10 @@ export default function Index() {
 				refetchAllowance();
 				refetchCurrentPeriod();
 				refetchSubs();
+				if (loaderData.closeAfterPayment === "true") {
+					window?.opener?.postMessage("payment_success", "*");
+					window.close();
+				}
 			}
 		}
 	});
