@@ -302,7 +302,8 @@ export default function Index() {
 		waitingForSubscriptionTxDataOnChain ||
 		confirmingSubscriptionExtension ||
 		fetchingSubs ||
-		amountToDeposit.length === 0;
+		amountToDeposit.length === 0 ||
+		+amountToDeposit < +loaderData.amount;
 	const disableApprove = disableAll || isApproved;
 	const disableSubscribe =
 		disableAll ||
