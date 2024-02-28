@@ -12,12 +12,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 	if (!isTheme(theme)) {
 		return json({
 			success: false,
-			message: `theme value of ${theme} is not a valid theme`
+			message: `theme value of ${theme} is not a valid theme`,
 		});
 	}
 
 	themeSession.setTheme(theme);
-	return json({ success: true }, { headers: { "Set-Cookie": await themeSession.commit() } });
+	return json(
+		{ success: true },
+		{ headers: { "Set-Cookie": await themeSession.commit() } },
+	);
 };
 
 export const loader = async () => redirect("/", { status: 404 });

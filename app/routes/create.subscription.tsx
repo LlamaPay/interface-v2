@@ -9,17 +9,22 @@ export default function Create() {
 	const [amount, setAmount] = useState("");
 	const [bgColor, setBgColor] = useState("#23BF91");
 	const url = `https://subscriptions.llamapay.io/subscribe?to=${receiver}&amount=${amount}&brandColor=${encodeURIComponent(
-		bgColor
+		bgColor,
 	)}`;
 	return (
 		<main className="relative mx-auto flex w-full max-w-[450px] flex-col gap-5 px-4 py-9 md:-left-[102px]">
-			<Link to="/" className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]">
+			<Link
+				to="/"
+				className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]"
+			>
 				<Icon name="arrow-left-sm" className="h-4 w-4 flex-shrink-0" />
 				<span>Dashboard</span>
 			</Link>
 
 			<form className="flex flex-col gap-4">
-				<h1 className="mb-4 text-center text-xl font-medium">Create A Subscription Page</h1>
+				<h1 className="mb-4 text-center text-xl font-medium">
+					Create A Subscription Page
+				</h1>
 				<label className="relative flex flex-col gap-1">
 					<span>Receiver Address</span>
 					<input
