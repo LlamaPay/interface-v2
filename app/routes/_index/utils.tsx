@@ -26,12 +26,12 @@ export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
 		const startTimestamp = +sub.startTimestamp;
 		const initialPeriod = +sub.initialPeriod;
-		const amountPerCycle = +sub.amountPerCycle;
+
 		const realExpiration = +sub.realExpiration;
 		const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
 		const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
 		const fullCycles = (realExpiration - fullPeriodStartingTime) / SUBSCRIPTION_DURATION;
-		const amountPaidFully = fullCycles * amountPerCycle;
+
 		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
 		const totalCycles = fullCycles + partialCycles;
 
@@ -43,7 +43,6 @@ export const formatSubs = (data: Array<ISub>) => {
 			...sub,
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
-			balanceLeft: BigInt(amountPaidFully),
 			subDuration: totalDays * 24 * 60 * 60
 		} as IFormattedSub;
 	});

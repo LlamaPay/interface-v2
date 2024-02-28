@@ -15,7 +15,15 @@ import { formatNum } from "~/utils/formatNum";
 
 import { SUB_CHAIN_LIB, subsContract, contract, client } from "./utils";
 
-async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedSub; contract: any; client: any }) {
+export async function calculateSubBalance({
+	sub,
+	contract,
+	client
+}: {
+	sub: IFormattedSub;
+	contract: any;
+	client: any;
+}) {
 	if (!sub) return null;
 	const initialShares = BigInt(sub.initialShares);
 
@@ -68,6 +76,7 @@ async function calculateSubBalance({ sub, contract, client }: { sub: IFormattedS
 		const balance: bigint = await contract.read.convertToAssets([
 			initialShares - (subsetAccumulator * BigInt(sub.amountPerCycle)) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR)
 		]);
+
 		return balance;
 	}
 }

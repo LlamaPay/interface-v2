@@ -26,7 +26,8 @@ import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
+import { calculateSubBalance } from "./_index/ManageSub";
+import { SUB_CHAIN_LIB, formatSubs, contract, client } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
@@ -123,6 +124,7 @@ export default function Index() {
 	const amountToDeposit = useDebounce(amountToDepositNotDebounced);
 	const amountToDepositActually =
 		(subs && subs.length > 0 ? subs[0].balanceLeft : 0n) + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals);
+
 	// get current DAI allowance of user
 	const {
 		data: allowance,
@@ -1086,9 +1088,16 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 		`;
 		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
-		return formatSubs(
+		const fSubs = formatSubs(
 			(data?.subs ?? []).filter((s) => +s.realExpiration > Date.now() / 1e3 && +s.startTimestamp !== +s.realExpiration)
 		);
+
+		const balances = await Promise.allSettled(fSubs.map((sub) => calculateSubBalance({ sub, contract, client })));
+
+		return fSubs.map((fsub, index) => ({
+			...fsub,
+			balanceLeft: balances[index].status === "fulfilled" ? (balances[index] as { value: bigint }).value : 0n
+		}));
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}
