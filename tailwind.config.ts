@@ -4,7 +4,7 @@ export default {
 	darkMode: "class",
 	content: ["./app/**/*.{js,jsx,ts,tsx}"],
 	theme: {
-		extend: {},
+		extend: {}
 	},
-	plugins: [],
+	plugins: []
 } satisfies Config;

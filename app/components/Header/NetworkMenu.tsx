@@ -7,10 +7,7 @@ import optimismLogo from "~/assets/chains/optimism.svg";
 import { Icon } from "~/components/Icon";
 import { formatChainName } from "~/utils/formatChainName";
 
-const logos: Record<number, string> = {
-	[mainnet.id]: ethereumLogo,
-	[optimism.id]: optimismLogo,
-};
+const logos: Record<number, string> = { [mainnet.id]: ethereumLogo, [optimism.id]: optimismLogo };
 
 export const NetworkMenu = () => {
 	const { chain, chains } = useNetwork();
@@ -22,19 +19,10 @@ export const NetworkMenu = () => {
 				<>
 					<span className="sr-only">Switch network from </span>
 					<span className="h-4 w-4 rounded-full">
-						{chain && logos[chain.id] ? (
-							<img
-								src={logos[chain.id]}
-								alt=""
-								className="h-4 w-4 rounded-full"
-							/>
-						) : null}
+						{chain && logos[chain.id] ? <img src={logos[chain.id]} alt="" className="h-4 w-4 rounded-full" /> : null}
 					</span>
 					<span>{chain ? formatChainName(chain.name) : ""}</span>
-					<Icon
-						className="h-4 w-4 flex-shrink-0 text-[#3D3D3D] dark:text-white/60"
-						name="arrow-select"
-					/>
+					<Icon className="h-4 w-4 flex-shrink-0 text-[#3D3D3D] dark:text-white/60" name="arrow-select" />
 				</>
 			</Ariakit.MenuButton>
 			<Ariakit.Menu
@@ -50,11 +38,7 @@ export const NetworkMenu = () => {
 						>
 							<span className="h-4 w-4 rounded-full">
 								{chain && logos[chain.id] ? (
-									<img
-										src={logos[chain.id]}
-										alt=""
-										className="h-4 w-4 rounded-full"
-									/>
+									<img src={logos[chain.id]} alt="" className="h-4 w-4 rounded-full" />
 								) : null}
 							</span>
 							<span>{chain ? formatChainName(chain.name) : ""}</span>

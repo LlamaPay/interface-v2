@@ -2,15 +2,13 @@ export const ENS_RESOLVER_ABI = [
 	{
 		inputs: [{ internalType: "contract ENS", name: "_ens", type: "address" }],
 		stateMutability: "nonpayable",
-		type: "constructor",
+		type: "constructor"
 	},
 	{
-		inputs: [
-			{ internalType: "address[]", name: "addresses", type: "address[]" },
-		],
+		inputs: [{ internalType: "address[]", name: "addresses", type: "address[]" }],
 		name: "getNames",
 		outputs: [{ internalType: "string[]", name: "r", type: "string[]" }],
 		stateMutability: "view",
-		type: "function",
-	},
+		type: "function"
+	}
 ];

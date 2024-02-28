@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { http, createPublicClient } from "viem";
+import { createPublicClient, http } from "viem";
 import { mainnet } from "viem/chains";
 import { useEnsName } from "wagmi";
 
@@ -11,21 +11,19 @@ const getEnsName = async ({ address }: { address?: string }) => {
 		if (!address) return null;
 		const client = createPublicClient({
 			chain: mainnet,
-			transport: http(LLAMAPAY_CHAINS_LIB[mainnet.id].rpc),
+			transport: http(LLAMAPAY_CHAINS_LIB[mainnet.id].rpc)
 		});
 
 		const name = await client.readContract({
 			address: MAINNET_ENS_RESOLVER,
 			abi: ENS_RESOLVER_ABI,
 			functionName: "getNames",
-			args: [[address.toLowerCase()]],
+			args: [[address.toLowerCase()]]
 		});
 		const username = (name as Array<string>)?.[0];
 		return username && username.length > 0 ? username : null;
 	} catch (error) {
-		throw new Error(
-			error instanceof Error ? error.message : "Failed to fetch ens name",
-		);
+		throw new Error(error instanceof Error ? error.message : "Failed to fetch ens name");
 	}
 };
 

@@ -13,8 +13,8 @@ import { DAI_OPTIMISM } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type IFormattedSub } from "~/types";
 
-import { ManageSub } from "./ManageSub";
 import { getSubscriptions } from "./data";
+import { ManageSub } from "./ManageSub";
 
 export const Subscriptions = () => {
 	const { address } = useAccount();
@@ -22,9 +22,9 @@ export const Subscriptions = () => {
 	const {
 		data: subs,
 		isLoading: fetchingSubs,
-		error: errorFetchingSubs,
+		error: errorFetchingSubs
 	} = useQuery(["subs", address], () => getSubscriptions(address), {
-		refetchInterval: 20_000,
+		refetchInterval: 20_000
 	});
 
 	const hydrated = useHydrated();
@@ -35,26 +35,20 @@ export const Subscriptions = () => {
 		if (subs && selectedSnapshotDate !== "" && address) {
 			const snapshotTimestamp = new Date(selectedSnapshotDate).getTime();
 			const activeSubs = subs.filter(
-				(sub) =>
-					+sub.startTimestamp <= snapshotTimestamp / 1e3 &&
-					+sub.realExpiration >= snapshotTimestamp / 1e3,
+				(sub) => +sub.startTimestamp <= snapshotTimestamp / 1e3 && +sub.realExpiration >= snapshotTimestamp / 1e3
 			);
 			const rows = [["Address", "Amount per month"]];
-
-			for (const sub of activeSubs) {
+			activeSubs.forEach((sub) => {
 				const incoming = sub.receiver === address.toLowerCase();
 				if (incoming) {
 					rows.push([
 						incoming ? sub.owner : sub.receiver,
-						formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals),
+						formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals)
 					]);
 				}
-			}
+			});
 
-			download(
-				`subscriptions-snapshot-${selectedSnapshotDate}.csv`,
-				rows.map((r) => r.join(",")).join("\n"),
-			);
+			download(`subscriptions-snapshot-${selectedSnapshotDate}.csv`, rows.map((r) => r.join(",")).join("\n"));
 		}
 	};
 
@@ -63,32 +57,23 @@ export const Subscriptions = () => {
 			{!hydrated || fetchingSubs ? (
 				<p className="text-center text-sm">Loading...</p>
 			) : !address ? (
-				<p className="text-center text-sm">
-					Connect wallet to view your subscriptions
-				</p>
+				<p className="text-center text-sm">Connect wallet to view your subscriptions</p>
 			) : errorFetchingSubs || !subs ? (
 				<p className="text-center text-sm text-red-500">
-					{(errorFetchingSubs as any)?.message ??
-						"Failed to fetch subscriptions"}
+					{(errorFetchingSubs as any)?.message ?? "Failed to fetch subscriptions"}
 				</p>
 			) : subs.length === 0 ? (
-				<p className="text-center text-sm text-orange-500">
-					You do not have any subscriptions
-				</p>
+				<p className="text-center text-sm text-orange-500">You do not have any subscriptions</p>
 			) : (
 				<>
 					<table className="w-full border-collapse">
 						<thead>
 							<tr>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Type
-								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Type</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Address
 								</th>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Tier
-								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tier</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Time Left
 								</th>
@@ -98,12 +83,10 @@ export const Subscriptions = () => {
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Balance
 								</th>
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]" />
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]" />
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]" />
-								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
-									Tx
-								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]"></th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">Tx</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -151,27 +134,23 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 		data.startTimestamp === data.realExpiration
 			? "Cancelled"
 			: +data.startTimestamp > Date.now() / 1e3
-			  ? "Not yet started"
-			  : +data.realExpiration < Date.now() / 1e3
-				  ? "Expired"
-				  : "Active";
+				? "Not yet started"
+				: +data.realExpiration < Date.now() / 1e3
+					? "Expired"
+					: "Active";
 
 	const incoming = data.receiver === address.toLowerCase();
 
 	const subAddress = incoming ? data.owner : data.receiver;
 
 	const { data: ensName } = useGetEnsName({
-		address: getAddress(subAddress),
+		address: getAddress(subAddress)
 	});
 
 	return (
 		<tr>
 			<td className="p-3" title={incoming ? "Incoming" : "Outgoing"}>
-				{incoming ? (
-					<img src={incomingImg} alt="incoming" />
-				) : (
-					<img src={outgoingImg} alt="outgoing" />
-				)}
+				{incoming ? <img src={incomingImg} alt="incoming" /> : <img src={outgoingImg} alt="outgoing" />}
 			</td>
 			<td className="p-3">
 				<a
@@ -180,7 +159,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					href={`https://optimistic.etherscan.io/address/${subAddress}`}
 					className="underline"
 				>
-					{ensName ?? `${subAddress.slice(0, 4)}...${subAddress.slice(-4)}`}
+					{ensName ?? subAddress.slice(0, 4) + "..." + subAddress.slice(-4)}
 				</a>
 			</td>
 			<td className="p-3">
@@ -188,7 +167,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 					<span className="whitespace-nowrap">{`${formatUnits(
 						BigInt(data.amountPerCycle),
-						DAI_OPTIMISM.decimals,
+						DAI_OPTIMISM.decimals
 					)} DAI / month`}</span>
 				</span>
 			</td>
@@ -196,9 +175,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 				{status === "Active" ? (
 					<p
 						className="whitespace-nowrap tabular-nums"
-						title={`Expiry: ${new Date(
-							+data.realExpiration * 1000,
-						).toLocaleString()}`}
+						title={`Expiry: ${new Date(+data.realExpiration * 1000).toLocaleString()}`}
 					>
 						<EndsIn deadline={+data.realExpiration * 1000} />
 					</p>
@@ -209,10 +186,10 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 			<td className="whitespace-nowrap p-3">{status}</td>
 			{incoming ? (
 				<>
-					<td className="whitespace-nowrap p-3 text-center" />
-					<td className="whitespace-nowrap p-3 text-center" />
-					<td className="whitespace-nowrap p-3 text-center" />
-					<td className="whitespace-nowrap p-3 text-center" />
+					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
+					<td className="whitespace-nowrap p-3 text-center"></td>
 				</>
 			) : (
 				<ManageSub data={data} />
@@ -233,10 +210,7 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 
 function download(filename: string, text: string) {
 	const element = document.createElement("a");
-	element.setAttribute(
-		"href",
-		`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`,
-	);
+	element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
 	element.setAttribute("download", filename);
 
 	element.style.display = "none";

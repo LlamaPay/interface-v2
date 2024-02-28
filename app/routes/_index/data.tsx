@@ -1,4 +1,4 @@
-import { gql, request } from "graphql-request";
+import { request, gql } from "graphql-request";
 
 import { type ISub } from "~/types";
 
@@ -35,10 +35,7 @@ export async function getSubscriptions(address?: string) {
 				}
 			}
 		`;
-		const data: { subs: Array<ISub> } = await request(
-			SUB_CHAIN_LIB.subgraphs.subscriptions,
-			subs,
-		);
+		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
 
 		return formatSubs(data?.subs ?? []);
 	} catch (error: any) {

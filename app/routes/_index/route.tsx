@@ -15,14 +15,8 @@ import { getSubscriptions } from "./data";
 
 const defaultSelectedId = "subscriptions";
 
-const Claim = lazy(() =>
-	import("./Claim").then((module) => ({ default: module.Claim })),
-);
-const Subscriptions = lazy(() =>
-	import("./Subscriptions").then((module) => ({
-		default: module.Subscriptions,
-	})),
-);
+const Claim = lazy(() => import("./Claim").then((module) => ({ default: module.Claim })));
+const Subscriptions = lazy(() => import("./Subscriptions").then((module) => ({ default: module.Subscriptions })));
 
 export default function Index() {
 	const hydrated = useHydrated();
@@ -31,9 +25,9 @@ export default function Index() {
 	const {
 		data: subs,
 		isLoading: fetchingSubs,
-		error: errorFetchingSubs,
+		error: errorFetchingSubs
 	} = useQuery(["subs", address], () => getSubscriptions(address), {
-		refetchInterval: 20_000,
+		refetchInterval: 20_000
 	});
 
 	const { totalEarnings, totalExpenditure } = useMemo(() => {
@@ -42,25 +36,17 @@ export default function Index() {
 		}
 		const snapshotTimestamp = new Date().getTime();
 		const activeSubs = subs.filter(
-			(sub) =>
-				+sub.startTimestamp <= snapshotTimestamp / 1e3 &&
-				+sub.realExpiration >= snapshotTimestamp / 1e3,
+			(sub) => +sub.startTimestamp <= snapshotTimestamp / 1e3 && +sub.realExpiration >= snapshotTimestamp / 1e3
 		);
 		const totalEarnings = activeSubs.reduce((acc, curr) => {
-			return (acc +=
-				curr.receiver === address.toLowerCase()
-					? BigInt(curr.amountPerCycle)
-					: 0n);
+			return (acc += curr.receiver === address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
 		}, 0n);
 		const totalExpenditure = activeSubs.reduce((acc, curr) => {
-			return (acc +=
-				curr.receiver !== address.toLowerCase()
-					? BigInt(curr.amountPerCycle)
-					: 0n);
+			return (acc += curr.receiver !== address.toLowerCase() ? BigInt(curr.amountPerCycle) : 0n);
 		}, 0n);
 		return {
 			totalEarnings: formatUnits(totalEarnings, DAI_OPTIMISM.decimals),
-			totalExpenditure: formatUnits(totalExpenditure, DAI_OPTIMISM.decimals),
+			totalExpenditure: formatUnits(totalExpenditure, DAI_OPTIMISM.decimals)
 		};
 	}, [subs, address]);
 
@@ -77,12 +63,8 @@ export default function Index() {
 							<use href={`${spriteHref}#${l.iconId}`} />
 						</svg>
 						<span className="flex flex-col">
-							<span className="text-[#111827] dark:text-[#dcdcdc]">
-								{l.name}
-							</span>
-							<span className="text-sm text-[#596575] dark:text-[#838486]">
-								{l.description}
-							</span>
+							<span className="text-[#111827] dark:text-[#dcdcdc]">{l.name}</span>
+							<span className="text-sm text-[#596575] dark:text-[#838486]">{l.description}</span>
 						</span>
 						<Icon name="arrow-right" className="ml-4 h-4 w-4" />
 					</Link>
@@ -116,10 +98,7 @@ export default function Index() {
 			</div>
 			<div className="rounded-lg border border-black/5 bg-[#FCFFFE] shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]">
 				<Ariakit.TabProvider defaultSelectedId={defaultSelectedId}>
-					<Ariakit.TabList
-						className="flex flex-wrap items-center gap-6 p-5 pb-0"
-						aria-label="Mange Subscriptions"
-					>
+					<Ariakit.TabList className="flex flex-wrap items-center gap-6 p-5 pb-0" aria-label="Mange Subscriptions">
 						<Ariakit.Tab
 							className="group flex flex-nowrap items-center gap-1 border-b border-b-transparent pb-3 text-sm font-medium data-[active-item]:border-b-[#13785a] data-[active-item]:text-[#13785a] dark:data-[active-item]:border-b-[#21B58A] dark:data-[active-item]:text-[#21B58A]"
 							id="subscriptions"
@@ -140,24 +119,16 @@ export default function Index() {
 						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
 						tabId="subscriptions"
 					>
-						<Suspense fallback={<p />}>
-							{hydrated ? (
-								<Subscriptions />
-							) : (
-								<p className="text-center text-sm">Loading...</p>
-							)}
+						<Suspense fallback={<></>}>
+							{hydrated ? <Subscriptions /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 					<Ariakit.TabPanel
 						className="mt-1 w-full overflow-x-auto p-5 md:max-w-[calc(100vw-204px-32px-4px)]"
 						tabId="claim"
 					>
-						<Suspense fallback={<p />}>
-							{hydrated ? (
-								<Claim />
-							) : (
-								<p className="text-center text-sm">Loading...</p>
-							)}
+						<Suspense fallback={<></>}>
+							{hydrated ? <Claim /> : <p className="text-center text-sm">Loading...</p>}
 						</Suspense>
 					</Ariakit.TabPanel>
 				</Ariakit.TabProvider>
@@ -171,6 +142,6 @@ const links = [
 		name: "Create a new subscription",
 		description: "Subscriptions made simple",
 		to: "/create/subscription",
-		iconId: "stream",
-	},
+		iconId: "stream"
+	}
 ];

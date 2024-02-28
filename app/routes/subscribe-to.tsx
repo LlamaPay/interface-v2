@@ -7,10 +7,7 @@ export default function Create() {
 	const navigate = useNavigate();
 	return (
 		<main className="relative mx-auto flex w-full max-w-[450px] flex-col gap-5 px-4 py-9 md:-left-[102px]">
-			<Link
-				to="/"
-				className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]"
-			>
+			<Link to="/" className="flex items-center gap-1 text-[#70757d] dark:text-[#9CA3AF]">
 				<Icon name="arrow-left-sm" className="h-4 w-4 flex-shrink-0" />
 				<span>Dashboard</span>
 			</Link>
@@ -20,10 +17,7 @@ export default function Create() {
 				onSubmit={(e) => {
 					e.preventDefault();
 					const form = e.target as HTMLFormElement;
-					navigate(
-						`/subscribe?to=${form.receiver.value}&amount=${form.amount.value}`,
-						{ replace: true },
-					);
+					navigate(`/subscribe?to=${form.receiver.value}&amount=${form.amount.value}`, { replace: true });
 				}}
 			>
 				<label className="relative flex flex-col gap-1">
