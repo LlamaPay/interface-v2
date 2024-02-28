@@ -1,10 +1,17 @@
 import * as Ariakit from "@ariakit/react";
-import { defer, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, defer } from "@remix-run/node";
 import { Await, Link, useLoaderData } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import request, { gql } from "graphql-request";
-import { type CSSProperties, useRef, useState, useEffect, Suspense, lazy } from "react";
-import { formatUnits, getAddress, parseUnits, encodeFunctionData } from "viem";
+import {
+	type CSSProperties,
+	Suspense,
+	lazy,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { encodeFunctionData, formatUnits, getAddress, parseUnits } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -14,14 +21,18 @@ import {
 	useContractWrite,
 	useNetwork,
 	useSwitchNetwork,
-	useWaitForTransaction
+	useWaitForTransaction,
 } from "wagmi";
 
 import { EndsIn } from "~/components/EndsIn";
 import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import { DAI_OPTIMISM, LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
+import {
+	DAI_OPTIMISM,
+	LLAMAPAY_CHAINS_LIB,
+	SUBSCRIPTION_DURATION,
+} from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
@@ -29,10 +40,14 @@ import { formatNum } from "~/utils/formatNum";
 import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
-	import("~/components/Header/AccountMenu").then((module) => ({ default: module.AccountMenu }))
+	import("~/components/Header/AccountMenu").then((module) => ({
+		default: module.AccountMenu,
+	})),
 );
 const ConnectWallet = lazy(() =>
-	import("~/components/ConnectWallet").then((module) => ({ default: module.ConnectWallet }))
+	import("~/components/ConnectWallet").then((module) => ({
+		default: module.ConnectWallet,
+	})),
 );
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -55,16 +70,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		.then((res) => res.json())
 		.catch(() => null);
 
-	const bgColor = typeof brandColor === "string" ? decodeURIComponent(brandColor) : "#23BF91";
+	const bgColor =
+		typeof brandColor === "string" ? decodeURIComponent(brandColor) : "#23BF91";
 	const textColor = getTextColor(bgColor);
 	const bgColor2 =
 		bgColor === "#ffffff"
 			? "#000000"
 			: bgColor === "#000000"
-				? "#ffffff"
-				: textColor === "#ffffff"
-					? "#000000"
-					: "#ffffff";
+			  ? "#ffffff"
+			  : textColor === "#ffffff"
+				  ? "#000000"
+				  : "#ffffff";
 	const textColor2 = bgColor2 === "#ffffff" ? "#000000" : "#ffffff";
 
 	return defer({
@@ -75,7 +91,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		bgColor2,
 		textColor2,
 		verification,
-		closeAfterPayment
+		closeAfterPayment,
 	});
 }
 
@@ -94,27 +110,32 @@ export default function Index() {
 		data: subs,
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs,
-		refetch: refetchSubs
-	} = useQuery(["subs", address, loaderData.to], () => getSubscriptions({ owner: address, receiver: loaderData.to }), {
-		refetchInterval: 20_000
-	});
+		refetch: refetchSubs,
+	} = useQuery(
+		["subs", address, loaderData.to],
+		() => getSubscriptions({ owner: address, receiver: loaderData.to }),
+		{
+			refetchInterval: 20_000,
+		},
+	);
 
 	const isUserAlreadyASubscriber = subs && subs.length > 0;
 	const isUserSubscribedToSameTier =
 		subs &&
 		subs.length > 0 &&
-		`${subs[0].amountPerCycle}` === parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
+		`${subs[0].amountPerCycle}` ===
+			parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
 
 	// get current DAI balance of user
 	const {
 		data: balance,
 		isLoading: fetchingBalance,
 		error: errorFetchingBalance,
-		refetch: refetchBalance
+		refetch: refetchBalance,
 	} = useBalance({
 		address,
 		token: DAI_OPTIMISM.address,
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
 
 	const formRef = useRef<HTMLFormElement>(null);
@@ -122,47 +143,57 @@ export default function Index() {
 	const [amountToDepositNotDebounced, setAmountToDeposit] = useState("");
 	const amountToDeposit = useDebounce(amountToDepositNotDebounced);
 	const amountToDepositActually =
-		(subs && subs.length > 0 ? subs[0].balanceLeft : 0n) + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals);
+		(subs && subs.length > 0 ? subs[0].balanceLeft : 0n) +
+		parseUnits(amountToDeposit, DAI_OPTIMISM.decimals);
 	// get current DAI allowance of user
 	const {
 		data: allowance,
 		error: errorFetchingAllowance,
-		refetch: refetchAllowance
+		refetch: refetchAllowance,
 	} = useContractRead({
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "allowance",
-		args: address && [address, LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions],
+		args: address && [
+			address,
+			LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		],
 		enabled: address ? true : false,
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
 	// get current period from contract
 	const {
 		data: currentPeriod,
 		isLoading: fetchingCurrentPeriod,
 		error: errorFetchingCurrentPeriod,
-		refetch: refetchCurrentPeriod
+		refetch: refetchCurrentPeriod,
 	} = useContractRead({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "currentPeriod",
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
 
 	// check if input amount is gte to allowance
-	const isApproved = allowance && amountToDeposit.length > 0 ? allowance >= amountToDepositActually : false;
+	const isApproved =
+		allowance && amountToDeposit.length > 0
+			? allowance >= amountToDepositActually
+			: false;
 	const {
 		data: approveTxData,
 		write: approveToken,
 		isLoading: confirmingTokenApproval,
-		error: errorConfirmingTokenApproval
+		error: errorConfirmingTokenApproval,
 	} = useContractWrite({
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "approve",
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
-	const { isLoading: waitingForApproveTxConfirmation, error: errorConfirmingApproveTx } = useWaitForTransaction({
+	const {
+		isLoading: waitingForApproveTxConfirmation,
+		error: errorConfirmingApproveTx,
+	} = useWaitForTransaction({
 		hash: approveTxData?.hash,
 		enabled: approveTxData ? true : false,
 		chainId: optimism.id,
@@ -171,35 +202,35 @@ export default function Index() {
 				refetchAllowance();
 				refetchCurrentPeriod();
 			}
-		}
+		},
 	});
 
 	const {
 		data: subscribeTxData,
 		write: subscribe,
 		isLoading: confirmingSubscription,
-		error: errorConfirmingSubscription
+		error: errorConfirmingSubscription,
 	} = useContractWrite({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "subscribe",
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
 	const {
 		data: subscriptionExtendTxData,
 		write: subscriptionExtend,
 		isLoading: confirmingSubscriptionExtension,
-		error: errorConfirmingSubscriptionExtension
+		error: errorConfirmingSubscriptionExtension,
 	} = useContractWrite({
 		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "batch",
-		chainId: optimism.id
+		chainId: optimism.id,
 	});
 	const {
 		data: subscribeTxDataOnChain,
 		isLoading: waitingForSubscriptionTxDataOnChain,
-		error: errorWaitingForSubscriptionTxDataOnChain
+		error: errorWaitingForSubscriptionTxDataOnChain,
 	} = useWaitForTransaction({
 		hash: subscribeTxData?.hash ?? subscriptionExtendTxData?.hash,
 		enabled: subscribeTxData ?? subscriptionExtendTxData ? true : false,
@@ -219,44 +250,57 @@ export default function Index() {
 					window.close();
 				}
 			}
-		}
+		},
 	});
 
 	// amount per cycle from url query params
 	const amountPerCycle = loaderData.amount;
-	const decimalsAmountPerCycle = parseUnits(amountPerCycle, DAI_OPTIMISM.decimals);
+	const decimalsAmountPerCycle = parseUnits(
+		amountPerCycle,
+		DAI_OPTIMISM.decimals,
+	);
 	// duration of current period where user cannot claim money deposited
 	const currentTime = BigInt(Math.floor(Date.now() / 1e3));
 
 	// calculate time left in current cycle
 	let timeLeftInCurrentCycle = 0n;
 	if (currentPeriod) {
-		timeLeftInCurrentCycle = (currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
+		timeLeftInCurrentCycle =
+			(currentPeriod as bigint) + BigInt(SUBSCRIPTION_DURATION) - currentTime;
 		while (timeLeftInCurrentCycle < 0) {
 			timeLeftInCurrentCycle += BigInt(SUBSCRIPTION_DURATION);
 		}
 	}
 	const newCost = decimalsAmountPerCycle;
 	// cost of subscription if user is already a subscriber
-	const oldCost = isUserAlreadyASubscriber ? BigInt(subs[0].amountPerCycle) : 0n;
+	const oldCost = isUserAlreadyASubscriber
+		? BigInt(subs[0].amountPerCycle)
+		: 0n;
 	// if user is updtaing their subscription tier, calculate amount to be paid instantly
 	let instantPayment =
 		isUserAlreadyASubscriber && newCost > oldCost
-			? ((newCost - oldCost) * timeLeftInCurrentCycle) / BigInt(SUBSCRIPTION_DURATION)
+			? ((newCost - oldCost) * timeLeftInCurrentCycle) /
+			  BigInt(SUBSCRIPTION_DURATION)
 			: 0n;
 
 	let amountForCurrentPeriod = 0n;
 	if (currentPeriod) {
 		if (isUserAlreadyASubscriber) {
 			// if users current subscription hasn't started , instant payment should be 0
-			if (subs?.[0]?.startTimestamp ? +subs[0].startTimestamp > Date.now() / 1e3 : false) {
+			if (
+				subs?.[0]?.startTimestamp
+					? +subs[0].startTimestamp > Date.now() / 1e3
+					: false
+			) {
 				instantPayment = 0n;
 				amountForCurrentPeriod = 0n;
 			} else {
 				amountForCurrentPeriod = instantPayment;
 			}
 		} else {
-			amountForCurrentPeriod = (decimalsAmountPerCycle * timeLeftInCurrentCycle) / BigInt(SUBSCRIPTION_DURATION);
+			amountForCurrentPeriod =
+				(decimalsAmountPerCycle * timeLeftInCurrentCycle) /
+				BigInt(SUBSCRIPTION_DURATION);
 		}
 	}
 
@@ -273,36 +317,51 @@ export default function Index() {
 					subs[0].amountPerCycle,
 					subs[0].receiver,
 					subs[0].accumulator,
-					subs[0].initialShares
-				]
+					subs[0].initialShares,
+				],
 			});
 
 			const subscribeForNextPeriod = encodeFunctionData({
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "subscribeForNextPeriod",
-				args: [loaderData.to, decimalsAmountPerCycle, amountToDepositActually, instantPayment]
+				args: [
+					loaderData.to,
+					decimalsAmountPerCycle,
+					amountToDepositActually,
+					instantPayment,
+				],
 			});
-			const calls = [...(subs[0].unsubscribed ? [] : [unsusbcribe]), subscribeForNextPeriod];
+			const calls = [
+				...(subs[0].unsubscribed ? [] : [unsusbcribe]),
+				subscribeForNextPeriod,
+			];
 			subscriptionExtend?.({ args: [calls, true] });
 		} else {
 			subscribe?.({
 				args: [
 					loaderData.to,
 					decimalsAmountPerCycle,
-					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod // amountForFuture
-				]
+					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) -
+						amountForCurrentPeriod, // amountForFuture
+				],
 			});
 		}
 	};
 	// amount that cannot be claimed once subscribed
-	const amountChargedInstantly = formatUnits(amountForCurrentPeriod, DAI_OPTIMISM.decimals);
+	const amountChargedInstantly = formatUnits(
+		amountForCurrentPeriod,
+		DAI_OPTIMISM.decimals,
+	);
 	// amount is only valid if its gte to amount charged instantly
 	const isValidInputAmount = currentPeriod
-		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) + (subs?.[0]?.balanceLeft ?? 0n) >= amountForCurrentPeriod
+		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) +
+				(subs?.[0]?.balanceLeft ?? 0n) >=
+		  amountForCurrentPeriod
 		: +amountToDeposit >= +loaderData.amount;
 	const isValidInputAmountNotDebounced = currentPeriod
-		? parseUnits(amountToDepositNotDebounced, DAI_OPTIMISM.decimals) + (subs?.[0]?.balanceLeft ?? 0n) >=
-			amountForCurrentPeriod
+		? parseUnits(amountToDepositNotDebounced, DAI_OPTIMISM.decimals) +
+				(subs?.[0]?.balanceLeft ?? 0n) >=
+		  amountForCurrentPeriod
 		: +amountToDepositNotDebounced >= +loaderData.amount;
 
 	const disableAll =
@@ -328,17 +387,22 @@ export default function Index() {
 		fetchingCurrentPeriod;
 
 	const { data: ensName } = useGetEnsName({
-		address: loaderData.to
+		address: loaderData.to,
 	});
 
 	// durattion of current period where user cannot claim money deposited
-	const currentPeriodEndsIn = Number(String(currentTime + timeLeftInCurrentCycle)) * 1e3;
+	const currentPeriodEndsIn =
+		Number(String(currentTime + timeLeftInCurrentCycle)) * 1e3;
 	// if user is an existing subscriber, include claimable balance in current subscription
-	const amountAfterDepositing = +formatUnits(subs?.[0]?.balanceLeft ?? 0n, DAI_OPTIMISM.decimals) + +amountToDeposit;
+	const amountAfterDepositing =
+		+formatUnits(subs?.[0]?.balanceLeft ?? 0n, DAI_OPTIMISM.decimals) +
+		+amountToDeposit;
 	// subtract amount charged instantly from claimable amount
 	const claimableAmount = +formatUnits(
-		(subs?.[0]?.balanceLeft ?? 0n) + parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) - amountForCurrentPeriod,
-		DAI_OPTIMISM.decimals
+		(subs?.[0]?.balanceLeft ?? 0n) +
+			parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) -
+			amountForCurrentPeriod,
+		DAI_OPTIMISM.decimals,
 	);
 
 	// montly yield is based only on claimable amount
@@ -347,12 +411,22 @@ export default function Index() {
 	const netCostPerMonth = monthlyYield - +loaderData.amount;
 	const netCostFuture = currentPeriod ? loaderData.amount - monthlyYield : null;
 	// expected subscription duration after depositing
-	const expectedMonthsFuture = netCostFuture ? Math.floor(claimableAmount / netCostFuture) : null;
-	const expectedYears = expectedMonthsFuture && expectedMonthsFuture >= 12 ? (expectedMonthsFuture / 12) | 0 : 0;
+	const expectedMonthsFuture = netCostFuture
+		? Math.floor(claimableAmount / netCostFuture)
+		: null;
+	const expectedYears =
+		expectedMonthsFuture && expectedMonthsFuture >= 12
+			? (expectedMonthsFuture / 12) | 0
+			: 0;
 	const expectedMonths = expectedMonthsFuture ? expectedMonthsFuture % 12 : 0;
 
-	const borderColor = loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
-	const hideTableColumns = !hydrated || amountToDeposit.length === 0 || !isValidInputAmount || !currentPeriod;
+	const borderColor =
+		loaderData.textColor === "#ffffff" ? "border-white/40" : "border-black/40";
+	const hideTableColumns =
+		!hydrated ||
+		amountToDeposit.length === 0 ||
+		!isValidInputAmount ||
+		!currentPeriod;
 
 	return (
 		<main
@@ -361,7 +435,7 @@ export default function Index() {
 					"--page-bg-color": loaderData.bgColor,
 					"--page-text-color": loaderData.textColor,
 					"--page-bg-color-2": loaderData.bgColor2,
-					"--page-text-color-2": loaderData.textColor2
+					"--page-text-color-2": loaderData.textColor2,
 				} as CSSProperties
 			}
 			className="relative col-span-full row-span-full flex flex-col lg:bg-[linear-gradient(to_right,var(--page-bg-color)_50%,var(--page-bg-color-2)_50%)]"
@@ -383,7 +457,7 @@ export default function Index() {
 						</Suspense>
 					) : (
 						<div className="absolute right-4 top-4 flex items-center gap-4">
-							<Suspense fallback={<></>}>
+							<Suspense fallback={<p />}>
 								<AccountMenu className="absolute right-4 top-4 rounded-lg border p-2 text-[var(--page-text-color)] lg:border-[var(--page-bg-color)] lg:text-[var(--page-text-color-2)]" />
 							</Suspense>
 						</div>
@@ -394,7 +468,10 @@ export default function Index() {
 			<div className="flex flex-1 flex-col lg:my-auto lg:flex-none lg:flex-row">
 				<div className="flex-1 bg-[var(--page-bg-color)] text-[var(--page-text-color)]">
 					<div className="mx-auto flex max-w-[650px] flex-col px-4 pb-9 pt-24 lg:ml-auto lg:px-[100px]">
-						<button onClick={goBack} className="absolute top-4 flex items-center gap-1">
+						<button
+							onClick={goBack}
+							className="absolute top-4 flex items-center gap-1"
+						>
 							<Icon name="arrow-left-sm" className="h-6 w-6 flex-shrink-0" />
 							<span className="sr-only">Navigate back</span>
 						</button>
@@ -408,10 +485,11 @@ export default function Index() {
 									className="underline"
 									suppressHydrationWarning
 								>
-									{ensName ?? loaderData.to.slice(0, 6) + "..." + loaderData.to.slice(-6)}
+									{ensName ??
+										`${loaderData.to.slice(0, 6)}...${loaderData.to.slice(-6)}`}
 								</a>
-								<Suspense fallback={<></>}>
-									<Await resolve={loaderData.verification} errorElement={<></>}>
+								<Suspense fallback={<p />}>
+									<Await resolve={loaderData.verification} errorElement={<p />}>
 										{(verification) => (
 											<>
 												{verification?.twitterUsername ? (
@@ -421,7 +499,10 @@ export default function Index() {
 														rel="noreferrer noopener"
 														className="flex items-center"
 													>
-														<Icon name="twitter" className="relative -bottom-[1px] h-4 w-4" />
+														<Icon
+															name="twitter"
+															className="relative -bottom-[1px] h-4 w-4"
+														/>
 													</a>
 												) : null}
 											</>
@@ -433,11 +514,16 @@ export default function Index() {
 						<p className="mr-auto mt-1 text-4xl font-semibold">
 							<span className="flex items-center justify-center gap-1">
 								<img src={DAI_OPTIMISM.img} width={36} height={36} alt="" />
-								<span>{formatNum(+loaderData.amount, 2) + " DAI"}</span>
-								<span className="mb-[2px] mt-auto text-base font-normal opacity-[0.85]">/ month</span>
+								<span>{`${formatNum(+loaderData.amount, 2)} DAI`}</span>
+								<span className="mb-[2px] mt-auto text-base font-normal opacity-[0.85]">
+									/ month
+								</span>
 							</span>
 						</p>
-						<Link to="/" className="mt-10 flex items-center gap-1 text-sm underline opacity-[0.85]">
+						<Link
+							to="/"
+							className="mt-10 flex items-center gap-1 text-sm underline opacity-[0.85]"
+						>
 							<Icon name="cog" className="h-4 w-4 flex-shrink-0" />
 							<span className="">Manage your subscriptions</span>
 						</Link>
@@ -446,11 +532,14 @@ export default function Index() {
 								<ul className="ml-4 mt-10 hidden list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:flex">
 									{isUserAlreadyASubscriber ? (
 										<>
-											<li className="list-disc">You are an existing subscriber</li>
+											<li className="list-disc">
+												You are an existing subscriber
+											</li>
 											{isUserSubscribedToSameTier ? null : (
 												<li className="list-disc">
-													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
-													to {loaderData.amount} DAI per month
+													You are updating your subscription tier from{" "}
+													{formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI to{" "}
+													{loaderData.amount} DAI per month
 												</li>
 											)}
 										</>
@@ -463,13 +552,18 @@ export default function Index() {
 									</li>
 									<li className="list-disc">{`You'll be charged ${formatNum(
 										+amountChargedInstantly,
-										2
+										2,
 									)} DAI instantly`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
-										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
+										{`you'll be charged ${formatNum(
+											+loaderData.amount,
+											2,
+										)} DAI, repeated every 30 days`}
 									</li>
-									<li className="list-disc">{`You can withdraw balance left at any time`}</li>
+									<li className="list-disc">
+										You can withdraw balance left at any time
+									</li>
 								</ul>
 							</>
 						) : null}
@@ -477,7 +571,11 @@ export default function Index() {
 				</div>
 				<div className="flex-1 bg-[var(--page-bg-color-2)] text-[var(--page-text-color-2)] lg:overflow-auto">
 					<div className="mx-auto flex max-w-[650px] flex-col gap-5 overflow-auto px-4 pb-9 pt-9 lg:mr-auto lg:px-[100px] lg:pt-24">
-						<form className="flex flex-col gap-4" onSubmit={handleSubmit} ref={formRef}>
+						<form
+							className="flex flex-col gap-4"
+							onSubmit={handleSubmit}
+							ref={formRef}
+						>
 							<label className="flex flex-col gap-1">
 								<span>Amount to deposit</span>
 
@@ -490,7 +588,7 @@ export default function Index() {
 								>
 									<input
 										name="amountToDeposit"
-										className={`relative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none`}
+										className="relative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none"
 										required
 										autoComplete="off"
 										autoCorrect="off"
@@ -509,28 +607,42 @@ export default function Index() {
 											}
 										}}
 										disabled={
-											confirmingSubscription || waitingForSubscriptionTxDataOnChain || confirmingSubscriptionExtension
+											confirmingSubscription ||
+											waitingForSubscriptionTxDataOnChain ||
+											confirmingSubscriptionExtension
 										}
 									/>
 									<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
-										<p className={`ml-auto flex items-center gap-1 text-xl`}>
-											<img src={DAI_OPTIMISM.img} width={16} height={16} alt="" />
+										<p className="ml-auto flex items-center gap-1 text-xl">
+											<img
+												src={DAI_OPTIMISM.img}
+												width={16}
+												height={16}
+												alt=""
+											/>
 											<span>DAI</span>
 										</p>
-										<p className={`flex items-center gap-1 text-xs`}>
+										<p className="flex items-center gap-1 text-xs">
 											<span>Balance:</span>
 											{!hydrated || fetchingBalance ? (
-												<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400"></span>
+												<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400" />
 											) : !isConnected || errorFetchingBalance ? (
 												<span>-</span>
 											) : (
 												<>
-													<span>{formatNum(balance ? +balance.formatted : null, 2) ?? "0"}</span>
+													<span>
+														{formatNum(
+															balance ? +balance.formatted : null,
+															2,
+														) ?? "0"}
+													</span>
 
 													<button
 														type="button"
 														className="text-[var(--page-text-color-2)] underline"
-														onClick={() => setAmountToDeposit(balance?.formatted ?? "0")}
+														onClick={() =>
+															setAmountToDeposit(balance?.formatted ?? "0")
+														}
 													>
 														Max
 													</button>
@@ -541,15 +653,24 @@ export default function Index() {
 								</span>
 							</label>
 
-							<p className={`flex items-center gap-1 text-sm`}>
+							<p className="flex items-center gap-1 text-sm">
 								<span>Net Cost:</span>
-								{!hydrated || amountToDeposit.length <= 0 || !isValidInputAmount ? (
+								{!hydrated ||
+								amountToDeposit.length <= 0 ||
+								!isValidInputAmount ? (
 									""
 								) : netCostFuture && netCostFuture < 0 ? (
 									<>
 										<span>Free</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
+											<Ariakit.TooltipAnchor
+												render={
+													<Icon
+														name="question-mark-circle"
+														className="h-5 w-5"
+													/>
+												}
+											/>
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 												{`This assumes current yield (${AAVE_YIELD}% APR on your deposits) doesn't go down`}
 											</Ariakit.Tooltip>
@@ -558,26 +679,47 @@ export default function Index() {
 								) : (
 									<>
 										<img src={DAI_OPTIMISM.img} width={14} height={14} alt="" />
-										<span>{`${formatNum(netCostFuture, 2) ?? 0} DAI per month`}</span>
+										<span>{`${
+											formatNum(netCostFuture, 2) ?? 0
+										} DAI per month`}</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
+											<Ariakit.TooltipAnchor
+												render={
+													<Icon
+														name="question-mark-circle"
+														className="h-5 w-5"
+													/>
+												}
+											/>
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
-												{`You will earn 5% APR on your deposits`}
+												You will earn 5% APR on your deposits
 											</Ariakit.Tooltip>
 										</Ariakit.TooltipProvider>
 									</>
 								)}
 							</p>
-							{!hydrated || amountToDeposit.length <= 0 || !isValidInputAmount ? (
-								<p className={`flex items-center gap-1 text-sm`} suppressHydrationWarning>
+							{!hydrated ||
+							amountToDeposit.length <= 0 ||
+							!isValidInputAmount ? (
+								<p
+									className="flex items-center gap-1 text-sm"
+									suppressHydrationWarning
+								>
 									Subscription Ends In:
 								</p>
 							) : expectedMonthsFuture && expectedMonthsFuture < 0 ? (
 								<>
-									<p className={`flex items-center gap-1 text-sm`}>
-										<span>{`Subscription Months: Infinite`}</span>
+									<p className="flex items-center gap-1 text-sm">
+										<span>Subscription Months: Infinite</span>
 										<Ariakit.TooltipProvider showTimeout={0}>
-											<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
+											<Ariakit.TooltipAnchor
+												render={
+													<Icon
+														name="question-mark-circle"
+														className="h-5 w-5"
+													/>
+												}
+											/>
 											<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 												{`This assumes current yield (5% APR on your deposits) doesn't go down`}
 											</Ariakit.Tooltip>
@@ -586,32 +728,65 @@ export default function Index() {
 								</>
 							) : isUserAlreadyASubscriber ? (
 								isUserSubscribedToSameTier ? (
-									<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
-										Subscription Duration: Extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
-										{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
+									<p
+										className="flex flex-wrap items-center gap-1 text-sm"
+										suppressHydrationWarning
+									>
+										Subscription Duration: Extended by{" "}
+										{Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+										{+amountToDeposit / loaderData.amount >= 2
+											? "months"
+											: "month"}
 									</p>
 								) : (
 									<>
-										{subs && subs[0].startTimestamp && +subs[0].startTimestamp > Date.now() / 1e3 ? (
+										{subs?.[0]?.startTimestamp &&
+										+subs[0].startTimestamp > Date.now() / 1e3 ? (
 											expectedMonthsFuture ? (
-												<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+												<p
+													className="flex flex-wrap items-center gap-1 text-sm"
+													suppressHydrationWarning
+												>
 													Subscription Duration:{" "}
-													{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}`}
+													{`${
+														expectedYears > 0
+															? `${expectedYears} ${
+																	expectedYears > 1 ? "Years" : "Year"
+															  }, `
+															: ""
+													}${expectedMonths} ${
+														expectedMonths > 1 ? "Months" : "Month"
+													}`}
 												</p>
 											) : (
-												<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
-													Subscription Duration: Extended by {Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
-													{+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"}
+												<p
+													className="flex flex-wrap items-center gap-1 text-sm"
+													suppressHydrationWarning
+												>
+													Subscription Duration: Extended by{" "}
+													{Math.trunc(+amountToDeposit / loaderData.amount)}{" "}
+													{+amountToDeposit / loaderData.amount >= 2
+														? "months"
+														: "month"}
 												</p>
 											)
 										) : (
-											<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+											<p
+												className="flex flex-wrap items-center gap-1 text-sm"
+												suppressHydrationWarning
+											>
 												Subscription Ends In:{" "}
 												{expectedMonthsFuture ? (
 													<span>
-														{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-															`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
+														{`${
+															expectedYears > 0
+																? `${expectedYears} ${
+																		expectedYears > 1 ? "Years" : "Year"
+																  }, `
+																: ""
+														}${expectedMonths} ${
+															expectedMonths > 1 ? "Months" : "Month"
+														}, `}
 													</span>
 												) : null}
 												{amountToDeposit.length > 0 ? (
@@ -624,12 +799,22 @@ export default function Index() {
 									</>
 								)
 							) : (
-								<p className={`flex flex-wrap items-center gap-1 text-sm`} suppressHydrationWarning>
+								<p
+									className="flex flex-wrap items-center gap-1 text-sm"
+									suppressHydrationWarning
+								>
 									Subscription Ends In:{" "}
 									{expectedMonthsFuture ? (
 										<span>
-											{(expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-												`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `}
+											{`${
+												expectedYears > 0
+													? `${expectedYears} ${
+															expectedYears > 1 ? "Years" : "Year"
+													  }, `
+													: ""
+											}${expectedMonths} ${
+												expectedMonths > 1 ? "Months" : "Month"
+											}, `}
 										</span>
 									) : null}
 									{amountToDeposit.length > 0 ? (
@@ -685,8 +870,8 @@ export default function Index() {
 												confirmingSubscriptionExtension ||
 												amountToDeposit.length === 0
 											}
-										></div>
-										<div className="mx-auto min-h-[4px] w-[2px] flex-1 bg-[var(--page-text-color-2)] opacity-40"></div>
+										/>
+										<div className="mx-auto min-h-[4px] w-[2px] flex-1 bg-[var(--page-text-color-2)] opacity-40" />
 										<div
 											className="mb-3 h-8 w-8 rounded-full border-2 border-[var(--page-text-color-2)] bg-[var(--page-text-color-2)] data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40"
 											data-disabled={
@@ -700,7 +885,7 @@ export default function Index() {
 												amountToDeposit.length === 0 ||
 												disableSubscribe
 											}
-										></div>
+										/>
 									</div>
 									<div className="flex flex-1 flex-col gap-6">
 										<button
@@ -709,24 +894,31 @@ export default function Index() {
 											type="button"
 											onClick={() => {
 												approveToken?.({
-													args: [LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions, amountToDepositActually]
+													args: [
+														LLAMAPAY_CHAINS_LIB[optimism.id].contracts
+															.subscriptions,
+														amountToDepositActually,
+													],
 												});
 											}}
 										>
 											{!hydrated
 												? "Approve"
-												: confirmingTokenApproval || waitingForApproveTxConfirmation
-													? "Confirming..."
-													: isApproved
-														? "Approved"
-														: "Approve"}
+												: confirmingTokenApproval ||
+													  waitingForApproveTxConfirmation
+												  ? "Confirming..."
+												  : isApproved
+													  ? "Approved"
+													  : "Approve"}
 										</button>
 
 										<button
 											className="flex-1 rounded-lg border border-[var(--page-bg-color)] bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:bg-[var(--page-bg-color-2)] disabled:text-[var(--page-text-color-2)] disabled:opacity-60"
 											disabled={disableSubscribe}
 										>
-											{confirmingSubscription || confirmingSubscriptionExtension || waitingForSubscriptionTxDataOnChain
+											{confirmingSubscription ||
+											confirmingSubscriptionExtension ||
+											waitingForSubscriptionTxDataOnChain
 												? "Confirming..."
 												: "Subscribe"}
 										</button>
@@ -734,66 +926,111 @@ export default function Index() {
 								</div>
 							)}
 
-							{currentPeriod && !isValidInputAmountNotDebounced && amountToDepositNotDebounced.length > 0 ? (
-								<p className="break-all text-center text-sm text-red-500">{`Amount less than cost for the current period`}</p>
+							{currentPeriod &&
+							!isValidInputAmountNotDebounced &&
+							amountToDepositNotDebounced.length > 0 ? (
+								<p className="break-all text-center text-sm text-red-500">
+									Amount less than cost for the current period
+								</p>
 							) : null}
 
 							{hydrated && errorConfirmingTokenApproval ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-1>
-									{(errorConfirmingTokenApproval as any)?.shortMessage ?? errorConfirmingTokenApproval.message}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-1
+								>
+									{(errorConfirmingTokenApproval as any)?.shortMessage ??
+										errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
 							{hydrated && errorConfirmingApproveTx ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-2>
-									{(errorConfirmingApproveTx as any)?.shortMessage ?? errorConfirmingApproveTx.message}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-2
+								>
+									{(errorConfirmingApproveTx as any)?.shortMessage ??
+										errorConfirmingApproveTx.message}
 								</p>
 							) : null}
 							{hydrated && errorConfirmingSubscription ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-3>
-									{(errorConfirmingSubscription as any)?.shortMessage ?? errorConfirmingSubscription.message}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-3
+								>
+									{(errorConfirmingSubscription as any)?.shortMessage ??
+										errorConfirmingSubscription.message}
 								</p>
 							) : null}
 							{hydrated && errorConfirmingSubscriptionExtension ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-3>
-									{(errorConfirmingSubscriptionExtension as any)?.shortMessage ??
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-3
+								>
+									{(errorConfirmingSubscriptionExtension as any)
+										?.shortMessage ??
 										errorConfirmingSubscriptionExtension.message}
 								</p>
 							) : null}
 							{hydrated &&
 							errorWaitingForSubscriptionTxDataOnChain &&
 							!(
-								errorWaitingForSubscriptionTxDataOnChain.message.includes("hash") &&
-								errorWaitingForSubscriptionTxDataOnChain.message.includes("could not be found")
+								errorWaitingForSubscriptionTxDataOnChain.message.includes(
+									"hash",
+								) &&
+								errorWaitingForSubscriptionTxDataOnChain.message.includes(
+									"could not be found",
+								)
 							) ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-4>
-									{(errorWaitingForSubscriptionTxDataOnChain as any)?.shortMessage ??
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-4
+								>
+									{(errorWaitingForSubscriptionTxDataOnChain as any)
+										?.shortMessage ??
 										errorWaitingForSubscriptionTxDataOnChain.message}
 								</p>
 							) : null}
 
 							{hydrated && errorFetchingAllowance ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-5>
-									{(errorFetchingAllowance as any)?.shortMessage ?? errorFetchingAllowance.message}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-5
+								>
+									{(errorFetchingAllowance as any)?.shortMessage ??
+										errorFetchingAllowance.message}
 								</p>
 							) : null}
 
 							{hydrated && isConnected && errorFetchingCurrentPeriod ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-6>
-									{(errorFetchingCurrentPeriod as any)?.shortMessage ?? errorFetchingCurrentPeriod.message}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-6
+								>
+									{(errorFetchingCurrentPeriod as any)?.shortMessage ??
+										errorFetchingCurrentPeriod.message}
 								</p>
 							) : null}
 
 							{hydrated && isConnected && errorFetchingSubs ? (
-								<p className="break-all text-center text-sm text-red-500" data-error-7>
-									{`Failed to fetch if you are a current subscriber - ${(errorFetchingSubs as any).message ?? ""}`}
+								<p
+									className="break-all text-center text-sm text-red-500"
+									data-error-7
+								>
+									{`Failed to fetch if you are a current subscriber - ${
+										(errorFetchingSubs as any).message ?? ""
+									}`}
 								</p>
 							) : null}
 
 							{subscribeTxDataOnChain ? (
 								subscribeTxDataOnChain.status === "success" ? (
-									<p className="break-all text-center text-sm text-green-500">Transaction Success</p>
+									<p className="break-all text-center text-sm text-green-500">
+										Transaction Success
+									</p>
 								) : (
-									<p className="break-all text-center text-sm text-red-500">Transaction Failed</p>
+									<p className="break-all text-center text-sm text-red-500">
+										Transaction Failed
+									</p>
 								)
 							) : null}
 						</form>
@@ -803,11 +1040,14 @@ export default function Index() {
 								<ul className="ml-4 mt-10 flex list-disc flex-col gap-2 text-sm text-[var(--page-text-color)] opacity-90 lg:hidden">
 									{isUserAlreadyASubscriber ? (
 										<>
-											<li className="list-disc">You are an existing subscriber</li>
+											<li className="list-disc">
+												You are an existing subscriber
+											</li>
 											{isUserSubscribedToSameTier ? null : (
 												<li className="list-disc">
-													You are updating your subscription tier from {formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI
-													to {loaderData.amount} DAI per month
+													You are updating your subscription tier from{" "}
+													{formatUnits(oldCost, DAI_OPTIMISM.decimals)} DAI to{" "}
+													{loaderData.amount} DAI per month
 												</li>
 											)}
 										</>
@@ -820,13 +1060,18 @@ export default function Index() {
 									</li>
 									<li className="list-disc">{`You'll be charged ${formatNum(
 										+amountChargedInstantly,
-										2
+										2,
 									)} DAI instantly`}</li>
 									<li className="list-disc">
 										After {`${getShortTimeFromDeadline(currentPeriodEndsIn)}`}{" "}
-										{`you'll be charged ${formatNum(+loaderData.amount, 2)} DAI, repeated every 30 days`}
+										{`you'll be charged ${formatNum(
+											+loaderData.amount,
+											2,
+										)} DAI, repeated every 30 days`}
 									</li>
-									<li className="list-disc">{`You can withdraw balance left at any time`}</li>
+									<li className="list-disc">
+										You can withdraw balance left at any time
+									</li>
 								</ul>
 							</>
 						) : null}
@@ -835,22 +1080,35 @@ export default function Index() {
 							<table className="mt-10 min-w-full border-collapse opacity-[0.85]">
 								<tbody>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Your Deposit</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											Your Deposit
+										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm opacity-80">Input Amount</td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm opacity-80">
+												Input Amount
+											</td>
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												<span className="flex flex-nowrap items-center gap-1">
-													<span className="whitespace-nowrap">{formatNum(amountAfterDepositing, 2)} DAI</span>{" "}
-													{subs && subs.length > 0 && subs[0].balanceLeft !== 0n ? (
+													<span className="whitespace-nowrap">
+														{formatNum(amountAfterDepositing, 2)} DAI
+													</span>{" "}
+													{subs &&
+													subs.length > 0 &&
+													subs[0].balanceLeft !== 0n ? (
 														<Ariakit.TooltipProvider showTimeout={0}>
 															<Ariakit.TooltipAnchor
-																render={<Icon name="question-mark-circle" className="h-5 w-5" />}
+																render={
+																	<Icon
+																		name="question-mark-circle"
+																		className="h-5 w-5"
+																	/>
+																}
 															/>
 															<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 																{`Includes remaining balance from current subscription (${formatUnits(
 																	subs[0].balanceLeft,
-																	DAI_OPTIMISM.decimals
+																	DAI_OPTIMISM.decimals,
 																)} DAI)`}
 															</Ariakit.Tooltip>
 														</Ariakit.TooltipProvider>
@@ -865,9 +1123,11 @@ export default function Index() {
 												After Instant Payment
 											</th>
 											{hideTableColumns ? (
-												<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+												<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 											) : (
-												<td className="whitespace-nowrap p-2 pl-6 text-sm">{formatNum(claimableAmount, 2)} DAI</td>
+												<td className="whitespace-nowrap p-2 pl-6 text-sm">
+													{formatNum(claimableAmount, 2)} DAI
+												</td>
 											)}
 										</tr>
 									)}
@@ -876,7 +1136,14 @@ export default function Index() {
 											<span className="flex flex-nowrap items-center gap-1">
 												<span>AAVE Yield</span>
 												<Ariakit.TooltipProvider showTimeout={0}>
-													<Ariakit.TooltipAnchor render={<Icon name="question-mark-circle" className="h-5 w-5" />} />
+													<Ariakit.TooltipAnchor
+														render={
+															<Icon
+																name="question-mark-circle"
+																className="h-5 w-5"
+															/>
+														}
+													/>
 													<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 														Average APY over the last 30 days
 													</Ariakit.Tooltip>
@@ -884,15 +1151,19 @@ export default function Index() {
 											</span>
 										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 										) : (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm">{`${AAVE_YIELD * 100}%`}</td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">{`${
+												AAVE_YIELD * 100
+											}%`}</td>
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Monthly Yield</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											Monthly Yield
+										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{`${monthlyYield < 0 ? "" : "+"}`}
@@ -901,17 +1172,23 @@ export default function Index() {
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Subscription</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											Subscription
+										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 										) : (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm">-{loaderData.amount} DAI</td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm">
+												-{loaderData.amount} DAI
+											</td>
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Net Cost</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											Net Cost
+										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{`${netCostPerMonth < 0 ? "" : "+"}`}
@@ -920,23 +1197,43 @@ export default function Index() {
 										)}
 									</tr>
 									<tr className={`border-b ${borderColor}`}>
-										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">Duration</th>
+										<th className="whitespace-nowrap p-2 pr-6 text-left text-sm font-normal">
+											Duration
+										</th>
 										{hideTableColumns ? (
-											<td className="whitespace-nowrap p-2 pl-6 text-sm"></td>
+											<td className="whitespace-nowrap p-2 pl-6 text-sm" />
 										) : isUserAlreadyASubscriber ? (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{expectedMonthsFuture
-													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}`
-													: `Extended by ${Math.trunc(+amountToDeposit / loaderData.amount)} ${
-															+amountToDeposit / loaderData.amount >= 2 ? "months" : "month"
-														}`}
+													? `${
+															expectedYears > 0
+																? `${expectedYears} ${
+																		expectedYears > 1 ? "Years" : "Year"
+																  }, `
+																: ""
+													  }${expectedMonths} ${
+															expectedMonths > 1 ? "Months" : "Month"
+													  }`
+													: `Extended by ${Math.trunc(
+															+amountToDeposit / loaderData.amount,
+													  )} ${
+															+amountToDeposit / loaderData.amount >= 2
+																? "months"
+																: "month"
+													  }`}
 											</td>
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
 												{expectedMonthsFuture
-													? (expectedYears > 0 ? `${expectedYears} ${expectedYears > 1 ? "Years" : "Year"}, ` : "") +
-														`${expectedMonths} ${expectedMonths > 1 ? "Months" : "Month"}, `
+													? `${
+															expectedYears > 0
+																? `${expectedYears} ${
+																		expectedYears > 1 ? "Years" : "Year"
+																  }, `
+																: ""
+													  }${expectedMonths} ${
+															expectedMonths > 1 ? "Months" : "Month"
+													  }, `
 													: ""}
 												{amountToDeposit.length > 0 ? (
 													<span className="tabular-nums">
@@ -962,8 +1259,8 @@ function hexToRgb(hex: string) {
 		? {
 				r: parseInt(result[1], 16),
 				g: parseInt(result[2], 16),
-				b: parseInt(result[3], 16)
-			}
+				b: parseInt(result[3], 16),
+		  }
 		: null;
 }
 
@@ -974,21 +1271,32 @@ function rgbToRgb(rgb: string) {
 }
 
 function getTextColor(color: string) {
-	const rgb = color.startsWith("#") ? hexToRgb(color) : color.startsWith("rgb") ? rgbToRgb(color) : null;
+	const rgb = color.startsWith("#")
+		? hexToRgb(color)
+		: color.startsWith("rgb")
+		  ? rgbToRgb(color)
+		  : null;
 
 	if (!rgb) return "black";
 
-	const luminance = 0.2126 * rgb["r"] + 0.7152 * rgb["g"] + 0.0722 * rgb["b"];
+	const luminance = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
 	return luminance < 140 ? "#ffffff" : "#000000";
 }
 
 const getShortTimeFromDeadline = (deadline: number) => {
-	const diffTime = Math.abs(new Date().valueOf() - new Date(deadline).valueOf());
+	const diffTime = Math.abs(
+		new Date().valueOf() - new Date(deadline).valueOf(),
+	);
 	let days = diffTime / (24 * 60 * 60 * 1000);
 	let hours = (days % 1) * 24;
 	let minutes = (hours % 1) * 60;
 	let secs = (minutes % 1) * 60;
-	[days, hours, minutes, secs] = [Math.floor(days), Math.floor(hours), Math.floor(minutes), Math.floor(secs)];
+	[days, hours, minutes, secs] = [
+		Math.floor(days),
+		Math.floor(hours),
+		Math.floor(minutes),
+		Math.floor(secs),
+	];
 
 	if (days) {
 		return `${days} days`;
@@ -1026,8 +1334,11 @@ function goBack(e: any) {
 	 * location.
 	 */
 
-	if (newHash === oldHash && (typeof document.referrer !== "string" || document.referrer === "")) {
-		window.setTimeout(function () {
+	if (
+		newHash === oldHash &&
+		(typeof document.referrer !== "string" || document.referrer === "")
+	) {
+		window.setTimeout(() => {
 			// redirect to default location
 			window.location.href = defaultLocation;
 		}, 1000); // set timeout in ms
@@ -1053,7 +1364,13 @@ function useDebounce<T>(value: T, delay?: number): T {
 	return debouncedValue;
 }
 
-async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?: string }) {
+async function getSubscriptions({
+	owner,
+	receiver,
+}: {
+	owner?: string;
+	receiver?: string;
+}) {
 	try {
 		if (!owner || !receiver) return null;
 
@@ -1084,10 +1401,17 @@ async function getSubscriptions({ owner, receiver }: { owner?: string; receiver?
 				}
 			}
 		`;
-		const data: { subs: Array<ISub> } = await request(SUB_CHAIN_LIB.subgraphs.subscriptions, subs);
+		const data: { subs: Array<ISub> } = await request(
+			SUB_CHAIN_LIB.subgraphs.subscriptions,
+			subs,
+		);
 
 		return formatSubs(
-			(data?.subs ?? []).filter((s) => +s.realExpiration > Date.now() / 1e3 && +s.startTimestamp !== +s.realExpiration)
+			(data?.subs ?? []).filter(
+				(s) =>
+					+s.realExpiration > Date.now() / 1e3 &&
+					+s.startTimestamp !== +s.realExpiration,
+			),
 		);
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
