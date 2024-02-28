@@ -22,13 +22,20 @@ const walletIcons = Object.entries({
 	safe,
 	uniswap,
 	walletconnect,
-	rainbow
+	rainbow,
 });
 
-export const ConnectWallet = ({ className, chainId = optimism.id }: { className: string; chainId?: number }) => {
+export const ConnectWallet = ({
+	className,
+	chainId = optimism.id,
+}: {
+	className: string;
+	chainId?: number;
+}) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
-	const { connect, connectors, error, isLoading, pendingConnector } = useConnect();
+	const { connect, connectors, error, isLoading, pendingConnector } =
+		useConnect();
 
 	return (
 		<>
@@ -40,7 +47,9 @@ export const ConnectWallet = ({ className, chainId = optimism.id }: { className:
 				backdrop={<div className="dialog-backdrop" />}
 				className="dialog flex flex-col gap-8"
 			>
-				<Ariakit.DialogHeading className="text-center text-lg font-semibold">Connect Wallet</Ariakit.DialogHeading>
+				<Ariakit.DialogHeading className="text-center text-lg font-semibold">
+					Connect Wallet
+				</Ariakit.DialogHeading>
 
 				<button
 					className="absolute right-6 top-[26px] flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-black dark:bg-black/20 dark:text-white"
@@ -64,7 +73,7 @@ export const ConnectWallet = ({ className, chainId = optimism.id }: { className:
 								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20"
 							>
 								{isLoading && pendingConnector?.id === connector.id ? (
-									<span className="absolute left-[6px] h-1 w-1 animate-ping rounded-full bg-blue-500"></span>
+									<span className="absolute left-[6px] h-1 w-1 animate-ping rounded-full bg-blue-500" />
 								) : null}
 
 								<span className="mr-auto">{connector.name}</span>
@@ -76,16 +85,26 @@ export const ConnectWallet = ({ className, chainId = optimism.id }: { className:
 						</li>
 					))}
 				</ul>
-				{error ? <p className="text-center text-sm text-red-500">{error.message}</p> : null}
+				{error ? (
+					<p className="text-center text-sm text-red-500">{error.message}</p>
+				) : null}
 			</Ariakit.Dialog>
 		</>
 	);
 };
 
 const ConnectorLogo = ({ name }: { name: string }) => {
-	const src = walletIcons.find(([wname]) => name.toLowerCase().includes(wname))?.[1] ?? null;
+	const src =
+		walletIcons.find(([wname]) => name.toLowerCase().includes(wname))?.[1] ??
+		null;
 
 	if (!src) return null;
 
-	return <img src={src} alt="" className="h-6 w-6 flex-shrink-0 rounded-lg object-cover" />;
+	return (
+		<img
+			src={src}
+			alt=""
+			className="h-6 w-6 flex-shrink-0 rounded-lg object-cover"
+		/>
+	);
 };
