@@ -146,6 +146,7 @@ export default function Index() {
 	const amountToDepositActually =
 		(subs && subs.length > 0 ? subs[0].balanceLeft : 0n) +
 		parseUnits(amountToDeposit, DAI_OPTIMISM.decimals);
+
 	// get current DAI allowance of user
 	const {
 		data: allowance,

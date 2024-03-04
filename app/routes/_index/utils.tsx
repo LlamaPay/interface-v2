@@ -35,6 +35,7 @@ export const formatSubs = (data: Array<ISub>) => {
 		const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
 		const fullCycles =
 			(realExpiration - fullPeriodStartingTime) / SUBSCRIPTION_DURATION;
+
 		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
 		const totalCycles = fullCycles + partialCycles;
 

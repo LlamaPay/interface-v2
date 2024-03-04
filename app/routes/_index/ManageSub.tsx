@@ -100,6 +100,13 @@ export async function calculateSubBalance({
 	for (const shares of periodShares) {
 		const finalShares = !shares || shares === 0n ? currentSharePrice : shares;
 		subsetAccumulator += finalShares;
+  }
+  
+		const balance: bigint = await contract.read.convertToAssets([
+			initialShares - (subsetAccumulator * BigInt(sub.amountPerCycle)) / BigInt(SUBSCRIPTION_AMOUNT_DIVISOR)
+		]);
+
+		return balance;
 	}
 
 	const balance: bigint = await contract.read.convertToAssets([
