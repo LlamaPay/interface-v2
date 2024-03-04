@@ -27,7 +27,7 @@ import { formatNum } from "~/utils/formatNum";
 
 import { SUB_CHAIN_LIB, client, contract, subsContract } from "./utils";
 
-async function calculateSubBalance({
+export async function calculateSubBalance({
 	sub,
 	contract,
 	client,

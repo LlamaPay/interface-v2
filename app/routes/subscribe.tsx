@@ -37,7 +37,8 @@ import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
+import { calculateSubBalance } from "./_index/ManageSub";
+import { SUB_CHAIN_LIB, formatSubs, contract, client } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({
@@ -1406,13 +1407,25 @@ async function getSubscriptions({
 			subs,
 		);
 
-		return formatSubs(
+		const fSubs = formatSubs(
 			(data?.subs ?? []).filter(
 				(s) =>
 					+s.realExpiration > Date.now() / 1e3 &&
 					+s.startTimestamp !== +s.realExpiration,
 			),
 		);
+
+		const balances = await Promise.allSettled(
+			fSubs.map((sub) => calculateSubBalance({ sub, contract, client })),
+		);
+
+		return fSubs.map((fsub, index) => ({
+			...fsub,
+			balanceLeft:
+				balances[index].status === "fulfilled"
+					? (balances[index] as { value: bigint }).value
+					: 0n,
+		}));
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}
