@@ -1,53 +1,47 @@
 {
-	"name": "interface-v2",
-	"private": true,
-	"sideEffects": false,
-	"type": "module",
-	"scripts": {
-		"build": "remix build",
-		"dev": "remix dev --manual",
-		"start": "remix-serve ./build/index.js",
-		"typecheck": "tsc",
-		"format": "prettier --write .",
-		"lint": "eslint --cache --cache-location ./node_modules/.cache/eslint ."
-	},
-	"dependencies": {
-		"@ariakit/react": "^0.3.9",
-		"@remix-run/css-bundle": "^2.3.1",
-		"@remix-run/node": "^2.3.1",
-		"@remix-run/react": "^2.3.1",
-		"@remix-run/serve": "^2.3.1",
-		"@tanstack/react-query": "4.36.1",
-		"graphql": "^16.8.1",
-		"graphql-request": "^6.1.0",
-		"isbot": "^3.6.8",
-		"nprogress": "^0.2.0",
-		"react": "^18.2.0",
-		"react-dom": "^18.2.0",
-		"react-hot-toast": "^2.4.1",
-		"viem": "^1.20.0",
-		"wagmi": "^1.4.12"
-	},
-	"devDependencies": {
-		"@remix-run/dev": "^2.3.1",
-		"@types/nprogress": "^0.2.3",
-		"@types/react": "^18.2.20",
-		"@types/react-dom": "^18.2.7",
-		"@typescript-eslint/eslint-plugin": "^6.13.2",
-		"@typescript-eslint/parser": "^6.13.2",
-		"eslint": "^8.55.0",
-		"eslint-config-prettier": "^9.1.0",
-		"eslint-import-resolver-typescript": "^3.6.1",
-		"eslint-plugin-import": "^2.29.0",
-		"eslint-plugin-jsx-a11y": "^6.8.0",
-		"eslint-plugin-react": "^7.33.2",
-		"eslint-plugin-react-hooks": "^4.6.0",
-		"prettier": "^3.1.1",
-		"prettier-plugin-tailwindcss": "^0.5.9",
-		"tailwindcss": "^3.3.6",
-		"typescript": "^5.3.3"
-	},
-	"engines": {
-		"node": ">=18.0.0"
-	}
+  "name": "interface-v2",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "build": "remix vite:build",
+    "dev": "remix vite:dev",
+    "fix": "biome check . --apply",
+    "lint": "biome check .",
+    "start": "remix-serve ./build/server/index.js",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@ariakit/react": "0.3.9",
+    "@remix-run/node": "2.7.2",
+    "@remix-run/react": "2.7.2",
+    "@remix-run/serve": "2.7.2",
+    "@tanstack/react-query": "4.36.1",
+    "@vercel/remix": "^2.8.0",
+    "graphql": "16.8.1",
+    "graphql-request": "6.1.0",
+    "isbot": "5.1.1",
+    "nprogress": "0.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-hot-toast": "2.4.1",
+    "viem": "1.20.0",
+    "wagmi": "1.4.12"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.5.3",
+    "@remix-run/dev": "2.7.2",
+    "@types/nprogress": "0.2.3",
+    "@types/react": "18.2.57",
+    "@types/react-dom": "18.2.19",
+    "autoprefixer": "10.4.17",
+    "postcss": "8.4.35",
+    "tailwindcss": "3.4.1",
+    "typescript": "5.3.3",
+    "vite": "5.1.4",
+    "vite-tsconfig-paths": "4.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

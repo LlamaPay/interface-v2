@@ -1,4 +1,4 @@
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs, json } from "@remix-run/node";
 import { gql, request as grequest } from "graphql-request";
 import { optimism } from "viem/chains";
 
@@ -41,13 +41,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
     }
 `;
-		const data: { subs: Array<ISub> } = await grequest(LLAMAPAY_CHAINS_LIB[optimism.id].subgraphs.subscriptions, subs);
+		const data: { subs: Array<ISub> } = await grequest(
+			LLAMAPAY_CHAINS_LIB[optimism.id].subgraphs.subscriptions,
+			subs,
+		);
 		return json(formatSubs(data?.subs ?? []), {
 			headers: {
-				"Access-Control-Allow-Origin": "*"
-			}
+				"Access-Control-Allow-Origin": "*",
+			},
 		});
 	} catch (error) {
-		throw new Error(error instanceof Error ? error.message : "Failed to fetch subscriptions");
+		throw new Error(
+			error instanceof Error ? error.message : "Failed to fetch subscriptions",
+		);
 	}
 }

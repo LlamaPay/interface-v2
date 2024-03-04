@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { mainnet, optimism } from "viem/chains";
-import { createConfig, configureChains, WagmiConfig } from "wagmi";
+import { WagmiConfig, configureChains, createConfig } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { SafeConnector } from "wagmi/connectors/safe";
 import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
@@ -15,10 +15,10 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 	[
 		jsonRpcProvider({
 			rpc: (chain) => ({
-				http: (LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc
-			})
-		})
-	]
+				http: (LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc,
+			}),
+		}),
+	],
 );
 
 const config = createConfig({
@@ -35,18 +35,18 @@ const config = createConfig({
 					name: "LlamaPay",
 					description: "Automate transactions and stream them by the second.",
 					url: "https://llamapay.io",
-					icons: ["https://llamapay.io/icon.svg"]
-				}
-			}
+					icons: ["https://llamapay.io/icon.svg"],
+				},
+			},
 		}),
 		new SafeConnector({
 			chains,
 			options: {
 				allowedDomains: [/gnosis-safe.io$/, /app.safe.global$/],
-				debug: false
-			}
-		})
-	]
+				debug: false,
+			},
+		}),
+	],
 });
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
