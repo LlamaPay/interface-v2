@@ -38,7 +38,7 @@ import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 import { calculateSubBalance } from "./_index/ManageSub";
-import { SUB_CHAIN_LIB, formatSubs, contract, client } from "./_index/utils";
+import { SUB_CHAIN_LIB, client, contract, formatSubs } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({
