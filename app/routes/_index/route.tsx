@@ -91,7 +91,7 @@ export default function Index() {
 					<p className="flex items-center gap-1">
 						<img src={incomingImg} alt="incoming" />
 						<span>Earnings : </span>
-						{isConnected && subs ? (
+						{hydrated && isConnected && subs ? (
 							<span className="flex flex-nowrap items-center gap-1">
 								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 								<span className="whitespace-nowrap">
@@ -103,7 +103,7 @@ export default function Index() {
 					<p className="flex items-center gap-1">
 						<img src={outgoingImg} alt="incoming" />
 						<span>Expenses : </span>
-						{isConnected && subs ? (
+						{hydrated && isConnected && subs ? (
 							<span className="flex flex-nowrap items-center gap-1">
 								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 								<span className="whitespace-nowrap">

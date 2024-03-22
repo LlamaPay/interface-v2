@@ -11,6 +11,7 @@ export interface ISub {
 	realExpiration: string;
 	accumulator: string;
 	creationTx: string;
+	subsContract: string;
 }
 
 export interface IFormattedSub extends ISub {

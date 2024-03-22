@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { encodeFunctionData, formatUnits, parseUnits } from "viem";
+import { encodeFunctionData, formatUnits, getContract, parseUnits } from "viem";
 import { optimism } from "viem/chains";
 import {
 	erc20ABI,
@@ -25,18 +25,17 @@ import {
 import { type IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, client, contract, subsContract } from "./utils";
+import { SUB_CHAIN_LIB, client } from "./utils";
 
-export async function calculateSubBalance({
-	sub,
-	contract,
-	client,
-}: {
-	sub: IFormattedSub;
-	contract: any;
-	client: any;
-}) {
+export async function calculateSubBalance(sub: IFormattedSub) {
 	if (!sub) return null;
+
+	const contract: any = getContract({
+		address: sub.subsContract as `0x${string}`,
+		abi: SUBSCRIPTIONS_ABI,
+		publicClient: client as any,
+	});
+
 	const initialShares = BigInt(sub.initialShares);
 
 	const currentTimestamp = BigInt(Math.floor(Date.now() / 1e3));
@@ -87,7 +86,20 @@ export async function calculateSubBalance({
 			client
 				.multicall({
 					contracts: periods.map((p) => ({
-						...subsContract,
+						address: sub.subsContract as `0x${string}`,
+						abi: [
+							{
+								inputs: [
+									{ internalType: "uint256", name: "", type: "uint256" },
+								],
+								name: "sharesPerPeriod",
+								outputs: [
+									{ internalType: "uint256", name: "", type: "uint256" },
+								],
+								stateMutability: "view",
+								type: "function",
+							},
+						],
 						functionName: "sharesPerPeriod",
 						args: [p],
 					})),
@@ -120,16 +132,9 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		isLoading: fetchingBalance,
 		error: errorFetchingBalance,
 		refetch: refetchBalance,
-	} = useQuery(
-		["subBalance", data.id],
-		() =>
-			calculateSubBalance({
-				contract,
-				client,
-				sub: data,
-			}),
-		{ refetchInterval: 20_000 },
-	);
+	} = useQuery(["subBalance", data.id], () => calculateSubBalance(data), {
+		refetchInterval: 20_000,
+	});
 
 	// UNSUBSCRIBE
 	const {
@@ -326,12 +331,14 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		<>
 			<td className="p-3 text-center">
 				<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
-					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 					{!fetchingBalance && balance ? (
-						<span className="whitespace-nowrap">{`${formatNum(
-							+formatUnits(balance, DAI_OPTIMISM.decimals),
-							2,
-						)} DAI`}</span>
+						<>
+							<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
+							<span className="whitespace-nowrap">{`${formatNum(
+								+formatUnits(balance, DAI_OPTIMISM.decimals),
+								2,
+							)} DAI`}</span>
+						</>
 					) : null}
 					{errorFetchingBalance ? (
 						<Ariakit.TooltipProvider showTimeout={0}>

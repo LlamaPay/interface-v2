@@ -19,7 +19,7 @@ import {
 } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, client, contract, subsContract } from "./utils";
+import { SUB_CHAIN_LIB, client } from "./utils";
 
 const min = (a: bigint, b: bigint) => (a > b ? b : a);
 // TODO calculate available to claim next month
