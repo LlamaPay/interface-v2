@@ -58,14 +58,14 @@ export const Header = () => {
 						<Suspense
 							fallback={
 								<button
-									className="h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white"
+									className="h-10 rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white"
 									disabled
 								>
 									Connect Wallet
 								</button>
 							}
 						>
-							<ConnectWallet className="h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
+							<ConnectWallet className="h-10 rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white" />
 						</Suspense>
 					) : (
 						<>
@@ -77,7 +77,7 @@ export const Header = () => {
 							</Suspense>
 							<Suspense
 								fallback={
-									<button className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:hidden">
+									<button className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:hidden">
 										<span className="sr-only">Open Menu</span>
 										<Icon
 											className="h-4 w-4 flex-shrink-0 text-[#3D3D3D] dark:text-white/60"
@@ -93,7 +93,7 @@ export const Header = () => {
 				</>
 			) : null}
 			<button
-				className="hidden h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:flex"
+				className="hidden h-10 w-10 items-center justify-center rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:flex"
 				onClick={toggleTheme}
 			>
 				<img src={theme === "dark" ? moon : sun} alt="" className="h-4" />

@@ -38,6 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             realExpiration
             accumulator
             creationTx
+            subsContract
         }
     }
 `;

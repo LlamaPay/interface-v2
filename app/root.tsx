@@ -5,7 +5,6 @@ import type {
 } from "@remix-run/node";
 import {
 	Links,
-	LiveReload,
 	Meta,
 	Outlet,
 	Scripts,
@@ -158,7 +157,6 @@ function App() {
 				<Toaster position="top-right" reverseOrder={false} />
 				<ScrollRestoration />
 				<Scripts />
-				<LiveReload />
 				<link rel="stylesheet" href={nProgressStyles} />
 			</body>
 		</html>

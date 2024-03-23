@@ -65,7 +65,7 @@ export default function Index() {
 	}, [subs, address]);
 
 	return (
-		<main className="isolate flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
+		<main className="isolate relative flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
 				{links.map((l) => (
 					<Link
@@ -91,7 +91,7 @@ export default function Index() {
 					<p className="flex items-center gap-1">
 						<img src={incomingImg} alt="incoming" />
 						<span>Earnings : </span>
-						{isConnected && subs ? (
+						{hydrated && isConnected && subs ? (
 							<span className="flex flex-nowrap items-center gap-1">
 								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 								<span className="whitespace-nowrap">
@@ -103,7 +103,7 @@ export default function Index() {
 					<p className="flex items-center gap-1">
 						<img src={outgoingImg} alt="incoming" />
 						<span>Expenses : </span>
-						{isConnected && subs ? (
+						{hydrated && isConnected && subs ? (
 							<span className="flex flex-nowrap items-center gap-1">
 								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
 								<span className="whitespace-nowrap">

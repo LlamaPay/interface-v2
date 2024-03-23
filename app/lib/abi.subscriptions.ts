@@ -7,11 +7,7 @@ export const SUBSCRIPTIONS_ABI = [
 			{ internalType: "uint256", name: "_currentPeriod", type: "uint256" },
 			{ internalType: "address", name: "rewardRecipient_", type: "address" },
 			{ internalType: "address", name: "stakingRewards_", type: "address" },
-			{
-				internalType: "uint256",
-				name: "minBalanceToTriggerDeposit_",
-				type: "uint256",
-			},
+			{ internalType: "address", name: "owner_", type: "address" },
 		],
 		stateMutability: "nonpayable",
 		type: "constructor",
@@ -168,6 +164,13 @@ export const SUBSCRIPTIONS_ABI = [
 	},
 	{
 		inputs: [],
+		name: "aToken",
+		outputs: [{ internalType: "contract ERC20", name: "", type: "address" }],
+		stateMutability: "view",
+		type: "function",
+	},
+	{
+		inputs: [],
 		name: "asset",
 		outputs: [{ internalType: "contract ERC20", name: "", type: "address" }],
 		stateMutability: "view",
@@ -242,8 +245,8 @@ export const SUBSCRIPTIONS_ABI = [
 	},
 	{
 		inputs: [],
-		name: "minBalanceToTriggerDeposit",
-		outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+		name: "lendingPool",
+		outputs: [{ internalType: "contract IPool", name: "", type: "address" }],
 		stateMutability: "view",
 		type: "function",
 	},
@@ -324,29 +327,15 @@ export const SUBSCRIPTIONS_ABI = [
 	},
 	{
 		inputs: [],
-		name: "rewardsToken",
-		outputs: [{ internalType: "contract ERC20", name: "", type: "address" }],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
-		name: "sendRewards",
-		outputs: [],
-		stateMutability: "nonpayable",
-		type: "function",
-	},
-	{
-		inputs: [
+		name: "rewardsController",
+		outputs: [
 			{
-				internalType: "uint256",
-				name: "_minBalanceToTriggerDeposit",
-				type: "uint256",
+				internalType: "contract IRewardsController",
+				name: "",
+				type: "address",
 			},
 		],
-		name: "setMinBalanceToTriggerDeposit",
-		outputs: [],
-		stateMutability: "nonpayable",
+		stateMutability: "view",
 		type: "function",
 	},
 	{
@@ -369,15 +358,6 @@ export const SUBSCRIPTIONS_ABI = [
 		inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
 		name: "sharesPerPeriod",
 		outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-		stateMutability: "view",
-		type: "function",
-	},
-	{
-		inputs: [],
-		name: "stakingRewards",
-		outputs: [
-			{ internalType: "contract StakingRewards", name: "", type: "address" },
-		],
 		stateMutability: "view",
 		type: "function",
 	},
@@ -433,7 +413,10 @@ export const SUBSCRIPTIONS_ABI = [
 		type: "function",
 	},
 	{
-		inputs: [{ internalType: "uint256", name: "maxToPull", type: "uint256" }],
+		inputs: [
+			{ internalType: "uint256", name: "amount", type: "uint256" },
+			{ internalType: "uint256", name: "maxToPull", type: "uint256" },
+		],
 		name: "triggerDeposit",
 		outputs: [],
 		stateMutability: "nonpayable",
@@ -453,11 +436,4 @@ export const SUBSCRIPTIONS_ABI = [
 		stateMutability: "nonpayable",
 		type: "function",
 	},
-	{
-		inputs: [],
-		name: "vault",
-		outputs: [{ internalType: "contract Yearn", name: "", type: "address" }],
-		stateMutability: "view",
-		type: "function",
-	},
-];
+] as const;

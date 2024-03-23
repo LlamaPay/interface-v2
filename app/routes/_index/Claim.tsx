@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, getContract, parseUnits } from "viem";
 import { optimism } from "viem/chains";
 import {
 	useAccount,
@@ -14,25 +14,31 @@ import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import {
 	DAI_OPTIMISM,
+	LLAMAPAY_CHAINS_LIB,
 	SUBSCRIPTION_AMOUNT_DIVISOR,
 	SUBSCRIPTION_DURATION,
 } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, client, contract, subsContract } from "./utils";
+import { SUB_CHAIN_LIB, client } from "./utils";
+import { Icon } from "~/components/Icon";
 
 const min = (a: bigint, b: bigint) => (a > b ? b : a);
 // TODO calculate available to claim next month
 async function calculateAvailableToClaim({
+	subsContract,
 	receiver,
-	contract,
-	client,
 }: {
+	subsContract: `0x${string}`;
 	receiver?: string;
-	contract: any;
-	client: any;
 }) {
 	if (!receiver) return null;
+
+	const contract: any = getContract({
+		address: subsContract,
+		abi: SUBSCRIPTIONS_ABI,
+		publicClient: client as any,
+	});
 
 	try {
 		const currentTimestamp = Math.floor(Date.now() / 1e3);
@@ -62,7 +68,8 @@ async function calculateAvailableToClaim({
 					client
 						.multicall({
 							contracts: periods.map((p) => ({
-								...subsContract,
+								address: subsContract,
+								abi: SUBSCRIPTIONS_ABI,
 								functionName: "sharesPerPeriod",
 								args: [p],
 							})),
@@ -71,7 +78,8 @@ async function calculateAvailableToClaim({
 					client
 						.multicall({
 							contracts: periods.map((p) => ({
-								...subsContract,
+								address: subsContract,
+								abi: SUBSCRIPTIONS_ABI,
 								functionName: "receiverAmountToExpire",
 								args: [receiver, p],
 							})),
@@ -100,16 +108,20 @@ async function calculateAvailableToClaim({
 }
 
 async function calculateAvailableToClaimNextMonth({
+	subsContract,
 	receiver,
-	contract,
-	client,
 }: {
+	subsContract: `0x${string}`;
 	receiver?: string;
-	contract: any;
-	client: any;
 }) {
 	if (!receiver) return null;
 	try {
+		const contract: any = getContract({
+			address: subsContract as `0x${string}`,
+			abi: SUBSCRIPTIONS_ABI,
+			publicClient: client as any,
+		});
+
 		const receiverBalance = await contract.read.receiverBalances([receiver]);
 		// eslint-disable-next-line
 		const [balance, amountPerPeriod, lastUpdate]: [bigint, bigint, bigint] =
@@ -137,13 +149,103 @@ async function calculateAvailableToClaimNextMonth({
 	}
 }
 
+async function calcAvailableToClaimOnAllContracts({
+	receiver,
+}: {
+	receiver?: string;
+}) {
+	try {
+		const data = await Promise.allSettled([
+			calculateAvailableToClaimNextMonth({
+				subsContract:
+					LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
+				receiver,
+			}),
+			calculateAvailableToClaimNextMonth({
+				subsContract: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+				receiver,
+			}),
+		]);
+
+		const claimables_v1 = data[0].status === "fulfilled" ? data[0].value : null;
+		const claimables_v2 = data[1].status === "fulfilled" ? data[1].value : null;
+
+		return {
+			claimables_v1,
+			claimables_v2,
+			total:
+				typeof claimables_v1 === "bigint" || typeof claimables_v2 === "bigint"
+					? (claimables_v1 ?? 0n) + (claimables_v2 ?? 0n)
+					: null,
+		};
+	} catch (error) {
+		throw new Error(
+			error instanceof Error
+				? error.message
+				: "Failed to fetch claimables next month",
+		);
+	}
+}
+
+async function calcAvailableToClaimNextMonthOnAllContracts({
+	receiver,
+}: {
+	receiver?: string;
+}) {
+	try {
+		const data = await Promise.allSettled([
+			calculateAvailableToClaim({
+				subsContract:
+					LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
+				receiver,
+			}),
+			calculateAvailableToClaim({
+				subsContract: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+				receiver,
+			}),
+		]);
+
+		const claimables_v1 = data[0].status === "fulfilled" ? data[0].value : null;
+		const claimables_v2 = data[1].status === "fulfilled" ? data[1].value : null;
+
+		return {
+			claimables_v1,
+			claimables_v2,
+			total:
+				typeof claimables_v1 === "bigint" || typeof claimables_v2 === "bigint"
+					? (claimables_v1 ?? 0n) + (claimables_v2 ?? 0n)
+					: null,
+		};
+	} catch (error) {
+		throw new Error(
+			error instanceof Error ? error.message : "Failed to fetch claimables",
+		);
+	}
+}
+
 export const Claim = () => {
 	const { address, isConnected } = useAccount();
 	const { chain } = useNetwork();
 	const {
-		data: claimTxData,
-		writeAsync: claim,
-		isLoading: confirmingClaimTx,
+		data: claimTxData_v1,
+		writeAsync: claim_v1,
+		isLoading: confirmingClaimTx_v1,
+	} = useContractWrite({
+		address: SUB_CHAIN_LIB.contracts.subscriptions_v1,
+		abi: SUBSCRIPTIONS_ABI,
+		functionName: "claim",
+		chainId: optimism.id,
+		onError: (err) => {
+			const msg = (err as any)?.shortMessage ?? err.message;
+			toast.error(msg, {
+				id: `error-confirming-claim-tx${claimTxData_v1?.hash ?? ""}`,
+			});
+		},
+	});
+	const {
+		data: claimTxData_v2,
+		writeAsync: claim_v2,
+		isLoading: confirmingClaimTx_v2,
 	} = useContractWrite({
 		address: SUB_CHAIN_LIB.contracts.subscriptions,
 		abi: SUBSCRIPTIONS_ABI,
@@ -152,18 +254,40 @@ export const Claim = () => {
 		onError: (err) => {
 			const msg = (err as any)?.shortMessage ?? err.message;
 			toast.error(msg, {
-				id: `error-confirming-claim-tx${claimTxData?.hash ?? ""}`,
+				id: `error-confirming-claim-tx${claimTxData_v2?.hash ?? ""}`,
 			});
 		},
 	});
-	const { isLoading: waitingForClaimTxDataOnChain } = useWaitForTransaction({
-		hash: claimTxData?.hash,
-		enabled: claimTxData ? true : false,
+	const { isLoading: waitingForClaimTxDataOnChain_v1 } = useWaitForTransaction({
+		hash: claimTxData_v1?.hash,
+		enabled: claimTxData_v1 ? true : false,
 		chainId: optimism.id,
 		onError: (err) => {
 			const msg = (err as any)?.shortMessage ?? err.message;
 			toast.error(msg, {
-				id: `error-confirming-claim-tx-on-chain${claimTxData?.hash ?? ""}`,
+				id: `error-confirming-claim-tx-on-chain${claimTxData_v1?.hash ?? ""}`,
+			});
+		},
+		onSuccess: (data) => {
+			if (data.status === "success") {
+				toast.success("Transaction Success", {
+					id: `tx-success-${data.transactionHash}`,
+				});
+			} else {
+				toast.error("Transaction Failed", {
+					id: `tx-failed-${data.transactionHash}`,
+				});
+			}
+		},
+	});
+	const { isLoading: waitingForClaimTxDataOnChain_v2 } = useWaitForTransaction({
+		hash: claimTxData_v2?.hash,
+		enabled: claimTxData_v2 ? true : false,
+		chainId: optimism.id,
+		onError: (err) => {
+			const msg = (err as any)?.shortMessage ?? err.message;
+			toast.error(msg, {
+				id: `error-confirming-claim-tx-on-chain${claimTxData_v2?.hash ?? ""}`,
 			});
 		},
 		onSuccess: (data) => {
@@ -187,10 +311,8 @@ export const Claim = () => {
 	} = useQuery(
 		["claimable", address],
 		() =>
-			calculateAvailableToClaim({
+			calcAvailableToClaimNextMonthOnAllContracts({
 				receiver: address,
-				contract,
-				client,
 			}),
 		{ refetchInterval: 20_000 },
 	);
@@ -198,10 +320,8 @@ export const Claim = () => {
 		useQuery(
 			["claimable-next-month", address],
 			() =>
-				calculateAvailableToClaimNextMonth({
+				calcAvailableToClaimOnAllContracts({
 					receiver: address,
-					contract,
-					client,
 				}),
 			{ refetchInterval: 20_000 },
 		);
@@ -210,21 +330,66 @@ export const Claim = () => {
 		e.preventDefault();
 		const form = e.target as HTMLFormElement;
 
-		if (!address || !chain || chain.id !== optimism.id || !claimable) return;
+		if (
+			!address ||
+			!chain ||
+			chain.id !== optimism.id ||
+			!claimable ||
+			!claimable.total
+		)
+			return;
 
-		const shares = await contract.read.convertToShares([
-			parseUnits(form.amountToClaim.value, DAI_OPTIMISM.decimals),
-		]);
+		let toClaim = parseUnits(form.amountToClaim.value, DAI_OPTIMISM.decimals);
 
-		await claim?.({
-			args: [min(claimable, shares)],
-		});
+		if (claimable.claimables_v1 && claimable.claimables_v1 > 0) {
+			const contract: any = getContract({
+				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
+				abi: SUBSCRIPTIONS_ABI,
+				publicClient: client as any,
+			});
+
+			const shares = await contract.read.convertToShares([toClaim]);
+
+			await claim_v1?.({
+				args: [min(min(toClaim, claimable.claimables_v1), shares)],
+			});
+
+			toClaim -= claimable.claimables_v1;
+		}
+
+		if (claimable.claimables_v2 && claimable.claimables_v2 > 0 && toClaim > 0) {
+			const contract: any = getContract({
+				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+				abi: SUBSCRIPTIONS_ABI,
+				publicClient: client as any,
+			});
+			const shares = await contract.read.convertToShares([toClaim]);
+
+			await claim_v2?.({
+				args: [min(toClaim, shares)],
+			});
+		}
 
 		form.reset();
 		refetchClaimable();
 	};
 	const [amountToClaim, setAmountToClaim] = useState("");
 	const hydrated = useHydrated();
+
+	const amountToClaimParsed =
+		amountToClaim !== ""
+			? parseUnits(amountToClaim, DAI_OPTIMISM.decimals)
+			: 0n;
+
+	const needToClaimTwoTxs =
+		amountToClaim !== "" &&
+		claimable &&
+		claimable.claimables_v1 &&
+		claimable.total &&
+		amountToClaimParsed > claimable.claimables_v1 &&
+		amountToClaimParsed <= claimable.total
+			? true
+			: false;
 
 	return (
 		<>
@@ -256,7 +421,12 @@ export const Claim = () => {
 									setAmountToClaim(e.target.value.trim());
 								}
 							}}
-							disabled={confirmingClaimTx || waitingForClaimTxDataOnChain}
+							disabled={
+								confirmingClaimTx_v1 ||
+								confirmingClaimTx_v2 ||
+								waitingForClaimTxDataOnChain_v1 ||
+								waitingForClaimTxDataOnChain_v2
+							}
 						/>
 						<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
 							<p className="ml-auto flex items-center gap-1 text-xl">
@@ -272,9 +442,9 @@ export const Claim = () => {
 								) : (
 									<>
 										<span>
-											{typeof claimable === "bigint"
+											{typeof claimable?.total === "bigint"
 												? formatNum(
-														formatUnits(claimable, DAI_OPTIMISM.decimals),
+														formatUnits(claimable.total, DAI_OPTIMISM.decimals),
 														2,
 												  )
 												: "-"}
@@ -285,8 +455,11 @@ export const Claim = () => {
 											className="text-[var(--page-text-color-2)] underline"
 											onClick={() =>
 												setAmountToClaim(
-													claimable
-														? formatUnits(claimable, DAI_OPTIMISM.decimals)
+													claimable?.total
+														? formatUnits(
+																claimable.total,
+																DAI_OPTIMISM.decimals,
+														  )
 														: "0",
 												)
 											}
@@ -316,9 +489,12 @@ export const Claim = () => {
 						<span>-</span>
 					) : (
 						<span>
-							{typeof claimableNextMonth === "bigint"
+							{typeof claimableNextMonth?.total === "bigint"
 								? `${formatNum(
-										formatUnits(claimableNextMonth, DAI_OPTIMISM.decimals),
+										formatUnits(
+											claimableNextMonth.total,
+											DAI_OPTIMISM.decimals,
+										),
 										2,
 								  )} DAI`
 								: "-"}
@@ -333,14 +509,28 @@ export const Claim = () => {
 						!address ||
 						!chain ||
 						chain.id !== optimism.id ||
-						confirmingClaimTx ||
-						waitingForClaimTxDataOnChain
+						confirmingClaimTx_v1 ||
+						waitingForClaimTxDataOnChain_v1 ||
+						confirmingClaimTx_v2 ||
+						waitingForClaimTxDataOnChain_v2 ||
+						!claimable?.total ||
+						amountToClaimParsed > claimable.total
 					}
 				>
-					{confirmingClaimTx || waitingForClaimTxDataOnChain
+					{confirmingClaimTx_v1 ||
+					waitingForClaimTxDataOnChain_v1 ||
+					confirmingClaimTx_v2 ||
+					waitingForClaimTxDataOnChain_v2
 						? "Confirming..."
 						: "Claim"}
 				</button>
+
+				{needToClaimTwoTxs ? (
+					<p className="flex items-center justify-center gap-1 flex-nowrap text-orange-500 text-sm text-center">
+						<Icon name="exclamation-circle" className="h-5 w-5 flex-shrink-0" />
+						<span>You need to confirm two transactions on your wallet</span>
+					</p>
+				) : null}
 			</form>
 		</>
 	);

@@ -38,7 +38,7 @@ import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 import { calculateSubBalance } from "./_index/ManageSub";
-import { SUB_CHAIN_LIB, client, contract, formatSubs } from "./_index/utils";
+import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({
@@ -127,6 +127,12 @@ export default function Index() {
 		`${subs[0].amountPerCycle}` ===
 			parseUnits(loaderData.amount, DAI_OPTIMISM.decimals).toString();
 
+	// backward compatible with old contract
+	const subsContract =
+		subs && subs.length > 0
+			? (subs[0].subsContract as `0x${string}`)
+			: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions;
+
 	// get current DAI balance of user
 	const {
 		data: balance,
@@ -156,10 +162,7 @@ export default function Index() {
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "allowance",
-		args: address && [
-			address,
-			LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-		],
+		args: address && [address, subsContract],
 		enabled: address ? true : false,
 		chainId: optimism.id,
 	});
@@ -170,7 +173,7 @@ export default function Index() {
 		error: errorFetchingCurrentPeriod,
 		refetch: refetchCurrentPeriod,
 	} = useContractRead({
-		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		address: subsContract,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "currentPeriod",
 		chainId: optimism.id,
@@ -213,7 +216,7 @@ export default function Index() {
 		isLoading: confirmingSubscription,
 		error: errorConfirmingSubscription,
 	} = useContractWrite({
-		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		address: subsContract,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "subscribe",
 		chainId: optimism.id,
@@ -224,7 +227,7 @@ export default function Index() {
 		isLoading: confirmingSubscriptionExtension,
 		error: errorConfirmingSubscriptionExtension,
 	} = useContractWrite({
-		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		address: subsContract,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "batch",
 		chainId: optimism.id,
@@ -314,12 +317,12 @@ export default function Index() {
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "unsubscribe",
 				args: [
-					subs[0].initialPeriod,
-					subs[0].expirationDate,
-					subs[0].amountPerCycle,
-					subs[0].receiver,
-					subs[0].accumulator,
-					subs[0].initialShares,
+					BigInt(subs[0].initialPeriod),
+					BigInt(subs[0].expirationDate),
+					BigInt(subs[0].amountPerCycle),
+					subs[0].receiver as `0x${string}`,
+					BigInt(subs[0].accumulator),
+					BigInt(subs[0].initialShares),
 				],
 			});
 
@@ -896,11 +899,7 @@ export default function Index() {
 											type="button"
 											onClick={() => {
 												approveToken?.({
-													args: [
-														LLAMAPAY_CHAINS_LIB[optimism.id].contracts
-															.subscriptions,
-														amountToDepositActually,
-													],
+													args: [subsContract, amountToDepositActually],
 												});
 											}}
 										>
@@ -1400,6 +1399,7 @@ async function getSubscriptions({
 					realExpiration
 					accumulator
 					creationTx
+					subsContract
 				}
 			}
 		`;
@@ -1417,7 +1417,7 @@ async function getSubscriptions({
 		);
 
 		const balances = await Promise.allSettled(
-			fSubs.map((sub) => calculateSubBalance({ sub, contract, client })),
+			fSubs.map((sub) => calculateSubBalance(sub)),
 		);
 
 		return fSubs.map((fsub, index) => ({
