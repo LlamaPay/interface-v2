@@ -351,13 +351,13 @@ export const Claim = () => {
 			const shares = await contract.read.convertToShares([toClaim]);
 
 			await claim_v1?.({
-				args: [min(claimable.claimables_v1, shares)],
+				args: [min(min(toClaim, claimable.claimables_v1), shares)],
 			});
 
 			toClaim -= claimable.claimables_v1;
 		}
 
-		if (claimable.claimables_v2 && claimable.claimables_v2 > 0) {
+		if (claimable.claimables_v2 && claimable.claimables_v2 > 0 && toClaim > 0) {
 			const contract: any = getContract({
 				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 				abi: SUBSCRIPTIONS_ABI,
@@ -366,7 +366,7 @@ export const Claim = () => {
 			const shares = await contract.read.convertToShares([toClaim]);
 
 			await claim_v2?.({
-				args: [min(claimable.claimables_v2, shares)],
+				args: [min(toClaim, shares)],
 			});
 		}
 
@@ -383,8 +383,13 @@ export const Claim = () => {
 
 	const needToClaimTwoTxs =
 		amountToClaim !== "" &&
-		claimable?.claimables_v1 &&
-		amountToClaimParsed >= claimable.claimables_v1;
+		claimable &&
+		claimable.claimables_v1 &&
+		claimable.total &&
+		amountToClaimParsed > claimable.claimables_v1 &&
+		amountToClaimParsed <= claimable.total
+			? true
+			: false;
 
 	return (
 		<>
@@ -507,7 +512,9 @@ export const Claim = () => {
 						confirmingClaimTx_v1 ||
 						waitingForClaimTxDataOnChain_v1 ||
 						confirmingClaimTx_v2 ||
-						waitingForClaimTxDataOnChain_v2
+						waitingForClaimTxDataOnChain_v2 ||
+						!claimable?.total ||
+						amountToClaimParsed > claimable.total
 					}
 				>
 					{confirmingClaimTx_v1 ||

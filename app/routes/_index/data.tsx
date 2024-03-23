@@ -32,6 +32,7 @@ export async function getSubscriptions(address?: string) {
 					realExpiration
 					accumulator
 					creationTx
+					subsContract
 				}
 			}
 		`;
