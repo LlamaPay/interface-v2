@@ -65,7 +65,7 @@ export default function Index() {
 	}, [subs, address]);
 
 	return (
-		<main className="isolate flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
+		<main className="isolate relative flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
 				{links.map((l) => (
 					<Link

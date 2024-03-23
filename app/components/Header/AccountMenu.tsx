@@ -1,4 +1,5 @@
 import * as Ariakit from "@ariakit/react";
+import { useState } from "react";
 import { useAccount, useBalance, useDisconnect } from "wagmi";
 
 import { Icon } from "~/components/Icon";
@@ -14,6 +15,7 @@ export const AccountMenu = ({ className }: { className?: string }) => {
 	const { data: ensName } = useGetEnsName({
 		address,
 	});
+	const [copied, setCopied] = useState(false);
 
 	return (
 		<>
@@ -21,7 +23,7 @@ export const AccountMenu = ({ className }: { className?: string }) => {
 				onClick={dialog.show}
 				className={
 					className ??
-					"hidden h-10 rounded-lg border border-[#E4EDEB] bg-[rgba(245,250,249,0.50)] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:inline"
+					"hidden h-10 rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-2 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:inline"
 				}
 			>
 				{address ? ensName ?? formatAddress(address) : null}
@@ -52,10 +54,14 @@ export const AccountMenu = ({ className }: { className?: string }) => {
 						className="flex flex-1 flex-col items-center gap-1 rounded-lg bg-gray-100 p-2 text-sm dark:bg-black/20"
 						onClick={() => {
 							navigator.clipboard.writeText(address ?? "");
+							setCopied(true);
+							setTimeout(() => {
+								setCopied(false);
+							}, 300);
 						}}
 					>
 						<Icon name="copy" className="h-4 w-4" />
-						<span>Copy Address</span>
+						<span>{copied ? "Copied" : "Copy Address"}</span>
 					</button>
 					<button
 						className="flex flex-1 flex-col items-center gap-1 rounded-lg bg-gray-100 p-2 text-sm dark:bg-black/20"
