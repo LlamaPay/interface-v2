@@ -17,7 +17,10 @@ export const LLAMAPAY_CHAINS_LIB = {
 	},
 	[optimism.id]: {
 		rpc: "https://optimism.publicnode.com",
-		contracts: { subscriptions: "0x58B05eB0e58761E294297B334869F98983de0169" },
+		contracts: {
+			subscriptions: "0x58B05eB0e58761E294297B334869F98983de0169",
+			subscriptions_v1: "0x8B6473801e466E543BAf0cB6c7Ea1C9321C3C816",
+		},
 		subgraphs: {
 			subscriptions:
 				"https://api.thegraph.com/subgraphs/name/0xngmi/llamasubs-optimism",

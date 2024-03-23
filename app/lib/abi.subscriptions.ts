@@ -436,4 +436,4 @@ export const SUBSCRIPTIONS_ABI = [
 		stateMutability: "nonpayable",
 		type: "function",
 	},
-];
+] as const;

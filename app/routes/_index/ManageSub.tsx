@@ -87,19 +87,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 				.multicall({
 					contracts: periods.map((p) => ({
 						address: sub.subsContract as `0x${string}`,
-						abi: [
-							{
-								inputs: [
-									{ internalType: "uint256", name: "", type: "uint256" },
-								],
-								name: "sharesPerPeriod",
-								outputs: [
-									{ internalType: "uint256", name: "", type: "uint256" },
-								],
-								stateMutability: "view",
-								type: "function",
-							},
-						],
+						abi: SUBSCRIPTIONS_ABI,
 						functionName: "sharesPerPeriod",
 						args: [p],
 					})),
@@ -147,12 +135,12 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "unsubscribe",
 		args: [
-			data.initialPeriod,
-			data.expirationDate,
-			data.amountPerCycle,
-			data.receiver,
-			data.accumulator,
-			data.initialShares,
+			BigInt(data.initialPeriod),
+			BigInt(data.expirationDate),
+			BigInt(data.amountPerCycle),
+			data.receiver as `0x${string}`,
+			BigInt(data.accumulator),
+			BigInt(data.initialShares),
 		],
 		chainId: optimism.id,
 		onError: (err) => {
@@ -251,19 +239,24 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "unsubscribe",
 			args: [
-				data.initialPeriod,
-				data.expirationDate,
-				data.amountPerCycle,
-				data.receiver,
-				data.accumulator,
-				data.initialShares,
+				BigInt(data.initialPeriod),
+				BigInt(data.expirationDate),
+				BigInt(data.amountPerCycle),
+				data.receiver as `0x${string}`,
+				BigInt(data.accumulator),
+				BigInt(data.initialShares),
 			],
 		});
 
 		const subscribeForNextPeriod = encodeFunctionData({
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "subscribeForNextPeriod",
-			args: [data.receiver, data.amountPerCycle, amountToDeposit, 0n],
+			args: [
+				data.receiver as `0x${string}`,
+				BigInt(data.amountPerCycle),
+				amountToDeposit,
+				0n,
+			],
 		});
 		const calls = [unsusbcribe, subscribeForNextPeriod];
 		withdrawBalanceFromSub?.({ args: [calls, true] });
@@ -350,7 +343,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 									/>
 								}
 							/>
-							<Ariakit.Tooltip className="max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
+							<Ariakit.Tooltip className="break-all max-w-xs cursor-default border border-solid border-black bg-white p-1 text-sm text-black">
 								{(errorFetchingBalance as any)?.message ??
 									"Failed to fetch available balance"}
 							</Ariakit.Tooltip>

@@ -317,12 +317,12 @@ export default function Index() {
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "unsubscribe",
 				args: [
-					subs[0].initialPeriod,
-					subs[0].expirationDate,
-					subs[0].amountPerCycle,
-					subs[0].receiver,
-					subs[0].accumulator,
-					subs[0].initialShares,
+					BigInt(subs[0].initialPeriod),
+					BigInt(subs[0].expirationDate),
+					BigInt(subs[0].amountPerCycle),
+					subs[0].receiver as `0x${string}`,
+					BigInt(subs[0].accumulator),
+					BigInt(subs[0].initialShares),
 				],
 			});
 
