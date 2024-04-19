@@ -235,6 +235,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	const disableWithdrawal = amountToDeposit < 0n;
 	const handleWithdrawal = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
 		const unsusbcribe = encodeFunctionData({
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "unsubscribe",
@@ -248,17 +249,22 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 			],
 		});
 
-		const subscribeForNextPeriod = encodeFunctionData({
-			abi: SUBSCRIPTIONS_ABI,
-			functionName: "subscribeForNextPeriod",
-			args: [
-				data.receiver as `0x${string}`,
-				BigInt(data.amountPerCycle),
-				amountToDeposit,
-				0n,
-			],
-		});
-		const calls = [unsusbcribe, subscribeForNextPeriod];
+		const calls = [unsusbcribe];
+
+		if (amountToDeposit > 0n) {
+			const subscribeForNextPeriod = encodeFunctionData({
+				abi: SUBSCRIPTIONS_ABI,
+				functionName: "subscribeForNextPeriod",
+				args: [
+					data.receiver as `0x${string}`,
+					BigInt(data.amountPerCycle),
+					amountToDeposit,
+					0n,
+				],
+			});
+			calls.push(subscribeForNextPeriod);
+		}
+
 		withdrawBalanceFromSub?.({ args: [calls, true] });
 	};
 
@@ -279,6 +285,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		enabled: address ? true : false,
 		chainId: optimism.id,
 	});
+
 	// check if input amount is gte to allowance
 	const isApproved = allowance ? allowance >= amountToDeposit : false;
 
@@ -369,9 +376,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 						disabled={!chain || chain.unsupported}
 						onClick={withdrawDialog.toggle}
 					>
-						{confirmingUnsubscribeTx || waitingForUnsubscribeTxDataOnChain
-							? "Confirming..."
-							: "Withdraw"}
+						Withdraw
 					</button>
 					<Ariakit.Dialog
 						store={withdrawDialog}
