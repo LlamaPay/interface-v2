@@ -131,7 +131,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		isLoading: confirmingUnsubscribeTx,
 		reset,
 	} = useContractWrite({
-		address: SUB_CHAIN_LIB.contracts.subscriptions,
+		address: data.subsContract as `0x${string}`,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "unsubscribe",
 		args: [
@@ -197,7 +197,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		isLoading: confirmingWithdrawal,
 		error: errorConfirmingWithdrawal,
 	} = useContractWrite({
-		address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
+		address: data.subsContract as `0x${string}`,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "batch",
 		chainId: optimism.id,
