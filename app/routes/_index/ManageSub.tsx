@@ -316,7 +316,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	});
 
 	// Hide table cells if sub expired/cancelled/unsubscribed
-	if (isUnsubscribed || isExpired) {
+	if (isUnsubscribed) {
 		return (
 			<>
 				<td className="p-3 text-center" />
