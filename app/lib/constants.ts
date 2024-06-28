@@ -9,6 +9,13 @@ export const createJsonRpcProvider = (api: string) =>
 		}),
 	});
 
+function unscramble(str:string) {
+  return str.split("").reduce(function(a, b) {
+    return a + String.fromCharCode(b.charCodeAt(0)+8)
+  }, "");
+}
+const apiKey = unscramble('.[^+0](,0[+1,*\\YZY\\[(*+Z,][/**,]')
+
 export const LLAMAPAY_CHAINS_LIB = {
 	[mainnet.id]: {
 		rpc: "https://rpc.ankr.com/eth",
@@ -23,7 +30,7 @@ export const LLAMAPAY_CHAINS_LIB = {
 		},
 		subgraphs: {
 			subscriptions:
-				"https://api.thegraph.com/subgraphs/name/0xngmi/llamasubs-optimism",
+				`https://gateway-arbitrum.network.thegraph.com/api/${apiKey}/subgraphs/id/7SAiBm4sRAfPkHniw45Pw83GnyfE953p3LFr87N6XXwC`,
 		},
 	},
 } as const;
