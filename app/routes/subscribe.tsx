@@ -220,6 +220,7 @@ export default function Index() {
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "subscribe",
 		chainId: optimism.id,
+		dataSuffix: "0x0000000000000000000000000000000000000000000000000000000177bf6800"
 	});
 	const {
 		data: subscriptionExtendTxData,
