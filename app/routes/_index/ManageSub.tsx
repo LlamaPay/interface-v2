@@ -3,8 +3,14 @@ import { Link } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { encodeFunctionData, formatUnits, getContract, parseUnits } from "viem";
-import { optimism } from "viem/chains";
+import {
+	http,
+	createPublicClient,
+	encodeFunctionData,
+	formatUnits,
+	getContract,
+	parseUnits,
+} from "viem";
 import {
 	erc20ABI,
 	useAccount,
@@ -22,13 +28,23 @@ import {
 	SUBSCRIPTION_AMOUNT_DIVISOR,
 	SUBSCRIPTION_DURATION,
 } from "~/lib/constants";
+import { supportedChains } from "~/lib/wallet";
 import { type IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, client } from "./utils";
-
 export async function calculateSubBalance(sub: IFormattedSub) {
 	if (!sub) return null;
+
+	const supportedChain = supportedChains.find(
+		(chain) => chain.id === sub.chainId,
+	);
+
+	if (!supportedChain) return null;
+
+	const client = createPublicClient({
+		chain: supportedChain,
+		transport: http((LLAMAPAY_CHAINS_LIB as any)[sub.chainId].rpc),
+	});
 
 	const contract: any = getContract({
 		address: sub.subsContract as `0x${string}`,
@@ -142,7 +158,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 			BigInt(data.accumulator),
 			BigInt(data.initialShares),
 		],
-		chainId: optimism.id,
+		chainId: data.chainId,
 		onError: (err) => {
 			const msg = (err as any)?.shortMessage ?? err.message;
 			toast.error(msg, {
@@ -156,7 +172,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	} = useWaitForTransaction({
 		hash: unsubscribeTxData?.hash,
 		enabled: unsubscribeTxData ? true : false,
-		chainId: optimism.id,
+		chainId: data.chainId,
 		onError: (err) => {
 			const msg = (err as any)?.shortMessage ?? err.message;
 			toast.error(msg, {
@@ -200,7 +216,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		address: data.subsContract as `0x${string}`,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "batch",
-		chainId: optimism.id,
+		chainId: data.chainId,
 		onError: (err) => {
 			const msg = (err as any)?.shortMessage ?? err.message;
 			toast.error(msg, {
@@ -215,7 +231,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	} = useWaitForTransaction({
 		hash: withdrawTxData?.hash,
 		enabled: withdrawTxData ? true : false,
-		chainId: optimism.id,
+		chainId: data.chainId,
 		onSuccess: (data) => {
 			if (data.status === "success") {
 				toast.success("Transaction Success", {
@@ -233,6 +249,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	const amountToDeposit =
 		(balance ?? 0n) - parseUnits(amountToWithdraw, DAI_OPTIMISM.decimals);
 	const disableWithdrawal = amountToDeposit < 0n;
+
 	const handleWithdrawal = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
@@ -278,16 +295,18 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "allowance",
-		args: address && [
-			address,
-			LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-		],
+		args: address && [address, data.subsContract as `0x${string}`],
 		enabled: address ? true : false,
-		chainId: optimism.id,
+		chainId: data.chainId,
 	});
 
 	// check if input amount is gte to allowance
-	const isApproved = allowance ? allowance >= amountToDeposit : false;
+	const isApproved =
+		amountToDeposit > 0n
+			? allowance
+				? allowance >= amountToDeposit
+				: false
+			: true;
 
 	const {
 		data: approveTxData,
@@ -298,7 +317,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		address: DAI_OPTIMISM.address,
 		abi: erc20ABI,
 		functionName: "approve",
-		chainId: optimism.id,
+		chainId: data.chainId,
 	});
 	const {
 		data: approveTxDataOnChain,
@@ -307,7 +326,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 	} = useWaitForTransaction({
 		hash: approveTxData?.hash,
 		enabled: approveTxData ? true : false,
-		chainId: optimism.id,
+		chainId: data.chainId,
 		onSuccess(data) {
 			if (data.status === "success") {
 				refetchAllowance();
@@ -359,15 +378,17 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 				</span>
 			</td>
 			<td className="px-3 py-1">
-				<Link
-					to={`/subscribe?to=${data.receiver}&amount=${formatUnits(
-						BigInt(data.amountPerCycle),
-						DAI_OPTIMISM.decimals,
-					)}`}
-					className="whitespace-nowrap rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-				>
-					Top up
-				</Link>
+				{data.type === "old" ? (
+					<Link
+						to={`/subscribe?to=${data.receiver}&amount=${formatUnits(
+							BigInt(data.amountPerCycle),
+							DAI_OPTIMISM.decimals,
+						)}`}
+						className="whitespace-nowrap rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
+					>
+						Top up
+					</Link>
+				) : null}
 			</td>
 			<td className="px-3 py-1">
 				<div>
@@ -475,14 +496,15 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 										className="h-8 w-8 rounded-full border-2 border-black bg-black first-of-type:mt-3 data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40 dark:border-white dark:bg-white"
 										data-disabled={
 											!chain ||
-											chain.id !== optimism.id ||
+											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
 											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
 											waitingForApproveTxConfirmation ||
 											isApproved ||
-											amountToWithdraw.length === 0
+											amountToWithdraw.length === 0 ||
+											amountToDeposit === 0n
 										}
 									/>
 									<div className="mx-auto min-h-[4px] w-[2px] flex-1 bg-black opacity-40 dark:bg-white" />
@@ -490,7 +512,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 										className="mb-3 h-8 w-8 rounded-full border-2 border-black bg-black data-[disabled=true]:bg-[var(--page-bg-color-2)] data-[disabled=true]:opacity-40 dark:border-white dark:bg-white"
 										data-disabled={
 											!chain ||
-											chain.id !== optimism.id ||
+											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
 											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
@@ -506,21 +528,21 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 										className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 										disabled={
 											!chain ||
-											chain.id !== optimism.id ||
+											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
 											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
 											waitingForApproveTxConfirmation ||
 											isApproved ||
-											amountToWithdraw.length === 0
+											amountToWithdraw.length === 0 ||
+											amountToDeposit === 0n
 										}
 										type="button"
 										onClick={() => {
 											approveToken?.({
 												args: [
-													LLAMAPAY_CHAINS_LIB[optimism.id].contracts
-														.subscriptions,
+													data.subsContract as `0x${string}`,
 													amountToDeposit,
 												],
 											});
@@ -537,7 +559,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 										className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 										disabled={
 											!chain ||
-											chain.id !== optimism.id ||
+											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
 											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||

@@ -13,6 +13,7 @@ import { DAI_OPTIMISM } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
 import { type IFormattedSub } from "~/types";
 
+import { chainIdToNames } from "~/lib/wallet";
 import { ManageSub } from "./ManageSub";
 import { getSubscriptions } from "./data";
 
@@ -88,6 +89,9 @@ export const Subscriptions = () => {
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Tier
+								</th>
+								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
+									Chain
 								</th>
 								<th className="whitespace-nowrap p-3 text-left font-normal text-[#596575] dark:text-[#838486]">
 									Time Left
@@ -191,6 +195,17 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 						DAI_OPTIMISM.decimals,
 					)} DAI / month`}</span>
 				</span>
+			</td>
+			<td title={chainIdToNames[data.chainId].name}>
+				<img
+					src={`https://icons.llamao.fi/icons/chains/rsz_${
+						(chainIdToNames as any)[data.chainId]?.iconServerName ?? ""
+					}?w=48&h=48`}
+					height={16}
+					width={16}
+					className="rounded-full mx-auto"
+					alt={chainIdToNames[data.chainId].name}
+				/>
 			</td>
 			<td className="p-3">
 				{status === "Active" ? (

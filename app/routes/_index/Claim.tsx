@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { formatUnits, getContract, parseUnits } from "viem";
+import {
+	http,
+	createPublicClient,
+	formatUnits,
+	getContract,
+	parseUnits,
+} from "viem";
 import { optimism } from "viem/chains";
 import {
 	useAccount,
@@ -20,8 +26,13 @@ import {
 } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
 
-import { SUB_CHAIN_LIB, client } from "./utils";
 import { Icon } from "~/components/Icon";
+
+const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
+const client = createPublicClient({
+	chain: optimism,
+	transport: http(SUB_CHAIN_LIB.rpc),
+});
 
 const min = (a: bigint, b: bigint) => (a > b ? b : a);
 // TODO calculate available to claim next month
