@@ -35,7 +35,7 @@ const client = createPublicClient({
 });
 
 const min = (a: bigint, b: bigint) => (a > b ? b : a);
-// TODO calculate available to claim next month
+
 async function calculateAvailableToClaim({
 	subsContract,
 	receiver,
