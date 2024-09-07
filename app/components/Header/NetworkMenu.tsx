@@ -1,16 +1,9 @@
 import * as Ariakit from "@ariakit/react";
-import { mainnet, optimism } from "viem/chains";
 import { useNetwork, useSwitchNetwork } from "wagmi";
 
-import ethereumLogo from "~/assets/chains/ethereum.png";
-import optimismLogo from "~/assets/chains/optimism.svg";
 import { Icon } from "~/components/Icon";
+import { chainIdToNames } from "~/lib/wallet";
 import { formatChainName } from "~/utils/formatChainName";
-
-const logos: Record<number, string> = {
-	[mainnet.id]: ethereumLogo,
-	[optimism.id]: optimismLogo,
-};
 
 export const NetworkMenu = () => {
 	const { chain, chains } = useNetwork();
@@ -22,9 +15,11 @@ export const NetworkMenu = () => {
 				<>
 					<span className="sr-only">Switch network from </span>
 					<span className="h-4 w-4 rounded-full">
-						{chain && logos[chain.id] ? (
+						{chain ? (
 							<img
-								src={logos[chain.id]}
+								src={`https://icons.llamao.fi/icons/chains/rsz_${
+									(chainIdToNames as any)[chain.id]?.iconServerName ?? ""
+								}?w=48&h=48`}
 								alt=""
 								className="h-4 w-4 rounded-full"
 							/>
@@ -49,9 +44,11 @@ export const NetworkMenu = () => {
 							onClick={() => switchNetwork?.(chain.id)}
 						>
 							<span className="h-4 w-4 rounded-full">
-								{chain && logos[chain.id] ? (
+								{chain ? (
 									<img
-										src={logos[chain.id]}
+										src={`https://icons.llamao.fi/icons/chains/rsz_${
+											(chainIdToNames as any)[chain.id]?.iconServerName ?? ""
+										}?w=48&h=48`}
 										alt=""
 										className="h-4 w-4 rounded-full"
 									/>

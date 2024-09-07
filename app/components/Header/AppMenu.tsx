@@ -2,7 +2,6 @@ import * as Ariakit from "@ariakit/react";
 import type { MenuButtonProps, MenuItemProps } from "@ariakit/react";
 import { Link } from "@remix-run/react";
 import { type ReactNode, forwardRef } from "react";
-import { mainnet, optimism } from "viem/chains";
 import {
 	useAccount,
 	useDisconnect,
@@ -11,16 +10,10 @@ import {
 	useSwitchNetwork,
 } from "wagmi";
 
-import ethereumLogo from "~/assets/chains/ethereum.png";
-import optimismLogo from "~/assets/chains/optimism.svg";
 import { Icon } from "~/components/Icon";
+import { chainIdToNames } from "~/lib/wallet";
 import { formatAddress } from "~/utils/formatAddress";
 import { formatChainName } from "~/utils/formatChainName";
-
-const logos: Record<number, string> = {
-	[mainnet.id]: ethereumLogo,
-	[optimism.id]: optimismLogo,
-};
 
 export const AppMenu = () => {
 	const { address } = useAccount();
@@ -58,9 +51,11 @@ export const AppMenu = () => {
 							onClick={() => switchNetwork?.(chainx.id)}
 						>
 							<span className="h-4 w-4 rounded-full">
-								{chainx && logos[chainx.id] ? (
+								{chainx ? (
 									<img
-										src={logos[chainx.id]}
+										src={`https://icons.llamao.fi/icons/chains/rsz_${
+											(chainIdToNames as any)[chainx.id]?.iconServerName ?? ""
+										}?w=48&h=48`}
 										alt=""
 										className="h-4 w-4 rounded-full"
 									/>

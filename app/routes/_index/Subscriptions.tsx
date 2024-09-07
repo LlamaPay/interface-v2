@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { formatUnits, getAddress } from "viem";
-import { optimism } from "viem/chains";
 import { useAccount } from "wagmi";
 
 import incomingImg from "~/assets/icons/incoming.svg";
@@ -181,7 +180,9 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 				<a
 					target="_blank"
 					rel="noopene noreferrer"
-					href={`https://optimistic.etherscan.io/address/${subAddress}`}
+					href={`${
+						chainIdToNames[data.chainId].blockExplorerUrl
+					}/address/${subAddress}`}
 					className="underline"
 				>
 					{ensName ?? `${subAddress.slice(0, 4)}...${subAddress.slice(-4)}`}
