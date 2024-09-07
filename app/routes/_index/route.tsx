@@ -67,7 +67,7 @@ export default function Index() {
 	return (
 		<main className="isolate relative flex flex-col gap-5 overflow-x-hidden px-4 py-9 md:pr-8">
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-				{links.map((l) => (
+				{/* {links.map((l) => (
 					<Link
 						to={l.to}
 						key={l.to}
@@ -86,7 +86,7 @@ export default function Index() {
 						</span>
 						<Icon name="arrow-right" className="ml-4 h-4 w-4" />
 					</Link>
-				))}
+				))} */}
 				<div className="flex flex-col gap-1 rounded-lg border border-black/5 bg-[#FCFFFE]  p-3 text-sm shadow-[0px_1px_0px_0px_rgba(0,0,0,0.05)] dark:border-white/5 dark:bg-[#1a1a1a]">
 					<p className="flex items-center gap-1">
 						<img src={incomingImg} alt="incoming" />
