@@ -1,4 +1,9 @@
-import { SUBSCRIPTION_DURATION, SUBSCRIPTION_PERIOD } from "~/lib/constants";
+import { parseUnits } from "viem";
+import {
+	DAI_OPTIMISM,
+	SUBSCRIPTION_DURATION,
+	SUBSCRIPTION_PERIOD,
+} from "~/lib/constants";
 import { llamapayChainNamesToIds } from "~/lib/wallet";
 import { type IFormattedSub, INewSub, type ISub } from "~/types";
 
@@ -26,12 +31,23 @@ export const formatSubs = (data: Array<ISub>) => {
 			subDuration: totalDays * 24 * 60 * 60,
 			chainId: 10,
 			type: "old",
+			tokenAddress: DAI_OPTIMISM.address,
+			tokenDecimal: DAI_OPTIMISM.decimals,
+			tokenDivisor: parseUnits("1", DAI_OPTIMISM.decimals),
 		} as IFormattedSub;
 	});
 };
 
-export const formatNewSubs = (data: Array<INewSub>) => {
-	return data.map((sub) => {
+export const formatNewSubs = ({
+	subs,
+	tokenAddresses,
+	tokenDecimals,
+}: {
+	subs: Array<INewSub>;
+	tokenAddresses: Record<string, string | null>;
+	tokenDecimals: Record<string, number | null>;
+}) => {
+	return subs.map((sub) => {
 		const startTimestamp = +sub.started_at;
 		const initialPeriod = +sub.initial_period;
 		const realExpiration = +sub.expires_at;
@@ -46,6 +62,13 @@ export const formatNewSubs = (data: Array<INewSub>) => {
 		const totalDays = totalCycles * SUBSCRIPTION_PERIOD;
 		// const remainingSeconds = (remainingMinutes - minutes) * secondsInMinute
 		// const seconds = Math.floor(remainingSeconds)
+
+		const chainId = llamapayChainNamesToIds[sub.chain];
+		const tokenAddress =
+			tokenAddresses[`${sub.subs_contract}:${chainId}`] ?? null;
+		const tokenDecimal = tokenAddress
+			? tokenDecimals[`${tokenAddress}:${chainId}`] ?? null
+			: null;
 
 		return {
 			expirationDate: sub.expiration_date,
@@ -64,8 +87,11 @@ export const formatNewSubs = (data: Array<INewSub>) => {
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
 			subDuration: totalDays * 24 * 60 * 60,
-			chainId: llamapayChainNamesToIds[sub.chain],
+			chainId,
 			type: "new",
+			tokenAddress,
+			tokenDecimal,
+			tokenDivisor: tokenDecimal ? parseUnits("1", tokenDecimal) : null,
 		} as IFormattedSub;
 	});
 };

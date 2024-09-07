@@ -22,18 +22,14 @@ import {
 
 import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import {
-	DAI_OPTIMISM,
-	LLAMAPAY_CHAINS_LIB,
-	SUBSCRIPTION_AMOUNT_DIVISOR,
-	SUBSCRIPTION_DURATION,
-} from "~/lib/constants";
+import { LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { supportedChains } from "~/lib/wallet";
 import { type IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 export async function calculateSubBalance(sub: IFormattedSub) {
-	if (!sub) return null;
+	if (!sub || !sub.tokenDecimal || !sub.tokenDivisor || !sub.tokenAddress)
+		return null;
 
 	const supportedChain = supportedChains.find(
 		(chain) => chain.id === sub.chainId,
@@ -66,7 +62,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 
 		if (currentPeriod + BigInt(SUBSCRIPTION_DURATION) < currentTimestamp) {
 			const shares: bigint = await contract.read.convertToShares([
-				SUBSCRIPTION_AMOUNT_DIVISOR,
+				sub.tokenDivisor,
 			]);
 			sharesAccumulator +=
 				((currentTimestamp - BigInt(currentPeriod)) /
@@ -77,7 +73,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 		const sharesPaid =
 			((sharesAccumulator - BigInt(sub.accumulator)) *
 				BigInt(sub.amountPerCycle)) /
-			BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
+			BigInt(sub.tokenDivisor);
 
 		const sharesLeft = initialShares - sharesPaid;
 
@@ -98,7 +94,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 
 	const [currentSharePrice, periodShares]: [bigint, Array<bigint>] =
 		await Promise.all([
-			contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]),
+			contract.read.convertToShares([sub.tokenDivisor]),
 			client
 				.multicall({
 					contracts: periods.map((p) => ({
@@ -121,12 +117,29 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 	const balance: bigint = await contract.read.convertToAssets([
 		initialShares -
 			(subsetAccumulator * BigInt(sub.amountPerCycle)) /
-				BigInt(SUBSCRIPTION_AMOUNT_DIVISOR),
+				BigInt(sub.tokenDivisor),
 	]);
 	return balance;
 }
 
 export const ManageSub = ({ data }: { data: IFormattedSub }) => {
+	if (!data.tokenAddress || !data.tokenDecimal || !data.tokenDivisor)
+		return null;
+
+	return (
+		<Content
+			data={data}
+			tokenAddress={data.tokenAddress}
+			tokenDecimal={data.tokenDecimal}
+		/>
+	);
+};
+
+const Content = ({
+	data,
+	tokenAddress,
+	tokenDecimal,
+}: { data: IFormattedSub; tokenAddress: string; tokenDecimal: number }) => {
 	const { address } = useAccount();
 	const { chain } = useNetwork();
 	const queryClient = useQueryClient();
@@ -247,7 +260,8 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 
 	const [amountToWithdraw, setAmountToWithdraw] = useState("");
 	const amountToDeposit =
-		(balance ?? 0n) - parseUnits(amountToWithdraw, DAI_OPTIMISM.decimals);
+		(balance ?? 0n) - parseUnits(amountToWithdraw, tokenDecimal);
+
 	const disableWithdrawal = amountToDeposit < 0n;
 
 	const handleWithdrawal = (e: React.FormEvent<HTMLFormElement>) => {
@@ -292,7 +306,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		error: errorFetchingAllowance,
 		refetch: refetchAllowance,
 	} = useContractRead({
-		address: DAI_OPTIMISM.address,
+		address: tokenAddress as `0x${string}`,
 		abi: erc20ABI,
 		functionName: "allowance",
 		args: address && [address, data.subsContract as `0x${string}`],
@@ -314,7 +328,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 		isLoading: confirmingTokenApproval,
 		error: errorConfirmingTokenApproval,
 	} = useContractWrite({
-		address: DAI_OPTIMISM.address,
+		address: tokenAddress as `0x${string}`,
 		abi: erc20ABI,
 		functionName: "approve",
 		chainId: data.chainId,
@@ -352,11 +366,10 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 				<span className="flex min-h-[1.5rem] flex-nowrap items-center gap-1">
 					{!fetchingBalance && balance ? (
 						<>
-							<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-							<span className="whitespace-nowrap">{`${formatNum(
-								+formatUnits(balance, DAI_OPTIMISM.decimals),
+							<span className="whitespace-nowrap">{`$${formatNum(
+								+formatUnits(balance, tokenDecimal),
 								2,
-							)} DAI`}</span>
+							)}`}</span>
 						</>
 					) : null}
 					{errorFetchingBalance ? (
@@ -382,7 +395,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 					<Link
 						to={`/subscribe?to=${data.receiver}&amount=${formatUnits(
 							BigInt(data.amountPerCycle),
-							DAI_OPTIMISM.decimals,
+							tokenDecimal,
 						)}`}
 						className="whitespace-nowrap rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					>
@@ -420,9 +433,12 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 								<span>Amount</span>
 
 								<span className="relative isolate rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 pb-[26px] dark:border-white/5 dark:bg-[#141414]">
+									<span className="absolute bottom-0 left-4 top-3 my-auto flex flex-col gap-2">
+										<p className="text-4xl">$</p>
+									</span>
 									<input
 										name="amountToWithdraw"
-										className="elative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none"
+										className="relative z-10 w-full border-none bg-transparent pl-8 text-4xl !outline-none"
 										required
 										autoComplete="off"
 										autoCorrect="off"
@@ -444,16 +460,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 											confirmingWithdrawal || confirmingWithdrawalTxOnChain
 										}
 									/>
-									<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
-										<p className="ml-auto flex items-center gap-1 text-xl">
-											<img
-												src={DAI_OPTIMISM.img}
-												width={16}
-												height={16}
-												alt=""
-											/>
-											<span>DAI</span>
-										</p>
+									<span className="absolute bottom-2 right-4 top-3 my-auto flex flex-col justify-end gap-2">
 										<p className="flex items-center gap-1 text-xs">
 											<span>Claimable:</span>
 											{fetchingBalance ? (
@@ -464,10 +471,10 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 												<>
 													<span>
 														{typeof balance === "bigint"
-															? formatNum(
-																	formatUnits(balance, DAI_OPTIMISM.decimals),
+															? `$${formatNum(
+																	formatUnits(balance, tokenDecimal),
 																	2,
-															  )
+															  )}`
 															: "-"}
 													</span>
 													<button
@@ -476,7 +483,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 														onClick={() =>
 															setAmountToWithdraw(
 																balance
-																	? formatUnits(balance, DAI_OPTIMISM.decimals)
+																	? formatUnits(balance, tokenDecimal)
 																	: "0",
 															)
 														}
@@ -504,6 +511,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 											waitingForApproveTxConfirmation ||
 											isApproved ||
 											amountToWithdraw.length === 0 ||
+											amountToWithdraw === "0" ||
 											amountToDeposit === 0n
 										}
 									/>
@@ -519,7 +527,8 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 											confirmingTokenApproval ||
 											waitingForApproveTxConfirmation ||
 											!isApproved ||
-											amountToWithdraw.length === 0
+											amountToWithdraw.length === 0 ||
+											amountToWithdraw === "0"
 										}
 									/>
 								</div>
@@ -536,6 +545,7 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 											waitingForApproveTxConfirmation ||
 											isApproved ||
 											amountToWithdraw.length === 0 ||
+											amountToWithdraw === "0" ||
 											amountToDeposit === 0n
 										}
 										type="button"
@@ -566,7 +576,8 @@ export const ManageSub = ({ data }: { data: IFormattedSub }) => {
 											confirmingTokenApproval ||
 											waitingForApproveTxConfirmation ||
 											!isApproved ||
-											amountToWithdraw.length === 0
+											amountToWithdraw.length === 0 ||
+											amountToWithdraw === "0"
 										}
 									>
 										{confirmingWithdrawal || confirmingWithdrawalTxOnChain

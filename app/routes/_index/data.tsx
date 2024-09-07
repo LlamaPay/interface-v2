@@ -4,6 +4,8 @@ import { type INewSub, type ISub } from "~/types";
 
 import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
 import { formatNewSubs, formatSubs } from "./utils";
+import { llamapayChainNamesToIds } from "~/lib/wallet";
+import { readContract } from "wagmi/actions";
 
 export async function getSubscriptions(address?: string) {
 	try {
@@ -52,11 +54,101 @@ export async function getSubscriptions(address?: string) {
 			),
 		]);
 
+		const uniqueSubsContracts = new Set<string>();
+
+		for (const sub of newSubs.subscriptions) {
+			uniqueSubsContracts.add(
+				`${sub.subs_contract}:${llamapayChainNamesToIds[sub.chain]}`,
+			);
+		}
+
+		const tokenAddresses = await getTokenAddresses(
+			Array.from(uniqueSubsContracts),
+		);
+
+		const uniqueTokens = Object.entries(tokenAddresses).map(
+			([sub, token]) => `${token}:${sub.split(":")[1]}`,
+		);
+
+		const tokenDecimals = await getTokenDecimals(uniqueTokens);
+
 		return [
-			...formatNewSubs(newSubs.subscriptions),
+			...formatNewSubs({
+				subs: newSubs.subscriptions,
+				tokenAddresses,
+				tokenDecimals,
+			}),
 			...formatSubs(data?.subs ?? []),
 		];
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}
 }
+
+const getTokenAddresses = async (contracts: Array<string>) => {
+	try {
+		const data = await Promise.allSettled(
+			contracts.map((contract) =>
+				readContract({
+					address: contract.split(":")[0] as `0x${string}`,
+					abi: [
+						{
+							inputs: [],
+							name: "asset",
+							outputs: [
+								{ internalType: "contract ERC20", name: "", type: "address" },
+							],
+							stateMutability: "view",
+							type: "function",
+						},
+					],
+					functionName: "asset",
+					chainId: +contract.split(":")[1],
+				}),
+			),
+		);
+
+		return Object.fromEntries(
+			contracts.map((contract, i) => [
+				contract,
+				data[i].status === "fulfilled" ? (data[i].value as string) : null,
+			]),
+		);
+	} catch (error) {
+		console.log(error);
+		return {};
+	}
+};
+
+const getTokenDecimals = async (contracts: Array<string>) => {
+	try {
+		const data = await Promise.allSettled(
+			contracts.map((contract) =>
+				readContract({
+					address: contract.split(":")[0] as `0x${string}`,
+					abi: [
+						{
+							inputs: [],
+							name: "decimals",
+							outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
+							stateMutability: "view",
+							type: "function",
+						},
+					],
+					functionName: "decimals",
+					chainId: +contract.split(":")[1],
+				}),
+			),
+		);
+
+		return Object.fromEntries(
+			contracts.map((contract, i) => [
+				contract,
+				data[i].status === "fulfilled" ? (data[i].value as number) : null,
+			]),
+		);
+	} catch (error) {
+		console.log(error);
+		return {};
+	}
+};

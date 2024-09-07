@@ -111,7 +111,7 @@ export const Subscriptions = () => {
 						</thead>
 						<tbody>
 							{subs.map((sub) => (
-								<Sub key={sub.id} data={sub} address={address} />
+								<Sub key={sub.creationTx} data={sub} address={address} />
 							))}
 						</tbody>
 					</table>
