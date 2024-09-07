@@ -1,8 +1,9 @@
 import { gql, request } from "graphql-request";
 
-import { type ISub } from "~/types";
+import { type INewSub, type ISub } from "~/types";
 
-import { SUB_CHAIN_LIB, formatSubs } from "./utils";
+import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
+import { formatNewSubs, formatSubs } from "./utils";
 
 export async function getSubscriptions(address?: string) {
 	try {
@@ -36,12 +37,25 @@ export async function getSubscriptions(address?: string) {
 				}
 			}
 		`;
-		const data: { subs: Array<ISub> } = await request(
-			SUB_CHAIN_LIB.subgraphs.subscriptions,
-			subs,
-		);
+		const [data, newSubs]: [
+			{ subs: Array<ISub> },
+			{ subscriptions: Array<INewSub> },
+		] = await Promise.all([
+			request(
+				LLAMAPAY_CHAINS_LIB[10].subgraphs.subscriptions,
+				subs,
+			) as Promise<{
+				subs: Array<ISub>;
+			}>,
+			fetch(`https://api.llamapay.io/subscriptions/owned/${address}`).then(
+				(res) => res.json(),
+			),
+		]);
 
-		return formatSubs(data?.subs ?? []);
+		return [
+			...formatNewSubs(newSubs.subscriptions),
+			...formatSubs(data?.subs ?? []),
+		];
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}

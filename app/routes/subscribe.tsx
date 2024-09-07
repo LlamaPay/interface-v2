@@ -38,7 +38,7 @@ import { type ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 import { calculateSubBalance } from "./_index/ManageSub";
-import { SUB_CHAIN_LIB, formatSubs } from "./_index/utils";
+import { formatSubs } from "./_index/utils";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({
@@ -220,7 +220,8 @@ export default function Index() {
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "subscribe",
 		chainId: optimism.id,
-		dataSuffix: "0x0000000000000000000000000000000000000000000000000000000177bf6800"
+		dataSuffix:
+			"0x0000000000000000000000000000000000000000000000000000000177bf6800",
 	});
 	const {
 		data: subscriptionExtendTxData,
@@ -1404,10 +1405,15 @@ async function getSubscriptions({
 				}
 			}
 		`;
+
 		const data: { subs: Array<ISub> } = await request(
-			SUB_CHAIN_LIB.subgraphs.subscriptions,
+			LLAMAPAY_CHAINS_LIB[optimism.id].subgraphs.subscriptions,
 			subs,
 		);
+
+		// fetch(`${SERVER_URL}/subscriptions/owned/${address}`).then((res) =>
+		// 	res.json(),
+		// )
 
 		const fSubs = formatSubs(
 			(data?.subs ?? []).filter(

@@ -1,19 +1,6 @@
-import { http, createPublicClient } from "viem";
-import { optimism } from "viem/chains";
-
-import {
-	LLAMAPAY_CHAINS_LIB,
-	SUBSCRIPTION_DURATION,
-	SUBSCRIPTION_PERIOD,
-} from "~/lib/constants";
-import { type IFormattedSub, type ISub } from "~/types";
-
-export const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
-
-export const client = createPublicClient({
-	chain: optimism,
-	transport: http(SUB_CHAIN_LIB.rpc),
-});
+import { SUBSCRIPTION_DURATION, SUBSCRIPTION_PERIOD } from "~/lib/constants";
+import { llamapayChainNamesToIds } from "~/lib/wallet";
+import { type IFormattedSub, INewSub, type ISub } from "~/types";
 
 export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
@@ -37,6 +24,48 @@ export const formatSubs = (data: Array<ISub>) => {
 			periodDuration: SUBSCRIPTION_DURATION,
 			fullPeriodStartingTime,
 			subDuration: totalDays * 24 * 60 * 60,
+			chainId: 10,
+			type: "old",
+		} as IFormattedSub;
+	});
+};
+
+export const formatNewSubs = (data: Array<INewSub>) => {
+	return data.map((sub) => {
+		const startTimestamp = +sub.started_at;
+		const initialPeriod = +sub.initial_period;
+		const realExpiration = +sub.expires_at;
+		const fullPeriodStartingTime = initialPeriod + SUBSCRIPTION_DURATION;
+		const partialPeriodTime = fullPeriodStartingTime - startTimestamp;
+		const fullCycles =
+			(realExpiration - fullPeriodStartingTime) / SUBSCRIPTION_DURATION;
+
+		const partialCycles = partialPeriodTime / SUBSCRIPTION_DURATION;
+		const totalCycles = fullCycles + partialCycles;
+
+		const totalDays = totalCycles * SUBSCRIPTION_PERIOD;
+		// const remainingSeconds = (remainingMinutes - minutes) * secondsInMinute
+		// const seconds = Math.floor(remainingSeconds)
+
+		return {
+			expirationDate: sub.expiration_date,
+			id: sub.sub_id,
+			initialPeriod: sub.initial_period,
+			initialShares: sub.initial_shares,
+			owner: sub.from_address,
+			receiver: sub.to_address,
+			startTimestamp: sub.started_at,
+			unsubscribed: sub.unsubscribed,
+			amountPerCycle: sub.amount_per_cycle,
+			realExpiration: sub.expires_at,
+			accumulator: sub.accumulator,
+			creationTx: sub.creation_tx_hash,
+			subsContract: sub.subs_contract,
+			periodDuration: SUBSCRIPTION_DURATION,
+			fullPeriodStartingTime,
+			subDuration: totalDays * 24 * 60 * 60,
+			chainId: llamapayChainNamesToIds[sub.chain],
+			type: "new",
 		} as IFormattedSub;
 	});
 };
