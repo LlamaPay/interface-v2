@@ -231,7 +231,9 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 			)}
 			<td className="whitespace-nowrap p-3 text-center">
 				<a
-					href={`${optimism.blockExplorers.etherscan.url}/tx/${data.creationTx}`}
+					href={`${chainIdToNames[data.chainId].blockExplorerUrl}/tx/${
+						data.creationTx
+					}`}
 					target="_blank"
 					rel="noreferrer noopener"
 				>
