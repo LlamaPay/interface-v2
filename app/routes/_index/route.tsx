@@ -92,11 +92,8 @@ export default function Index() {
 						<img src={incomingImg} alt="incoming" />
 						<span>Earnings : </span>
 						{hydrated && isConnected && subs ? (
-							<span className="flex flex-nowrap items-center gap-1">
-								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-								<span className="whitespace-nowrap">
-									<strong>{totalEarnings}</strong> DAI / month
-								</span>
+							<span className="whitespace-nowrap">
+								<strong>${totalEarnings}</strong> / month
 							</span>
 						) : null}
 					</p>
@@ -104,11 +101,8 @@ export default function Index() {
 						<img src={outgoingImg} alt="incoming" />
 						<span>Expenses : </span>
 						{hydrated && isConnected && subs ? (
-							<span className="flex flex-nowrap items-center gap-1">
-								<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-								<span className="whitespace-nowrap">
-									<strong>{totalExpenditure}</strong> DAI / month
-								</span>
+							<span className="whitespace-nowrap">
+								<strong>${totalExpenditure}</strong> / month
 							</span>
 						) : null}
 					</p>

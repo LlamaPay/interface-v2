@@ -187,14 +187,11 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 					{ensName ?? `${subAddress.slice(0, 4)}...${subAddress.slice(-4)}`}
 				</a>
 			</td>
-			<td className="p-3">
-				<span className="flex flex-nowrap items-center gap-1">
-					<img src={DAI_OPTIMISM.img} alt="" width={16} height={16} />
-					<span className="whitespace-nowrap">{`${formatUnits(
-						BigInt(data.amountPerCycle),
-						DAI_OPTIMISM.decimals,
-					)} DAI / month`}</span>
-				</span>
+			<td className="p-3 whitespace-nowrap">
+				{`$${formatUnits(
+					BigInt(data.amountPerCycle),
+					DAI_OPTIMISM.decimals,
+				)} / month`}
 			</td>
 			<td title={chainIdToNames[data.chainId].name}>
 				<img
