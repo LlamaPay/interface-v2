@@ -7,7 +7,7 @@ import {
 	mainnet,
 	optimism,
 	polygon,
-} from "wagmi/chains";
+} from "viem/chains";
 
 function unscramble(str: string) {
 	return str.split("").reduce((a, b) => {

@@ -17,7 +17,7 @@ import {
 	mainnet,
 	optimism,
 	polygon,
-} from "wagmi/chains";
+} from "viem/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 
 const queryClient = new QueryClient();
