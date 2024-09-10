@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { http, createPublicClient } from "viem";
 import { mainnet } from "viem/chains";
 import { useEnsName } from "wagmi";

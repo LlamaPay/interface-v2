@@ -7,15 +7,8 @@ import {
 	mainnet,
 	optimism,
 	polygon,
-} from "wagmi/chains";
-import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-
-export const createJsonRpcProvider = (api: string) =>
-	jsonRpcProvider({
-		rpc: () => ({
-			http: api,
-		}),
-	});
+	blast,
+} from "viem/chains";
 
 function unscramble(str: string) {
 	return str.split("").reduce((a, b) => {
@@ -65,7 +58,7 @@ export const LLAMAPAY_CHAINS_LIB = {
 		contracts: {},
 		subgraphs: {},
 	},
-	[81457]: {
+	[blast.id]: {
 		rpc: "https://blast-rpc.publicnode.com",
 		contracts: {},
 		subgraphs: {},

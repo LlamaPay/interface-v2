@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import {
 	http,
 	createPublicClient,
@@ -9,12 +8,7 @@ import {
 	parseUnits,
 } from "viem";
 import { optimism } from "viem/chains";
-import {
-	useAccount,
-	useContractWrite,
-	useNetwork,
-	useWaitForTransaction,
-} from "wagmi";
+import { useAccount } from "wagmi";
 
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
@@ -27,6 +21,7 @@ import {
 import { formatNum } from "~/utils/formatNum";
 
 import { Icon } from "~/components/Icon";
+import { useClaimV1, useClaimV2 } from "./actions";
 
 const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
 const client = createPublicClient({
@@ -48,7 +43,7 @@ async function calculateAvailableToClaim({
 	const contract: any = getContract({
 		address: subsContract,
 		abi: SUBSCRIPTIONS_ABI,
-		publicClient: client as any,
+		client: client as any,
 	});
 
 	try {
@@ -130,7 +125,7 @@ async function calculateAvailableToClaimNextMonth({
 		const contract: any = getContract({
 			address: subsContract as `0x${string}`,
 			abi: SUBSCRIPTIONS_ABI,
-			publicClient: client as any,
+			client: client as any,
 		});
 
 		const receiverBalance = await contract.read.receiverBalances([receiver]);
@@ -235,107 +230,35 @@ async function calcAvailableToClaimNextMonthOnAllContracts({
 }
 
 export const Claim = () => {
-	const { address, isConnected } = useAccount();
-	const { chain } = useNetwork();
-	const {
-		data: claimTxData_v1,
-		writeAsync: claim_v1,
-		isLoading: confirmingClaimTx_v1,
-	} = useContractWrite({
-		address: SUB_CHAIN_LIB.contracts.subscriptions_v1,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "claim",
-		chainId: optimism.id,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-claim-tx${claimTxData_v1?.hash ?? ""}`,
-			});
-		},
-	});
-	const {
-		data: claimTxData_v2,
-		writeAsync: claim_v2,
-		isLoading: confirmingClaimTx_v2,
-	} = useContractWrite({
-		address: SUB_CHAIN_LIB.contracts.subscriptions,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "claim",
-		chainId: optimism.id,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-claim-tx${claimTxData_v2?.hash ?? ""}`,
-			});
-		},
-	});
-	const { isLoading: waitingForClaimTxDataOnChain_v1 } = useWaitForTransaction({
-		hash: claimTxData_v1?.hash,
-		enabled: claimTxData_v1 ? true : false,
-		chainId: optimism.id,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-claim-tx-on-chain${claimTxData_v1?.hash ?? ""}`,
-			});
-		},
-		onSuccess: (data) => {
-			if (data.status === "success") {
-				toast.success("Transaction Success", {
-					id: `tx-success-${data.transactionHash}`,
-				});
-			} else {
-				toast.error("Transaction Failed", {
-					id: `tx-failed-${data.transactionHash}`,
-				});
-			}
-		},
-	});
-	const { isLoading: waitingForClaimTxDataOnChain_v2 } = useWaitForTransaction({
-		hash: claimTxData_v2?.hash,
-		enabled: claimTxData_v2 ? true : false,
-		chainId: optimism.id,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-claim-tx-on-chain${claimTxData_v2?.hash ?? ""}`,
-			});
-		},
-		onSuccess: (data) => {
-			if (data.status === "success") {
-				toast.success("Transaction Success", {
-					id: `tx-success-${data.transactionHash}`,
-				});
-			} else {
-				toast.error("Transaction Failed", {
-					id: `tx-failed-${data.transactionHash}`,
-				});
-			}
-		},
-	});
+	const { address, isConnected, chain } = useAccount();
+
+	const { mutateAsync: claim_v1, isPending: confirmingClaimTx_v1 } =
+		useClaimV1();
+	const { mutateAsync: claim_v2, isPending: confirmingClaimTx_v2 } =
+		useClaimV2();
 
 	const {
 		data: claimable,
 		isLoading: fetchingClaimables,
 		error: errorFetchingClaimables,
 		refetch: refetchClaimable,
-	} = useQuery(
-		["claimable", address],
-		() =>
+	} = useQuery({
+		queryKey: ["claimable", address],
+		queryFn: () =>
 			calcAvailableToClaimNextMonthOnAllContracts({
 				receiver: address,
 			}),
-		{ refetchInterval: 20_000 },
-	);
+		refetchInterval: 20_000,
+	});
 	const { data: claimableNextMonth, isLoading: fetchingClaimablesNextMonth } =
-		useQuery(
-			["claimable-next-month", address],
-			() =>
+		useQuery({
+			queryKey: ["claimable-next-month", address],
+			queryFn: () =>
 				calcAvailableToClaimOnAllContracts({
 					receiver: address,
 				}),
-			{ refetchInterval: 20_000 },
-		);
+			refetchInterval: 20_000,
+		});
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -356,7 +279,7 @@ export const Claim = () => {
 			const contract: any = getContract({
 				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
 				abi: SUBSCRIPTIONS_ABI,
-				publicClient: client as any,
+				client: client as any,
 			});
 
 			const shares = await contract.read.convertToShares([toClaim]);
@@ -372,7 +295,7 @@ export const Claim = () => {
 			const contract: any = getContract({
 				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
 				abi: SUBSCRIPTIONS_ABI,
-				publicClient: client as any,
+				client: client as any,
 			});
 			const shares = await contract.read.convertToShares([toClaim]);
 
@@ -432,12 +355,7 @@ export const Claim = () => {
 									setAmountToClaim(e.target.value.trim());
 								}
 							}}
-							disabled={
-								confirmingClaimTx_v1 ||
-								confirmingClaimTx_v2 ||
-								waitingForClaimTxDataOnChain_v1 ||
-								waitingForClaimTxDataOnChain_v2
-							}
+							disabled={confirmingClaimTx_v1 || confirmingClaimTx_v2}
 						/>
 						<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
 							<p className="ml-auto flex items-center gap-1 text-xl">
@@ -457,7 +375,7 @@ export const Claim = () => {
 												? formatNum(
 														formatUnits(claimable.total, DAI_OPTIMISM.decimals),
 														2,
-												  )
+													)
 												: "-"}
 										</span>
 
@@ -470,7 +388,7 @@ export const Claim = () => {
 														? formatUnits(
 																claimable.total,
 																DAI_OPTIMISM.decimals,
-														  )
+															)
 														: "0",
 												)
 											}
@@ -507,7 +425,7 @@ export const Claim = () => {
 											DAI_OPTIMISM.decimals,
 										),
 										2,
-								  )} DAI`
+									)} DAI`
 								: "-"}
 						</span>
 					)}
@@ -521,17 +439,12 @@ export const Claim = () => {
 						!chain ||
 						chain.id !== optimism.id ||
 						confirmingClaimTx_v1 ||
-						waitingForClaimTxDataOnChain_v1 ||
 						confirmingClaimTx_v2 ||
-						waitingForClaimTxDataOnChain_v2 ||
 						!claimable?.total ||
 						amountToClaimParsed > claimable.total
 					}
 				>
-					{confirmingClaimTx_v1 ||
-					waitingForClaimTxDataOnChain_v1 ||
-					confirmingClaimTx_v2 ||
-					waitingForClaimTxDataOnChain_v2
+					{confirmingClaimTx_v1 || confirmingClaimTx_v2
 						? "Confirming..."
 						: "Claim"}
 				</button>

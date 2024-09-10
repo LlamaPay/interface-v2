@@ -1,6 +1,6 @@
 import * as Ariakit from "@ariakit/react";
 import { optimism } from "viem/chains";
-import { useConnect } from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 
 import brave from "~/assets/wallets/brave.svg";
 import coinbase from "~/assets/wallets/coinbase.svg";
@@ -34,8 +34,9 @@ export const ConnectWallet = ({
 }) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
-	const { connect, connectors, error, isLoading, pendingConnector } =
-		useConnect();
+	const { connector } = useAccount();
+	const { connect, connectors, error } = useConnect();
+	const { disconnectAsync } = useDisconnect();
 
 	return (
 		<>
@@ -60,26 +61,32 @@ export const ConnectWallet = ({
 				</button>
 
 				<ul className="flex flex-col gap-4">
-					{connectors.map((connector) => (
-						<li key={connector.id} className="flex items-center">
+					{connectors.map((cntr) => (
+						<li key={cntr.id} className="flex items-center">
 							<button
-								disabled={!connector.ready}
 								onClick={() => {
-									connect({ connector, chainId });
+									if (connector && connector.id === cntr.id) {
+										disconnectAsync({ connector: cntr }).then(() => {
+											connect({ connector: cntr });
+										});
+									} else {
+										connect({ connector: cntr });
+									}
+
 									if (!error) {
 										dialog.toggle();
 									}
 								}}
-								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20"
+								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20 disabled:opacity-50"
 							>
-								{isLoading && pendingConnector?.id === connector.id ? (
+								{/* {isPending && pendingConnector?.id === connector.id ? (
 									<span className="absolute left-[6px] h-1 w-1 animate-ping rounded-full bg-blue-500" />
-								) : null}
+								) : null} */}
 
-								<span className="mr-auto">{connector.name}</span>
+								<span className="mr-auto">{cntr.name}</span>
 
 								<span className="rounded-lg border border-white/10">
-									<ConnectorLogo name={connector.name} />
+									<ConnectorLogo name={cntr.name} />
 								</span>
 							</button>
 						</li>

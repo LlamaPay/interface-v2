@@ -2,36 +2,30 @@ import * as Ariakit from "@ariakit/react";
 import { Link } from "@remix-run/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import toast from "react-hot-toast";
 import {
 	http,
 	createPublicClient,
 	encodeFunctionData,
+	erc20Abi,
 	formatUnits,
 	getContract,
 	parseUnits,
 } from "viem";
-import {
-	erc20ABI,
-	useAccount,
-	useContractRead,
-	useContractWrite,
-	useNetwork,
-	useWaitForTransaction,
-} from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 
 import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
-import { supportedChains } from "~/lib/wallet";
-import { type IFormattedSub } from "~/types";
+import { config } from "~/lib/wallet";
+import type { IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
+import { useApproveToken, useUnsubscribe, useWithdraw } from "./actions";
 
 export async function calculateSubBalance(sub: IFormattedSub) {
 	if (!sub || !sub.tokenDecimal || !sub.tokenDivisor || !sub.tokenAddress)
 		return null;
 
-	const supportedChain = supportedChains.find(
+	const supportedChain = config.chains.find(
 		(chain) => chain.id === sub.chainId,
 	);
 
@@ -45,7 +39,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 	const contract: any = getContract({
 		address: sub.subsContract as `0x${string}`,
 		abi: SUBSCRIPTIONS_ABI,
-		publicClient: client as any,
+		client: client as any,
 	});
 
 	const initialShares = BigInt(sub.initialShares);
@@ -123,8 +117,9 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 }
 
 export const ManageSub = ({ data }: { data: IFormattedSub }) => {
-	if (!data.tokenAddress || !data.tokenDecimal || !data.tokenDivisor)
+	if (!data.tokenAddress || !data.tokenDecimal || !data.tokenDivisor) {
 		return null;
+	}
 
 	return (
 		<Content
@@ -140,8 +135,7 @@ const Content = ({
 	tokenAddress,
 	tokenDecimal,
 }: { data: IFormattedSub; tokenAddress: string; tokenDecimal: number }) => {
-	const { address } = useAccount();
-	const { chain } = useNetwork();
+	const { address, chain } = useAccount();
 	const queryClient = useQueryClient();
 
 	const {
@@ -149,114 +143,34 @@ const Content = ({
 		isLoading: fetchingBalance,
 		error: errorFetchingBalance,
 		refetch: refetchBalance,
-	} = useQuery(["subBalance", data.id], () => calculateSubBalance(data), {
+	} = useQuery({
+		queryKey: ["subBalance", data.id],
+		queryFn: () => calculateSubBalance(data),
 		refetchInterval: 20_000,
 	});
 
 	// UNSUBSCRIBE
 	const {
 		data: unsubscribeTxData,
-		write: unsubscribe,
-		isLoading: confirmingUnsubscribeTx,
+		mutateAsync: unsubscribe,
+		isPending: confirmingUnsubscribeTx,
 		reset,
-	} = useContractWrite({
-		address: data.subsContract as `0x${string}`,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "unsubscribe",
-		args: [
-			BigInt(data.initialPeriod),
-			BigInt(data.expirationDate),
-			BigInt(data.amountPerCycle),
-			data.receiver as `0x${string}`,
-			BigInt(data.accumulator),
-			BigInt(data.initialShares),
-		],
-		chainId: data.chainId,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-unsub-tx${unsubscribeTxData?.hash ?? ""}`,
-			});
-		},
-	});
-	const {
-		data: unsubscribeTxDataOnChain,
-		isLoading: waitingForUnsubscribeTxDataOnChain,
-	} = useWaitForTransaction({
-		hash: unsubscribeTxData?.hash,
-		enabled: unsubscribeTxData ? true : false,
-		chainId: data.chainId,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-unsub-tx-on-chain${
-					unsubscribeTxData?.hash ?? ""
-				}`,
-			});
-		},
-		onSuccess: (data) => {
-			if (data.status === "success") {
-				toast.success("Transaction Success", {
-					id: `tx-success${data.transactionHash}`,
-				});
-				refetchBalance();
-				reset();
-				queryClient.invalidateQueries();
-			} else {
-				toast.error("Transaction Failed", {
-					id: `tx-failed${data.transactionHash}`,
-				});
-			}
-		},
-	});
+	} = useUnsubscribe();
 
 	const isExpired = +data.realExpiration * 1000 < Date.now();
 	const cannotUnsubscribe =
 		+data.realExpiration * 1000 - Date.now() <= data.subDuration;
 	const isUnsubscribed =
-		data.unsubscribed || unsubscribeTxDataOnChain?.status === "success"
-			? true
-			: false;
+		data.unsubscribed || unsubscribeTxData?.status === "success" ? true : false;
 
 	// WITHDRAWALS
 	const withdrawDialog = Ariakit.useDialogStore({ animated: true });
 	const {
 		data: withdrawTxData,
-		write: withdrawBalanceFromSub,
-		isLoading: confirmingWithdrawal,
+		mutateAsync: withdrawBalanceFromSub,
+		isPending: confirmingWithdrawal,
 		error: errorConfirmingWithdrawal,
-	} = useContractWrite({
-		address: data.subsContract as `0x${string}`,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "batch",
-		chainId: data.chainId,
-		onError: (err) => {
-			const msg = (err as any)?.shortMessage ?? err.message;
-			toast.error(msg, {
-				id: `error-confirming-withdraw-tx${withdrawTxData?.hash ?? ""}`,
-			});
-		},
-	});
-	const {
-		data: withdrawTxDataOnChain,
-		isLoading: confirmingWithdrawalTxOnChain,
-		error: errorConfirmingWithdrawTxDataOnChain,
-	} = useWaitForTransaction({
-		hash: withdrawTxData?.hash,
-		enabled: withdrawTxData ? true : false,
-		chainId: data.chainId,
-		onSuccess: (data) => {
-			if (data.status === "success") {
-				toast.success("Transaction Success", {
-					id: `tx-success${data.transactionHash}`,
-				});
-				refetchBalance();
-				reset();
-				queryClient.invalidateQueries();
-				withdrawDialog.toggle();
-			}
-		},
-	});
+	} = useWithdraw();
 
 	const [amountToWithdraw, setAmountToWithdraw] = useState("");
 	const amountToDeposit =
@@ -267,7 +181,7 @@ const Content = ({
 	const handleWithdrawal = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		const unsusbcribe = encodeFunctionData({
+		const unsubscribe = encodeFunctionData({
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "unsubscribe",
 			args: [
@@ -280,7 +194,7 @@ const Content = ({
 			],
 		});
 
-		const calls = [unsusbcribe];
+		const calls = [unsubscribe];
 
 		if (amountToDeposit > 0n) {
 			const subscribeForNextPeriod = encodeFunctionData({
@@ -296,7 +210,18 @@ const Content = ({
 			calls.push(subscribeForNextPeriod);
 		}
 
-		withdrawBalanceFromSub?.({ args: [calls, true] });
+		withdrawBalanceFromSub?.({
+			address: data.subsContract as `0x${string}`,
+			chainId: data.chainId,
+			args: [calls, true],
+		}).then((data) => {
+			if (data.status === "success") {
+				refetchBalance();
+				reset();
+				queryClient.invalidateQueries();
+				withdrawDialog.toggle();
+			}
+		});
 	};
 
 	// TOKEN APPROVAL
@@ -305,13 +230,15 @@ const Content = ({
 		data: allowance,
 		error: errorFetchingAllowance,
 		refetch: refetchAllowance,
-	} = useContractRead({
+	} = useReadContract({
 		address: tokenAddress as `0x${string}`,
-		abi: erc20ABI,
+		abi: erc20Abi,
 		functionName: "allowance",
 		args: address && [address, data.subsContract as `0x${string}`],
-		enabled: address ? true : false,
 		chainId: data.chainId,
+		query: {
+			enabled: address ? true : false,
+		},
 	});
 
 	// check if input amount is gte to allowance
@@ -324,29 +251,10 @@ const Content = ({
 
 	const {
 		data: approveTxData,
-		write: approveToken,
-		isLoading: confirmingTokenApproval,
+		mutateAsync: approveToken,
+		isPending: confirmingTokenApproval,
 		error: errorConfirmingTokenApproval,
-	} = useContractWrite({
-		address: tokenAddress as `0x${string}`,
-		abi: erc20ABI,
-		functionName: "approve",
-		chainId: data.chainId,
-	});
-	const {
-		data: approveTxDataOnChain,
-		isLoading: waitingForApproveTxConfirmation,
-		error: errorConfirmingApproveTx,
-	} = useWaitForTransaction({
-		hash: approveTxData?.hash,
-		enabled: approveTxData ? true : false,
-		chainId: data.chainId,
-		onSuccess(data) {
-			if (data.status === "success") {
-				refetchAllowance();
-			}
-		},
-	});
+	} = useApproveToken();
 
 	// Hide table cells if sub expired/cancelled/unsubscribed
 	if (isUnsubscribed) {
@@ -407,7 +315,7 @@ const Content = ({
 				<div>
 					<button
 						className="rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-						disabled={!chain || chain.unsupported}
+						disabled={!chain}
 						onClick={withdrawDialog.toggle}
 					>
 						Withdraw
@@ -456,9 +364,7 @@ const Content = ({
 												setAmountToWithdraw(e.target.value.trim());
 											}
 										}}
-										disabled={
-											confirmingWithdrawal || confirmingWithdrawalTxOnChain
-										}
+										disabled={confirmingWithdrawal}
 									/>
 									<span className="absolute bottom-2 right-4 top-3 my-auto flex flex-col justify-end gap-2">
 										<p className="flex items-center gap-1 text-xs">
@@ -474,7 +380,7 @@ const Content = ({
 															? `$${formatNum(
 																	formatUnits(balance, tokenDecimal),
 																	2,
-															  )}`
+																)}`
 															: "-"}
 													</span>
 													<button
@@ -505,10 +411,8 @@ const Content = ({
 											!chain ||
 											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
-											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
-											waitingForApproveTxConfirmation ||
 											isApproved ||
 											amountToWithdraw.length === 0 ||
 											amountToWithdraw === "0" ||
@@ -522,10 +426,8 @@ const Content = ({
 											!chain ||
 											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
-											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
-											waitingForApproveTxConfirmation ||
 											!isApproved ||
 											amountToWithdraw.length === 0 ||
 											amountToWithdraw === "0"
@@ -539,10 +441,8 @@ const Content = ({
 											!chain ||
 											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
-											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
-											waitingForApproveTxConfirmation ||
 											isApproved ||
 											amountToWithdraw.length === 0 ||
 											amountToWithdraw === "0" ||
@@ -551,18 +451,20 @@ const Content = ({
 										type="button"
 										onClick={() => {
 											approveToken?.({
-												args: [
-													data.subsContract as `0x${string}`,
-													amountToDeposit,
-												],
+												address: tokenAddress as `0x${string}`,
+												chainId: data.chainId,
+												subsContract: data.subsContract as `0x${string}`,
+												amountToDeposit,
+											}).then(() => {
+												refetchAllowance();
 											});
 										}}
 									>
-										{confirmingTokenApproval || waitingForApproveTxConfirmation
+										{confirmingTokenApproval
 											? "Confirming..."
 											: isApproved
-											  ? "Approved"
-											  : "Approve"}
+												? "Approved"
+												: "Approve"}
 									</button>
 
 									<button
@@ -571,18 +473,14 @@ const Content = ({
 											!chain ||
 											chain.id !== data.chainId ||
 											confirmingWithdrawal ||
-											confirmingWithdrawalTxOnChain ||
 											disableWithdrawal ||
 											confirmingTokenApproval ||
-											waitingForApproveTxConfirmation ||
 											!isApproved ||
 											amountToWithdraw.length === 0 ||
 											amountToWithdraw === "0"
 										}
 									>
-										{confirmingWithdrawal || confirmingWithdrawalTxOnChain
-											? "Confirming..."
-											: "Withdraw"}
+										{confirmingWithdrawal ? "Confirming..." : "Withdraw"}
 									</button>
 								</div>
 							</div>
@@ -590,58 +488,43 @@ const Content = ({
 							{errorFetchingAllowance ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-5
+									data-error-1
 								>
 									{(errorFetchingAllowance as any)?.shortMessage ??
 										errorFetchingAllowance.message}
 								</p>
 							) : null}
+
 							{errorConfirmingTokenApproval ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-5
+									data-error-2
 								>
 									{(errorConfirmingTokenApproval as any)?.shortMessage ??
 										errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
-							{errorConfirmingApproveTx ? (
-								<p
-									className="break-all text-center text-sm text-red-500"
-									data-error-5
-								>
-									{(errorConfirmingApproveTx as any)?.shortMessage ??
-										errorConfirmingApproveTx.message}
-								</p>
-							) : null}
-							{errorConfirmingWithdrawTxDataOnChain ? (
-								<p
-									className="break-all text-center text-sm text-red-500"
-									data-error-5
-								>
-									{(errorConfirmingWithdrawTxDataOnChain as any)
-										?.shortMessage ??
-										errorConfirmingWithdrawTxDataOnChain.message}
-								</p>
-							) : null}
+
 							{errorConfirmingWithdrawal ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-5
+									data-error-3
 								>
 									{(errorConfirmingWithdrawal as any)?.shortMessage ??
 										errorConfirmingWithdrawal.message}
 								</p>
 							) : null}
-							{withdrawTxDataOnChain?.status === "reverted" ? (
+
+							{withdrawTxData?.status === "reverted" ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-5
+									data-error-4
 								>
 									Transaction Reverted
 								</p>
 							) : null}
-							{approveTxDataOnChain?.status === "reverted" ? (
+
+							{approveTxData?.status === "reverted" ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
 									data-error-5
@@ -658,17 +541,22 @@ const Content = ({
 					className="rounded-lg bg-[#13785a] p-2 text-xs text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
 					disabled={
 						!chain ||
-						chain.unsupported ||
 						!unsubscribe ||
 						confirmingUnsubscribeTx ||
-						waitingForUnsubscribeTxDataOnChain ||
 						cannotUnsubscribe
 					}
-					onClick={() => unsubscribe?.()}
+					onClick={() =>
+						unsubscribe?.({
+							address: data.subsContract as `0x${string}`,
+							data,
+						}).finally(() => {
+							refetchBalance();
+							reset();
+							queryClient.invalidateQueries();
+						})
+					}
 				>
-					{confirmingUnsubscribeTx || waitingForUnsubscribeTxDataOnChain
-						? "Confirming..."
-						: "Unsubscribe"}
+					{confirmingUnsubscribeTx ? "Confirming..." : "Unsubscribe"}
 				</button>
 			</td>
 		</>

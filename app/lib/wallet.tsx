@@ -1,103 +1,60 @@
-import { type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import {
-	Chain,
+	http,
+	type State,
+	WagmiProvider,
+	cookieStorage,
+	createConfig,
+	createStorage,
+} from "wagmi";
+import {
 	arbitrum,
 	avalanche,
 	base,
+	blast,
 	bsc,
 	mainnet,
 	optimism,
 	polygon,
 } from "viem/chains";
-import { WagmiConfig, configureChains, createConfig } from "wagmi";
-import { InjectedConnector } from "wagmi/connectors/injected";
-import { SafeConnector } from "wagmi/connectors/safe";
-import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
-import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-
+import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 import { LLAMAPAY_CHAINS_LIB } from "./constants";
 
+const queryClient = new QueryClient();
 const projectId = "2b0fa925a6e30cf250c05823fa9ef890";
 
-const blast = {
-	id: 81457,
-	name: "Blast",
-	nativeCurrency: {
-		decimals: 18,
-		name: "Ether",
-		symbol: "ETH",
+export const config = createConfig({
+	chains: [mainnet, optimism, polygon, arbitrum, base, bsc, avalanche, blast],
+	connectors: [injected(), walletConnect({ projectId }), coinbaseWallet()],
+	ssr: true,
+	storage: createStorage({
+		storage: cookieStorage,
+	}),
+	transports: {
+		[mainnet.id]: http(LLAMAPAY_CHAINS_LIB[mainnet.id].rpc),
+		[optimism.id]: http(LLAMAPAY_CHAINS_LIB[optimism.id].rpc),
+		[polygon.id]: http(LLAMAPAY_CHAINS_LIB[polygon.id].rpc),
+		[arbitrum.id]: http(LLAMAPAY_CHAINS_LIB[arbitrum.id].rpc),
+		[base.id]: http(LLAMAPAY_CHAINS_LIB[base.id].rpc),
+		[bsc.id]: http(LLAMAPAY_CHAINS_LIB[bsc.id].rpc),
+		[avalanche.id]: http(LLAMAPAY_CHAINS_LIB[avalanche.id].rpc),
+		[blast.id]: http(LLAMAPAY_CHAINS_LIB[blast.id].rpc),
 	},
-	rpcUrls: {
-		public: { http: ["https://rpc.blast.io"] },
-		default: { http: ["https://rpc.blast.io"] },
-	},
-	blockExplorers: {
-		default: {
-			name: "Blastscan",
-			url: "https://blastscan.io",
-		},
-	},
-	contracts: {
-		multicall3: {
-			address: "0xcA11bde05977b3631167028862bE2a173976CA11",
-			blockCreated: 212929,
-		},
-	},
-	network: "blast",
-} as const satisfies Chain;
-
-export const supportedChains = [
-	mainnet,
-	optimism,
-	polygon,
-	arbitrum,
-	base,
-	bsc,
-	avalanche,
-	blast,
-];
-
-const { chains, publicClient, webSocketPublicClient } = configureChains(
-	supportedChains,
-	[
-		jsonRpcProvider({
-			rpc: (chain) => ({
-				http: (LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc,
-			}),
-		}),
-	],
-);
-
-const config = createConfig({
-	autoConnect: true,
-	publicClient,
-	webSocketPublicClient,
-	connectors: [
-		new InjectedConnector({ chains, options: { shimDisconnect: true } }),
-		new WalletConnectConnector({
-			chains,
-			options: {
-				projectId,
-				metadata: {
-					name: "LlamaPay",
-					description: "Automate transactions and stream them by the second.",
-					url: "https://llamapay.io",
-					icons: ["https://llamapay.io/icon.svg"],
-				},
-			},
-		}),
-		new SafeConnector({
-			chains,
-			options: {
-				allowedDomains: [/gnosis-safe.io$/, /app.safe.global$/],
-				debug: false,
-			},
-		}),
-	],
 });
 
-export const WalletProvider = ({ children }: { children: ReactNode }) => {
-	return <WagmiConfig config={config}>{children}</WagmiConfig>;
+export const WalletProvider = ({
+	children,
+	initialState,
+}: {
+	children: ReactNode;
+	initialState?: State;
+}) => {
+	return (
+		<WagmiProvider config={config} initialState={initialState}>
+			<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		</WagmiProvider>
+	);
 };
 
 export const chainIdToNames: Record<

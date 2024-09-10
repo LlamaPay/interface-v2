@@ -1,13 +1,13 @@
 import * as Ariakit from "@ariakit/react";
-import { useNetwork, useSwitchNetwork } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 
 import { Icon } from "~/components/Icon";
-import { chainIdToNames } from "~/lib/wallet";
+import { chainIdToNames, config } from "~/lib/wallet";
 import { formatChainName } from "~/utils/formatChainName";
 
 export const NetworkMenu = () => {
-	const { chain, chains } = useNetwork();
-	const { switchNetwork } = useSwitchNetwork();
+	const { chain } = useAccount();
+	const { switchChain } = useSwitchChain();
 
 	return (
 		<Ariakit.MenuProvider>
@@ -36,12 +36,12 @@ export const NetworkMenu = () => {
 				gutter={4}
 				className="hidden z-10 flex-col items-center gap-1 rounded-lg border border-[#E4EDEB] bg-[#f7fcfc] p-1 text-[#4B5563] disabled:cursor-not-allowed disabled:text-opacity-60 dark:border-[#2d2d2d] dark:bg-[rgba(43,43,43,0.50)] dark:text-white md:flex"
 			>
-				{chains.map((chain) => {
+				{config.chains.map((chain) => {
 					return (
 						<Ariakit.MenuItem
 							className="mr-auto flex cursor-pointer items-center gap-2 rounded-lg p-2"
 							key={chain.name}
-							onClick={() => switchNetwork?.(chain.id)}
+							onClick={() => switchChain?.({ chainId: chain.id })}
 						>
 							<span className="h-4 w-4 rounded-full">
 								{chain ? (

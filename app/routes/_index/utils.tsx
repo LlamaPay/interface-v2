@@ -5,7 +5,7 @@ import {
 	SUBSCRIPTION_PERIOD,
 } from "~/lib/constants";
 import { llamapayChainNamesToIds } from "~/lib/wallet";
-import { type IFormattedSub, INewSub, type ISub } from "~/types";
+import type { IFormattedSub, INewSub, ISub } from "~/types";
 
 export const formatSubs = (data: Array<ISub>) => {
 	return data.map((sub) => {
