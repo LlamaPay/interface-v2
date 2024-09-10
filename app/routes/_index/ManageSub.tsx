@@ -16,7 +16,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
-import { supportedChains } from "~/lib/wallet";
+import { config } from "~/lib/wallet";
 import type { IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 import { useApproveToken, useUnsubscribe, useWithdraw } from "./actions";
@@ -25,7 +25,7 @@ export async function calculateSubBalance(sub: IFormattedSub) {
 	if (!sub || !sub.tokenDecimal || !sub.tokenDivisor || !sub.tokenAddress)
 		return null;
 
-	const supportedChain = supportedChains.find(
+	const supportedChain = config.chains.find(
 		(chain) => chain.id === sub.chainId,
 	);
 

@@ -34,21 +34,8 @@ const transports = {
 	[blast.id]: http(),
 } as const;
 
-export const supportedChains = [
-	mainnet,
-	optimism,
-	polygon,
-	arbitrum,
-	base,
-	bsc,
-	avalanche,
-	blast,
-];
-
-export type TSupportedChains = keyof typeof transports;
-
 export const config = createConfig({
-	chains: [mainnet, polygon, optimism, arbitrum, base, blast, bsc, avalanche],
+	chains: [mainnet, optimism, polygon, arbitrum, base, bsc, avalanche, blast],
 	connectors: [injected(), walletConnect({ projectId }), coinbaseWallet()],
 	ssr: true,
 	storage: createStorage({
