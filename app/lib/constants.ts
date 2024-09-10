@@ -7,6 +7,7 @@ import {
 	mainnet,
 	optimism,
 	polygon,
+	blast,
 } from "viem/chains";
 
 function unscramble(str: string) {
@@ -57,7 +58,7 @@ export const LLAMAPAY_CHAINS_LIB = {
 		contracts: {},
 		subgraphs: {},
 	},
-	[81457]: {
+	[blast.id]: {
 		rpc: "https://blast-rpc.publicnode.com",
 		contracts: {},
 		subgraphs: {},
