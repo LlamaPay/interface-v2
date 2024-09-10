@@ -34,8 +34,7 @@ export const ConnectWallet = ({
 }) => {
 	const dialog = Ariakit.useDialogStore({ animated: true });
 
-	const { connect, connectors, error, isLoading, pendingConnector } =
-		useConnect();
+	const { connect, connectors, error } = useConnect();
 
 	return (
 		<>
@@ -72,9 +71,9 @@ export const ConnectWallet = ({
 								}}
 								className="relative m-auto flex flex-1 items-center gap-1 rounded-lg bg-gray-100 p-4 dark:bg-black/20"
 							>
-								{isLoading && pendingConnector?.id === connector.id ? (
+								{/* {isPending && pendingConnector?.id === connector.id ? (
 									<span className="absolute left-[6px] h-1 w-1 animate-ping rounded-full bg-blue-500" />
-								) : null}
+								) : null} */}
 
 								<span className="mr-auto">{connector.name}</span>
 

@@ -2,23 +2,16 @@ import * as Ariakit from "@ariakit/react";
 import type { MenuButtonProps, MenuItemProps } from "@ariakit/react";
 import { Link } from "@remix-run/react";
 import { type ReactNode, forwardRef } from "react";
-import {
-	useAccount,
-	useDisconnect,
-	useEnsName,
-	useNetwork,
-	useSwitchNetwork,
-} from "wagmi";
+import { useAccount, useDisconnect, useEnsName, useSwitchChain } from "wagmi";
 
 import { Icon } from "~/components/Icon";
-import { chainIdToNames } from "~/lib/wallet";
+import { chainIdToNames, config } from "~/lib/wallet";
 import { formatAddress } from "~/utils/formatAddress";
 import { formatChainName } from "~/utils/formatChainName";
 
 export const AppMenu = () => {
-	const { address } = useAccount();
-	const { chain, chains } = useNetwork();
-	const { switchNetwork } = useSwitchNetwork();
+	const { address, chain } = useAccount();
+	const { switchChain } = useSwitchChain();
 	const { data: ensName } = useEnsName({
 		address,
 		chainId: 1,
@@ -43,12 +36,12 @@ export const AppMenu = () => {
 			</Ariakit.MenuDescription>
 
 			<Menu label="Switch Network" className="p-2">
-				{chains.map((chainx) => {
+				{config.chains.map((chainx) => {
 					return (
 						<MenuItem
 							className="mr-auto flex cursor-pointer items-center gap-2 rounded-lg p-2"
 							key={chainx.name}
-							onClick={() => switchNetwork?.(chainx.id)}
+							onClick={() => switchChain?.({ chainId: chainx.id })}
 						>
 							<span className="h-4 w-4 rounded-full">
 								{chainx ? (

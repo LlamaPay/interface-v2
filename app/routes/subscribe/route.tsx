@@ -11,18 +11,15 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { encodeFunctionData, formatUnits, getAddress, parseUnits } from "viem";
-import { optimism } from "viem/chains";
 import {
-	erc20ABI,
-	useAccount,
-	useBalance,
-	useContractRead,
-	useContractWrite,
-	useNetwork,
-	useSwitchNetwork,
-	useWaitForTransaction,
-} from "wagmi";
+	encodeFunctionData,
+	erc20Abi,
+	formatUnits,
+	getAddress,
+	parseUnits,
+} from "viem";
+import { optimism } from "viem/chains";
+import { useAccount, useBalance, useReadContract, useSwitchChain } from "wagmi";
 
 import { EndsIn } from "~/components/EndsIn";
 import { Icon } from "~/components/Icon";
@@ -37,8 +34,13 @@ import { useGetEnsName } from "~/queries/useGetEnsName";
 import type { ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
-import { calculateSubBalance } from "./_index/ManageSub";
-import { formatSubs } from "./_index/utils";
+import { calculateSubBalance } from "../_index/ManageSub";
+import { formatSubs } from "../_index/utils";
+import {
+	useApproveToken,
+	useExtendSubscription,
+	useSubscribe,
+} from "./actions";
 
 const AccountMenu = lazy(() =>
 	import("~/components/Header/AccountMenu").then((module) => ({
@@ -101,9 +103,8 @@ const AAVE_YIELD = 0.052;
 export default function Index() {
 	const loaderData: any = useLoaderData();
 
-	const { address, isConnected } = useAccount();
-	const { chain } = useNetwork();
-	const { switchNetwork } = useSwitchNetwork();
+	const { address, isConnected, chain } = useAccount();
+	const { switchChain } = useSwitchChain();
 	const hydrated = useHydrated();
 
 	// get current subscriptions of user where user is already subscribed to receiver on same/different tier
@@ -112,13 +113,12 @@ export default function Index() {
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs,
 		refetch: refetchSubs,
-	} = useQuery(
-		["subs", address, loaderData.to],
-		() => getSubscriptions({ owner: address, receiver: loaderData.to }),
-		{
-			refetchInterval: 20_000,
-		},
-	);
+	} = useQuery({
+		queryKey: ["subs", address, loaderData.to],
+		queryFn: () =>
+			getSubscriptions({ owner: address, receiver: loaderData.to }),
+		refetchInterval: 20_000,
+	});
 
 	const isUserAlreadyASubscriber = subs && subs.length > 0;
 	const isUserSubscribedToSameTier =
@@ -158,13 +158,15 @@ export default function Index() {
 		data: allowance,
 		error: errorFetchingAllowance,
 		refetch: refetchAllowance,
-	} = useContractRead({
+	} = useReadContract({
 		address: DAI_OPTIMISM.address,
-		abi: erc20ABI,
+		abi: erc20Abi,
 		functionName: "allowance",
 		args: address && [address, subsContract],
-		enabled: address ? true : false,
 		chainId: optimism.id,
+		query: {
+			enabled: address ? true : false,
+		},
 	});
 	// get current period from contract
 	const {
@@ -172,7 +174,7 @@ export default function Index() {
 		isLoading: fetchingCurrentPeriod,
 		error: errorFetchingCurrentPeriod,
 		refetch: refetchCurrentPeriod,
-	} = useContractRead({
+	} = useReadContract({
 		address: subsContract,
 		abi: SUBSCRIPTIONS_ABI,
 		functionName: "currentPeriod",
@@ -185,80 +187,23 @@ export default function Index() {
 			? allowance >= amountToDepositActually
 			: false;
 	const {
-		data: approveTxData,
-		write: approveToken,
-		isLoading: confirmingTokenApproval,
+		mutateAsync: approveToken,
+		isPending: confirmingTokenApproval,
 		error: errorConfirmingTokenApproval,
-	} = useContractWrite({
-		address: DAI_OPTIMISM.address,
-		abi: erc20ABI,
-		functionName: "approve",
-		chainId: optimism.id,
-	});
-	const {
-		isLoading: waitingForApproveTxConfirmation,
-		error: errorConfirmingApproveTx,
-	} = useWaitForTransaction({
-		hash: approveTxData?.hash,
-		enabled: approveTxData ? true : false,
-		chainId: optimism.id,
-		onSuccess(data) {
-			if (data.status === "success") {
-				refetchAllowance();
-				refetchCurrentPeriod();
-			}
-		},
-	});
+	} = useApproveToken();
 
-	const {
-		data: subscribeTxData,
-		write: subscribe,
-		isLoading: confirmingSubscription,
-		error: errorConfirmingSubscription,
-	} = useContractWrite({
-		address: subsContract,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "subscribe",
-		chainId: optimism.id,
-		dataSuffix:
-			"0x0000000000000000000000000000000000000000000000000000000177bf6800",
-	});
-	const {
-		data: subscriptionExtendTxData,
-		write: subscriptionExtend,
-		isLoading: confirmingSubscriptionExtension,
-		error: errorConfirmingSubscriptionExtension,
-	} = useContractWrite({
-		address: subsContract,
-		abi: SUBSCRIPTIONS_ABI,
-		functionName: "batch",
-		chainId: optimism.id,
-	});
 	const {
 		data: subscribeTxDataOnChain,
-		isLoading: waitingForSubscriptionTxDataOnChain,
-		error: errorWaitingForSubscriptionTxDataOnChain,
-	} = useWaitForTransaction({
-		hash: subscribeTxData?.hash ?? subscriptionExtendTxData?.hash,
-		enabled: subscribeTxData ?? subscriptionExtendTxData ? true : false,
-		chainId: optimism.id,
-		onSuccess(data) {
-			if (data.status === "success") {
-				// navigate("/");
-
-				formRef.current?.reset();
-
-				refetchBalance();
-				refetchAllowance();
-				refetchCurrentPeriod();
-				refetchSubs();
-				if (loaderData.closeAfterPayment === "true") {
-					window?.opener?.postMessage("payment_success", "*");
-					window.close();
-				}
-			}
-		},
-	});
+		mutateAsync: subscribe,
+		isPending: confirmingSubscription,
+		error: errorConfirmingSubscription,
+	} = useSubscribe();
+	const {
+		data: waitingForSubscriptionTxDataOnChain,
+		mutateAsync: subscriptionExtend,
+		isPending: confirmingSubscriptionExtension,
+		error: errorConfirmingSubscriptionExtension,
+	} = useExtendSubscription();
 
 	// amount per cycle from url query params
 	const amountPerCycle = loaderData.amount;
@@ -315,7 +260,7 @@ export default function Index() {
 		e.preventDefault();
 		// if user is an existing subscriber , use batch to call unsubscribe() and subscribeForNextPeriod() to extend the current subscription
 		if (subs && subs.length > 0) {
-			const unsusbcribe = encodeFunctionData({
+			const unsubscribe = encodeFunctionData({
 				abi: SUBSCRIPTIONS_ABI,
 				functionName: "unsubscribe",
 				args: [
@@ -339,18 +284,51 @@ export default function Index() {
 				],
 			});
 			const calls = [
-				...(subs[0].unsubscribed ? [] : [unsusbcribe]),
+				...(subs[0].unsubscribed ? [] : [unsubscribe]),
 				subscribeForNextPeriod,
 			];
-			subscriptionExtend?.({ args: [calls, true] });
+			subscriptionExtend?.({ address: subsContract, args: [calls, true] }).then(
+				(data) => {
+					if (data.status === "success") {
+						// navigate("/");
+
+						formRef.current?.reset();
+
+						refetchBalance();
+						refetchAllowance();
+						refetchCurrentPeriod();
+						refetchSubs();
+						if (loaderData.closeAfterPayment === "true") {
+							window?.opener?.postMessage("payment_success", "*");
+							window.close();
+						}
+					}
+				},
+			);
 		} else {
 			subscribe?.({
+				address: subsContract,
 				args: [
 					loaderData.to,
 					decimalsAmountPerCycle,
 					parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) -
 						amountForCurrentPeriod, // amountForFuture
 				],
+			}).then((data) => {
+				if (data.status === "success") {
+					// navigate("/");
+
+					formRef.current?.reset();
+
+					refetchBalance();
+					refetchAllowance();
+					refetchCurrentPeriod();
+					refetchSubs();
+					if (loaderData.closeAfterPayment === "true") {
+						window?.opener?.postMessage("payment_success", "*");
+						window.close();
+					}
+				}
 			});
 		}
 	};
@@ -377,9 +355,7 @@ export default function Index() {
 		!chain ||
 		chain.id !== optimism.id ||
 		confirmingTokenApproval ||
-		waitingForApproveTxConfirmation ||
 		confirmingSubscription ||
-		waitingForSubscriptionTxDataOnChain ||
 		confirmingSubscriptionExtension ||
 		fetchingSubs ||
 		amountToDeposit.length === 0;
@@ -614,9 +590,7 @@ export default function Index() {
 											}
 										}}
 										disabled={
-											confirmingSubscription ||
-											waitingForSubscriptionTxDataOnChain ||
-											confirmingSubscriptionExtension
+											confirmingSubscription || confirmingSubscriptionExtension
 										}
 									/>
 									<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
@@ -857,7 +831,7 @@ export default function Index() {
 								</button>
 							) : chain.id !== optimism.id ? (
 								<button
-									onClick={() => switchNetwork?.(optimism.id)}
+									onClick={() => switchChain?.({ chainId: optimism.id })}
 									className="flex-1 rounded-lg bg-[var(--page-bg-color)] p-3 text-[var(--page-text-color)] disabled:opacity-60"
 								>
 									Switch Network
@@ -870,10 +844,8 @@ export default function Index() {
 											data-disabled={
 												!hydrated ||
 												confirmingTokenApproval ||
-												waitingForApproveTxConfirmation ||
 												isApproved ||
 												confirmingSubscription ||
-												waitingForSubscriptionTxDataOnChain ||
 												confirmingSubscriptionExtension ||
 												amountToDeposit.length === 0
 											}
@@ -885,9 +857,7 @@ export default function Index() {
 												!hydrated ||
 												!isApproved ||
 												confirmingSubscription ||
-												waitingForSubscriptionTxDataOnChain ||
 												confirmingTokenApproval ||
-												waitingForApproveTxConfirmation ||
 												confirmingSubscriptionExtension ||
 												amountToDeposit.length === 0 ||
 												disableSubscribe
@@ -901,14 +871,21 @@ export default function Index() {
 											type="button"
 											onClick={() => {
 												approveToken?.({
-													args: [subsContract, amountToDepositActually],
+													address: DAI_OPTIMISM.address,
+													chainId: optimism.id,
+													subsContract,
+													amountToDeposit: amountToDepositActually,
+												}).then((data) => {
+													if (data.status === "success") {
+														refetchAllowance();
+														refetchCurrentPeriod();
+													}
 												});
 											}}
 										>
 											{!hydrated
 												? "Approve"
-												: confirmingTokenApproval ||
-														waitingForApproveTxConfirmation
+												: confirmingTokenApproval
 													? "Confirming..."
 													: isApproved
 														? "Approved"
@@ -946,25 +923,32 @@ export default function Index() {
 										errorConfirmingTokenApproval.message}
 								</p>
 							) : null}
-							{hydrated && errorConfirmingApproveTx ? (
+
+							{hydrated &&
+							errorConfirmingSubscription &&
+							!(
+								errorConfirmingSubscription.message.includes("hash") &&
+								errorConfirmingSubscription.message.includes(
+									"could not be found",
+								)
+							) ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
 									data-error-2
-								>
-									{(errorConfirmingApproveTx as any)?.shortMessage ??
-										errorConfirmingApproveTx.message}
-								</p>
-							) : null}
-							{hydrated && errorConfirmingSubscription ? (
-								<p
-									className="break-all text-center text-sm text-red-500"
-									data-error-3
 								>
 									{(errorConfirmingSubscription as any)?.shortMessage ??
 										errorConfirmingSubscription.message}
 								</p>
 							) : null}
-							{hydrated && errorConfirmingSubscriptionExtension ? (
+
+							{hydrated &&
+							errorConfirmingSubscriptionExtension &&
+							!(
+								errorConfirmingSubscriptionExtension.message.includes("hash") &&
+								errorConfirmingSubscriptionExtension.message.includes(
+									"could not be found",
+								)
+							) ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
 									data-error-3
@@ -974,30 +958,11 @@ export default function Index() {
 										errorConfirmingSubscriptionExtension.message}
 								</p>
 							) : null}
-							{hydrated &&
-							errorWaitingForSubscriptionTxDataOnChain &&
-							!(
-								errorWaitingForSubscriptionTxDataOnChain.message.includes(
-									"hash",
-								) &&
-								errorWaitingForSubscriptionTxDataOnChain.message.includes(
-									"could not be found",
-								)
-							) ? (
-								<p
-									className="break-all text-center text-sm text-red-500"
-									data-error-4
-								>
-									{(errorWaitingForSubscriptionTxDataOnChain as any)
-										?.shortMessage ??
-										errorWaitingForSubscriptionTxDataOnChain.message}
-								</p>
-							) : null}
 
 							{hydrated && errorFetchingAllowance ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-5
+									data-error-4
 								>
 									{(errorFetchingAllowance as any)?.shortMessage ??
 										errorFetchingAllowance.message}
@@ -1007,7 +972,7 @@ export default function Index() {
 							{hydrated && isConnected && errorFetchingCurrentPeriod ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-6
+									data-error-5
 								>
 									{(errorFetchingCurrentPeriod as any)?.shortMessage ??
 										errorFetchingCurrentPeriod.message}
@@ -1017,7 +982,7 @@ export default function Index() {
 							{hydrated && isConnected && errorFetchingSubs ? (
 								<p
 									className="break-all text-center text-sm text-red-500"
-									data-error-7
+									data-error-6
 								>
 									{`Failed to fetch if you are a current subscriber - ${
 										(errorFetchingSubs as any).message ?? ""

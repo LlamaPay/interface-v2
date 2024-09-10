@@ -4,7 +4,7 @@ import type { INewSub, ISub } from "~/types";
 
 import { readContract } from "wagmi/actions";
 import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
-import { llamapayChainNamesToIds } from "~/lib/wallet";
+import { config, llamapayChainNamesToIds } from "~/lib/wallet";
 import { formatNewSubs, formatSubs } from "./utils";
 
 export async function getSubscriptions(address?: string) {
@@ -89,7 +89,7 @@ const getTokenAddresses = async (contracts: Array<string>) => {
 	try {
 		const data = await Promise.allSettled(
 			contracts.map((contract) =>
-				readContract({
+				readContract(config, {
 					address: contract.split(":")[0] as `0x${string}`,
 					abi: [
 						{
@@ -103,7 +103,7 @@ const getTokenAddresses = async (contracts: Array<string>) => {
 						},
 					],
 					functionName: "asset",
-					chainId: +contract.split(":")[1],
+					chainId: +contract.split(":")[1] as any,
 				}),
 			),
 		);
@@ -124,7 +124,7 @@ const getTokenDecimals = async (contracts: Array<string>) => {
 	try {
 		const data = await Promise.allSettled(
 			contracts.map((contract) =>
-				readContract({
+				readContract(config, {
 					address: contract.split(":")[0] as `0x${string}`,
 					abi: [
 						{
@@ -136,7 +136,7 @@ const getTokenDecimals = async (contracts: Array<string>) => {
 						},
 					],
 					functionName: "decimals",
-					chainId: +contract.split(":")[1],
+					chainId: +contract.split(":")[1] as any,
 				}),
 			),
 		);

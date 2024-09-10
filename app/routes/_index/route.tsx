@@ -2,7 +2,7 @@ import * as Ariakit from "@ariakit/react";
 import { Link } from "@remix-run/react";
 import { Suspense, lazy, useMemo } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useQuery } from "wagmi";
+import { useAccount } from "wagmi";
 
 import incomingImg from "~/assets/icons/incoming.svg";
 import outgoingImg from "~/assets/icons/outgoing.svg";
@@ -11,6 +11,7 @@ import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
 
+import { useQuery } from "@tanstack/react-query";
 import { getSubscriptions } from "./data";
 
 const defaultSelectedId = "subscriptions";
@@ -32,7 +33,9 @@ export default function Index() {
 		data: subs,
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs,
-	} = useQuery(["subs", address], () => getSubscriptions(address), {
+	} = useQuery({
+		queryKey: ["subs", address],
+		queryFn: () => getSubscriptions(address),
 		refetchInterval: 20_000,
 	});
 

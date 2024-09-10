@@ -23,7 +23,9 @@ export const Subscriptions = () => {
 		data: subs,
 		isLoading: fetchingSubs,
 		error: errorFetchingSubs,
-	} = useQuery(["subs", address], () => getSubscriptions(address), {
+	} = useQuery({
+		queryKey: ["subs", address],
+		queryFn: () => getSubscriptions(address),
 		refetchInterval: 20_000,
 	});
 

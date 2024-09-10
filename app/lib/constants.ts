@@ -8,14 +8,6 @@ import {
 	optimism,
 	polygon,
 } from "wagmi/chains";
-import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
-
-export const createJsonRpcProvider = (api: string) =>
-	jsonRpcProvider({
-		rpc: () => ({
-			http: api,
-		}),
-	});
 
 function unscramble(str: string) {
 	return str.split("").reduce((a, b) => {
