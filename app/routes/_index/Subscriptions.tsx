@@ -10,7 +10,7 @@ import { Icon } from "~/components/Icon";
 import { useHydrated } from "~/hooks/useHydrated";
 import { DAI_OPTIMISM } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
-import { type IFormattedSub } from "~/types";
+import type { IFormattedSub } from "~/types";
 
 import { chainIdToNames } from "~/lib/wallet";
 import { ManageSub } from "./ManageSub";
@@ -154,10 +154,10 @@ const Sub = ({ data, address }: { data: IFormattedSub; address: string }) => {
 		data.startTimestamp === data.realExpiration
 			? "Cancelled"
 			: +data.startTimestamp > Date.now() / 1e3
-			  ? "Not yet started"
-			  : +data.realExpiration < Date.now() / 1e3
-				  ? "Expired"
-				  : "Active";
+				? "Not yet started"
+				: +data.realExpiration < Date.now() / 1e3
+					? "Expired"
+					: "Active";
 
 	const incoming = data.receiver === address.toLowerCase();
 

@@ -1,11 +1,11 @@
 import { gql, request } from "graphql-request";
 
-import { type INewSub, type ISub } from "~/types";
+import type { INewSub, ISub } from "~/types";
 
-import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
-import { formatNewSubs, formatSubs } from "./utils";
-import { llamapayChainNamesToIds } from "~/lib/wallet";
 import { readContract } from "wagmi/actions";
+import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
+import { llamapayChainNamesToIds } from "~/lib/wallet";
+import { formatNewSubs, formatSubs } from "./utils";
 
 export async function getSubscriptions(address?: string) {
 	try {

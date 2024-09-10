@@ -457,7 +457,7 @@ export const Claim = () => {
 												? formatNum(
 														formatUnits(claimable.total, DAI_OPTIMISM.decimals),
 														2,
-												  )
+													)
 												: "-"}
 										</span>
 
@@ -470,7 +470,7 @@ export const Claim = () => {
 														? formatUnits(
 																claimable.total,
 																DAI_OPTIMISM.decimals,
-														  )
+															)
 														: "0",
 												)
 											}
@@ -507,7 +507,7 @@ export const Claim = () => {
 											DAI_OPTIMISM.decimals,
 										),
 										2,
-								  )} DAI`
+									)} DAI`
 								: "-"}
 						</span>
 					)}

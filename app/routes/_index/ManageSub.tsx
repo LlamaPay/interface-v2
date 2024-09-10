@@ -24,7 +24,7 @@ import { Icon } from "~/components/Icon";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import { LLAMAPAY_CHAINS_LIB, SUBSCRIPTION_DURATION } from "~/lib/constants";
 import { supportedChains } from "~/lib/wallet";
-import { type IFormattedSub } from "~/types";
+import type { IFormattedSub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 export async function calculateSubBalance(sub: IFormattedSub) {
@@ -474,7 +474,7 @@ const Content = ({
 															? `$${formatNum(
 																	formatUnits(balance, tokenDecimal),
 																	2,
-															  )}`
+																)}`
 															: "-"}
 													</span>
 													<button
@@ -561,8 +561,8 @@ const Content = ({
 										{confirmingTokenApproval || waitingForApproveTxConfirmation
 											? "Confirming..."
 											: isApproved
-											  ? "Approved"
-											  : "Approve"}
+												? "Approved"
+												: "Approve"}
 									</button>
 
 									<button

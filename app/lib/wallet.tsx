@@ -1,6 +1,6 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
-	Chain,
+	type Chain,
 	arbitrum,
 	avalanche,
 	base,

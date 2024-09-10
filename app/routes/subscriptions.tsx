@@ -3,7 +3,7 @@ import { gql, request as grequest } from "graphql-request";
 import { optimism } from "viem/chains";
 
 import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
-import { type ISub } from "~/types";
+import type { ISub } from "~/types";
 
 import { formatSubs } from "./_index/utils";
 

@@ -34,7 +34,7 @@ import {
 	SUBSCRIPTION_DURATION,
 } from "~/lib/constants";
 import { useGetEnsName } from "~/queries/useGetEnsName";
-import { type ISub } from "~/types";
+import type { ISub } from "~/types";
 import { formatNum } from "~/utils/formatNum";
 
 import { calculateSubBalance } from "./_index/ManageSub";
@@ -78,10 +78,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		bgColor === "#ffffff"
 			? "#000000"
 			: bgColor === "#000000"
-			  ? "#ffffff"
-			  : textColor === "#ffffff"
-				  ? "#000000"
-				  : "#ffffff";
+				? "#ffffff"
+				: textColor === "#ffffff"
+					? "#000000"
+					: "#ffffff";
 	const textColor2 = bgColor2 === "#ffffff" ? "#000000" : "#ffffff";
 
 	return defer({
@@ -287,7 +287,7 @@ export default function Index() {
 	let instantPayment =
 		isUserAlreadyASubscriber && newCost > oldCost
 			? ((newCost - oldCost) * timeLeftInCurrentCycle) /
-			  BigInt(SUBSCRIPTION_DURATION)
+				BigInt(SUBSCRIPTION_DURATION)
 			: 0n;
 
 	let amountForCurrentPeriod = 0n;
@@ -363,12 +363,12 @@ export default function Index() {
 	const isValidInputAmount = currentPeriod
 		? parseUnits(amountToDeposit, DAI_OPTIMISM.decimals) +
 				(subs?.[0]?.balanceLeft ?? 0n) >=
-		  amountForCurrentPeriod
+			amountForCurrentPeriod
 		: +amountToDeposit >= +loaderData.amount;
 	const isValidInputAmountNotDebounced = currentPeriod
 		? parseUnits(amountToDepositNotDebounced, DAI_OPTIMISM.decimals) +
 				(subs?.[0]?.balanceLeft ?? 0n) >=
-		  amountForCurrentPeriod
+			amountForCurrentPeriod
 		: +amountToDepositNotDebounced >= +loaderData.amount;
 
 	const disableAll =
@@ -759,7 +759,7 @@ export default function Index() {
 														expectedYears > 0
 															? `${expectedYears} ${
 																	expectedYears > 1 ? "Years" : "Year"
-															  }, `
+																}, `
 															: ""
 													}${expectedMonths} ${
 														expectedMonths > 1 ? "Months" : "Month"
@@ -789,7 +789,7 @@ export default function Index() {
 															expectedYears > 0
 																? `${expectedYears} ${
 																		expectedYears > 1 ? "Years" : "Year"
-																  }, `
+																	}, `
 																: ""
 														}${expectedMonths} ${
 															expectedMonths > 1 ? "Months" : "Month"
@@ -817,7 +817,7 @@ export default function Index() {
 												expectedYears > 0
 													? `${expectedYears} ${
 															expectedYears > 1 ? "Years" : "Year"
-													  }, `
+														}, `
 													: ""
 											}${expectedMonths} ${
 												expectedMonths > 1 ? "Months" : "Month"
@@ -908,11 +908,11 @@ export default function Index() {
 											{!hydrated
 												? "Approve"
 												: confirmingTokenApproval ||
-													  waitingForApproveTxConfirmation
-												  ? "Confirming..."
-												  : isApproved
-													  ? "Approved"
-													  : "Approve"}
+														waitingForApproveTxConfirmation
+													? "Confirming..."
+													: isApproved
+														? "Approved"
+														: "Approve"}
 										</button>
 
 										<button
@@ -1212,18 +1212,18 @@ export default function Index() {
 															expectedYears > 0
 																? `${expectedYears} ${
 																		expectedYears > 1 ? "Years" : "Year"
-																  }, `
+																	}, `
 																: ""
-													  }${expectedMonths} ${
+														}${expectedMonths} ${
 															expectedMonths > 1 ? "Months" : "Month"
-													  }`
+														}`
 													: `Extended by ${Math.trunc(
 															+amountToDeposit / loaderData.amount,
-													  )} ${
+														)} ${
 															+amountToDeposit / loaderData.amount >= 2
 																? "months"
 																: "month"
-													  }`}
+														}`}
 											</td>
 										) : (
 											<td className="whitespace-nowrap p-2 pl-6 text-sm">
@@ -1232,11 +1232,11 @@ export default function Index() {
 															expectedYears > 0
 																? `${expectedYears} ${
 																		expectedYears > 1 ? "Years" : "Year"
-																  }, `
+																	}, `
 																: ""
-													  }${expectedMonths} ${
+														}${expectedMonths} ${
 															expectedMonths > 1 ? "Months" : "Month"
-													  }, `
+														}, `
 													: ""}
 												{amountToDeposit.length > 0 ? (
 													<span className="tabular-nums">
@@ -1260,10 +1260,10 @@ function hexToRgb(hex: string) {
 	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	return result
 		? {
-				r: parseInt(result[1], 16),
-				g: parseInt(result[2], 16),
-				b: parseInt(result[3], 16),
-		  }
+				r: Number.parseInt(result[1], 16),
+				g: Number.parseInt(result[2], 16),
+				b: Number.parseInt(result[3], 16),
+			}
 		: null;
 }
 
@@ -1277,8 +1277,8 @@ function getTextColor(color: string) {
 	const rgb = color.startsWith("#")
 		? hexToRgb(color)
 		: color.startsWith("rgb")
-		  ? rgbToRgb(color)
-		  : null;
+			? rgbToRgb(color)
+			: null;
 
 	if (!rgb) return "black";
 
