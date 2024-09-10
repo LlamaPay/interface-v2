@@ -19,20 +19,10 @@ import {
 	polygon,
 } from "viem/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
+import { LLAMAPAY_CHAINS_LIB } from "./constants";
 
 const queryClient = new QueryClient();
 const projectId = "2b0fa925a6e30cf250c05823fa9ef890";
-
-const transports = {
-	[mainnet.id]: http(),
-	[optimism.id]: http(),
-	[polygon.id]: http(),
-	[arbitrum.id]: http(),
-	[base.id]: http(),
-	[bsc.id]: http(),
-	[avalanche.id]: http(),
-	[blast.id]: http(),
-} as const;
 
 export const config = createConfig({
 	chains: [mainnet, optimism, polygon, arbitrum, base, bsc, avalanche, blast],
@@ -41,7 +31,16 @@ export const config = createConfig({
 	storage: createStorage({
 		storage: cookieStorage,
 	}),
-	transports,
+	transports: {
+		[mainnet.id]: http(LLAMAPAY_CHAINS_LIB[mainnet.id].rpc),
+		[optimism.id]: http(LLAMAPAY_CHAINS_LIB[optimism.id].rpc),
+		[polygon.id]: http(LLAMAPAY_CHAINS_LIB[polygon.id].rpc),
+		[arbitrum.id]: http(LLAMAPAY_CHAINS_LIB[arbitrum.id].rpc),
+		[base.id]: http(LLAMAPAY_CHAINS_LIB[base.id].rpc),
+		[bsc.id]: http(LLAMAPAY_CHAINS_LIB[bsc.id].rpc),
+		[avalanche.id]: http(LLAMAPAY_CHAINS_LIB[avalanche.id].rpc),
+		[blast.id]: http(LLAMAPAY_CHAINS_LIB[blast.id].rpc),
+	},
 });
 
 export const WalletProvider = ({
