@@ -3,11 +3,11 @@ import {
 	arbitrum,
 	avalanche,
 	base,
+	blast,
 	bsc,
 	mainnet,
 	optimism,
 	polygon,
-	blast,
 } from "viem/chains";
 
 function unscramble(str: string) {

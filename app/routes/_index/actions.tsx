@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { erc20Abi } from "viem";
 import { optimism } from "viem/chains";
 import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
@@ -23,7 +22,20 @@ async function approveToken({
 		const hash = await writeContract(config, {
 			address,
 			chainId: chainId as any,
-			abi: erc20Abi,
+			abi: [
+				{
+					constant: false,
+					inputs: [
+						{ name: "_spender", type: "address" },
+						{ name: "_value", type: "uint256" },
+					],
+					name: "approve",
+					outputs: [],
+					payable: false,
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+			],
 			functionName: "approve",
 			args: [subsContract, amountToDeposit],
 		});
@@ -43,7 +55,9 @@ async function approveToken({
 		return receipt;
 	} catch (error) {
 		throw new Error(
-			`[TOKEN-APPROVAL]: ${error instanceof Error ? error.message : "Failed to approve token"}`,
+			`[TOKEN-APPROVAL]: ${
+				error instanceof Error ? error.message : "Failed to approve token"
+			}`,
 		);
 	}
 }
@@ -137,7 +151,9 @@ async function withdraw({
 		return receipt;
 	} catch (error) {
 		throw new Error(
-			`[WITHDRAW]: ${error instanceof Error ? error.message : "Failed to withdraw"}`,
+			`[WITHDRAW]: ${
+				error instanceof Error ? error.message : "Failed to withdraw"
+			}`,
 		);
 	}
 }
@@ -146,11 +162,7 @@ export const useWithdraw = () => {
 	return useMutation({ mutationFn: withdraw });
 };
 
-async function claimV1({
-	args,
-}: {
-	args: any;
-}) {
+async function claimV1({ args }: { args: any }) {
 	try {
 		const hash = await writeContract(config, {
 			address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
@@ -186,11 +198,7 @@ export const useClaimV1 = () => {
 	return useMutation({ mutationFn: claimV1 });
 };
 
-async function claimV2({
-	args,
-}: {
-	args: any;
-}) {
+async function claimV2({ args }: { args: any }) {
 	try {
 		const hash = await writeContract(config, {
 			address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,

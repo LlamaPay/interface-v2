@@ -1,14 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import {
-	http,
-	type State,
-	WagmiProvider,
-	cookieStorage,
-	createConfig,
-	createStorage,
-} from "wagmi";
-import {
 	arbitrum,
 	avalanche,
 	base,
@@ -18,6 +10,14 @@ import {
 	optimism,
 	polygon,
 } from "viem/chains";
+import {
+	http,
+	type State,
+	WagmiProvider,
+	cookieStorage,
+	createConfig,
+	createStorage,
+} from "wagmi";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 import { LLAMAPAY_CHAINS_LIB } from "./constants";
 

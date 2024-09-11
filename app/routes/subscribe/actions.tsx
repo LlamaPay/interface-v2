@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { erc20Abi } from "viem";
 import { optimism } from "viem/chains";
 import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
@@ -21,7 +20,20 @@ async function approveToken({
 		const hash = await writeContract(config, {
 			address,
 			chainId: chainId as any,
-			abi: erc20Abi,
+			abi: [
+				{
+					constant: false,
+					inputs: [
+						{ name: "_spender", type: "address" },
+						{ name: "_value", type: "uint256" },
+					],
+					name: "approve",
+					outputs: [],
+					payable: false,
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+			],
 			functionName: "approve",
 			args: [subsContract, amountToDeposit],
 		});
@@ -41,7 +53,9 @@ async function approveToken({
 		return receipt;
 	} catch (error) {
 		throw new Error(
-			`[TOKEN-APPROVAL]: ${error instanceof Error ? error.message : "Failed to approve token"}`,
+			`[TOKEN-APPROVAL]: ${
+				error instanceof Error ? error.message : "Failed to approve token"
+			}`,
 		);
 	}
 }
@@ -83,7 +97,9 @@ async function subscribe({
 		return receipt;
 	} catch (error) {
 		throw new Error(
-			`[SUBSCRIBE]: ${error instanceof Error ? error.message : "Failed to subscribe"}`,
+			`[SUBSCRIBE]: ${
+				error instanceof Error ? error.message : "Failed to subscribe"
+			}`,
 		);
 	}
 }
@@ -123,7 +139,9 @@ async function extendSubscription({
 		return receipt;
 	} catch (error) {
 		throw new Error(
-			`[EXTEND-SUB]: ${error instanceof Error ? error.message : "Failed to extend subscription"}`,
+			`[EXTEND-SUB]: ${
+				error instanceof Error ? error.message : "Failed to extend subscription"
+			}`,
 		);
 	}
 }
