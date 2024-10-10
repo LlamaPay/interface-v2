@@ -1,47 +1,44 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import {
 	http,
+	type Chain,
 	createPublicClient,
 	formatUnits,
 	getContract,
-	parseUnits,
 } from "viem";
-import { optimism } from "viem/chains";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 
 import { useHydrated } from "~/hooks/useHydrated";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
 import {
-	DAI_OPTIMISM,
+	type ITokenByChain,
 	LLAMAPAY_CHAINS_LIB,
-	SUBSCRIPTION_AMOUNT_DIVISOR,
 	SUBSCRIPTION_DURATION,
+	tokensByChain,
 } from "~/lib/constants";
 import { formatNum } from "~/utils/formatNum";
 
-import { Icon } from "~/components/Icon";
-import { useClaimV1, useClaimV2 } from "./actions";
-
-const SUB_CHAIN_LIB = LLAMAPAY_CHAINS_LIB[optimism.id];
-const client = createPublicClient({
-	chain: optimism,
-	transport: http(SUB_CHAIN_LIB.rpc),
-});
-
-const min = (a: bigint, b: bigint) => (a > b ? b : a);
+import { chainIdToNames, config } from "~/lib/wallet";
+import { useClaim } from "./actions";
 
 async function calculateAvailableToClaim({
-	subsContract,
+	token,
 	receiver,
+	chain,
 }: {
-	subsContract: `0x${string}`;
+	token: ITokenByChain;
 	receiver?: string;
+	chain: Chain;
 }) {
-	if (!receiver) return null;
+	if (!receiver || !(LLAMAPAY_CHAINS_LIB as any)[chain.id]) return null;
+
+	const client = createPublicClient({
+		chain: chain,
+		transport: http((LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc),
+	});
 
 	const contract: any = getContract({
-		address: subsContract,
+		address: token.subsContract,
 		abi: SUBSCRIPTIONS_ABI,
 		client: client as any,
 	});
@@ -70,11 +67,11 @@ async function calculateAvailableToClaim({
 
 			const [currentSharePrice, periodShares, receiverAmountToExpire] =
 				await Promise.all([
-					contract.read.convertToShares([SUBSCRIPTION_AMOUNT_DIVISOR]),
+					contract.read.convertToShares([token.divisor]),
 					client
 						.multicall({
 							contracts: periods.map((p) => ({
-								address: subsContract,
+								address: token.subsContract,
 								abi: SUBSCRIPTIONS_ABI,
 								functionName: "sharesPerPeriod",
 								args: [p],
@@ -84,7 +81,7 @@ async function calculateAvailableToClaim({
 					client
 						.multicall({
 							contracts: periods.map((p) => ({
-								address: subsContract,
+								address: token.subsContract,
 								abi: SUBSCRIPTIONS_ABI,
 								functionName: "receiverAmountToExpire",
 								args: [receiver, p],
@@ -98,8 +95,7 @@ async function calculateAvailableToClaim({
 					!shares || shares === 0n ? currentSharePrice : shares;
 				amountPerPeriod -= receiverAmountToExpire[i] ?? 0n;
 				balance +=
-					BigInt(amountPerPeriod * finalShares) /
-					BigInt(SUBSCRIPTION_AMOUNT_DIVISOR);
+					BigInt(amountPerPeriod * finalShares) / BigInt(token.divisor);
 			});
 		}
 
@@ -114,16 +110,24 @@ async function calculateAvailableToClaim({
 }
 
 async function calculateAvailableToClaimNextMonth({
-	subsContract,
+	token,
 	receiver,
+	chain,
 }: {
-	subsContract: `0x${string}`;
+	token: ITokenByChain;
 	receiver?: string;
+	chain: Chain;
 }) {
-	if (!receiver) return null;
+	if (!receiver || !(LLAMAPAY_CHAINS_LIB as any)[chain.id]) return null;
+
+	const client = createPublicClient({
+		chain,
+		transport: http((LLAMAPAY_CHAINS_LIB as any)[chain.id].rpc),
+	});
+
 	try {
 		const contract: any = getContract({
-			address: subsContract as `0x${string}`,
+			address: token.subsContract,
 			abi: SUBSCRIPTIONS_ABI,
 			client: client as any,
 		});
@@ -155,35 +159,40 @@ async function calculateAvailableToClaimNextMonth({
 	}
 }
 
-async function calcAvailableToClaimOnAllContracts({
+interface IClaimableToken extends ITokenByChain {
+	claimbale: bigint;
+}
+
+async function calcAvailableToClaimNextMonthOnAllContracts({
 	receiver,
+	chain,
 }: {
 	receiver?: string;
+	chain: Chain;
 }) {
 	try {
-		const data = await Promise.allSettled([
-			calculateAvailableToClaimNextMonth({
-				subsContract:
-					LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
-				receiver,
-			}),
-			calculateAvailableToClaimNextMonth({
-				subsContract: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-				receiver,
-			}),
-		]);
+		const data = await Promise.allSettled(
+			tokensByChain[chain.id].map((token) =>
+				calculateAvailableToClaimNextMonth({
+					token,
+					receiver,
+					chain,
+				}),
+			),
+		);
 
-		const claimables_v1 = data[0].status === "fulfilled" ? data[0].value : null;
-		const claimables_v2 = data[1].status === "fulfilled" ? data[1].value : null;
-
-		return {
-			claimables_v1,
-			claimables_v2,
-			total:
-				typeof claimables_v1 === "bigint" || typeof claimables_v2 === "bigint"
-					? (claimables_v1 ?? 0n) + (claimables_v2 ?? 0n)
+		const claimablesByToken = tokensByChain[chain.id].map((token, index) => ({
+			...token,
+			claimbale:
+				data[index].status === "fulfilled" &&
+				typeof data[index].value === "bigint"
+					? data[index].value
 					: null,
-		};
+		}));
+
+		return claimablesByToken.filter((token) =>
+			token.claimbale ? true : false,
+		) as Array<IClaimableToken>;
 	} catch (error) {
 		throw new Error(
 			error instanceof Error
@@ -193,35 +202,38 @@ async function calcAvailableToClaimOnAllContracts({
 	}
 }
 
-async function calcAvailableToClaimNextMonthOnAllContracts({
+const min = (a: bigint, b: bigint) => (a > b ? b : a);
+
+async function calcAvailableToClaimNowOnAllContracts({
 	receiver,
+	chain,
 }: {
 	receiver?: string;
+	chain: Chain;
 }) {
 	try {
-		const data = await Promise.allSettled([
-			calculateAvailableToClaim({
-				subsContract:
-					LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
-				receiver,
-			}),
-			calculateAvailableToClaim({
-				subsContract: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-				receiver,
-			}),
-		]);
+		const data = await Promise.allSettled(
+			tokensByChain[chain.id].map((token) =>
+				calculateAvailableToClaim({
+					token,
+					receiver,
+					chain,
+				}),
+			),
+		);
 
-		const claimables_v1 = data[0].status === "fulfilled" ? data[0].value : null;
-		const claimables_v2 = data[1].status === "fulfilled" ? data[1].value : null;
-
-		return {
-			claimables_v1,
-			claimables_v2,
-			total:
-				typeof claimables_v1 === "bigint" || typeof claimables_v2 === "bigint"
-					? (claimables_v1 ?? 0n) + (claimables_v2 ?? 0n)
+		const claimablesByToken = tokensByChain[chain.id].map((token, index) => ({
+			...token,
+			claimbale:
+				data[index].status === "fulfilled" &&
+				typeof data[index].value === "bigint"
+					? data[index].value
 					: null,
-		};
+		}));
+
+		return claimablesByToken.filter((token) =>
+			token.claimbale ? true : false,
+		) as Array<IClaimableToken>;
 	} catch (error) {
 		throw new Error(
 			error instanceof Error ? error.message : "Failed to fetch claimables",
@@ -229,233 +241,191 @@ async function calcAvailableToClaimNextMonthOnAllContracts({
 	}
 }
 
-export const Claim = () => {
-	const { address, isConnected, chain } = useAccount();
+const ClaimByToken = ({
+	token,
+	chain,
+	disabled,
+	refetch,
+}: {
+	token: IClaimableToken;
+	chain: Chain;
+	disabled?: boolean;
+	refetch: () => void;
+}) => {
+	const { address, chain: chainOnWallet } = useAccount();
+	const { switchChain } = useSwitchChain();
 
-	const { mutateAsync: claim_v1, isPending: confirmingClaimTx_v1 } =
-		useClaimV1();
-	const { mutateAsync: claim_v2, isPending: confirmingClaimTx_v2 } =
-		useClaimV2();
+	const { mutateAsync: claimBalance, isPending: confirmingClaim } = useClaim();
+
+	return (
+		<>
+			<span className="p-1 border flex items-center justify-center gap-1">
+				<img
+					src={`https://token-icons.llamao.fi/icons/tokens/${chain.id}/${token.address.toLowerCase()}`}
+					width={16}
+					height={16}
+					alt=""
+				/>
+				<span>{`${formatNum(formatUnits(token.claimbale, token.decimals), 2)} ${token.name}`}</span>
+				{!disabled ? (
+					chain.id !== chainOnWallet?.id ? (
+						<button
+							className="ml-2 px-3 py-1 rounded-lg bg-[#13785a] text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black text-sm"
+							onClick={() => switchChain({ chainId: chain.id })}
+						>
+							Switch network
+						</button>
+					) : (
+						<button
+							className="ml-2 px-3 py-1 rounded-lg bg-[#13785a] text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black text-sm"
+							disabled={
+								!address ||
+								!chainOnWallet ||
+								chainOnWallet.id !== chain.id ||
+								confirmingClaim
+							}
+							onClick={() => {
+								claimBalance?.({
+									address: token.subsContract,
+									chainId: chain.id,
+									toClaim: token.claimbale,
+								}).then(() => refetch());
+							}}
+						>
+							{confirmingClaim ? "..." : "Claim"}
+						</button>
+					)
+				) : null}
+			</span>
+		</>
+	);
+};
+const ClaimByChain = ({ chain }: { chain: Chain }) => {
+	const { address, isConnected } = useAccount();
 
 	const {
-		data: claimable,
+		data: claimablesByToken,
 		isLoading: fetchingClaimables,
 		error: errorFetchingClaimables,
 		refetch: refetchClaimable,
 	} = useQuery({
-		queryKey: ["claimable", address],
+		queryKey: ["claimable", address, chain.id],
 		queryFn: () =>
-			calcAvailableToClaimNextMonthOnAllContracts({
+			calcAvailableToClaimNowOnAllContracts({
 				receiver: address,
+				chain,
 			}),
 		refetchInterval: 20_000,
 	});
-	const { data: claimableNextMonth, isLoading: fetchingClaimablesNextMonth } =
-		useQuery({
-			queryKey: ["claimable-next-month", address],
-			queryFn: () =>
-				calcAvailableToClaimOnAllContracts({
-					receiver: address,
-				}),
-			refetchInterval: 20_000,
-		});
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const form = e.target as HTMLFormElement;
+	const {
+		data: claimableNextMonth,
+		isLoading: fetchingClaimablesNextMonth,
+		error: errorFetchingClaimablesNextMonth,
+	} = useQuery({
+		queryKey: ["claimable-next-month", address],
+		queryFn: () =>
+			calcAvailableToClaimNextMonthOnAllContracts({
+				receiver: address,
+				chain,
+			}),
+		refetchInterval: 20_000,
+	});
 
-		if (
-			!address ||
-			!chain ||
-			chain.id !== optimism.id ||
-			!claimable ||
-			!claimable.total
-		)
-			return;
-
-		let toClaim = parseUnits(form.amountToClaim.value, DAI_OPTIMISM.decimals);
-
-		if (claimable.claimables_v1 && claimable.claimables_v1 > 0) {
-			const contract: any = getContract({
-				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
-				abi: SUBSCRIPTIONS_ABI,
-				client: client as any,
-			});
-
-			const shares = await contract.read.convertToShares([toClaim]);
-
-			await claim_v1?.({
-				args: [min(min(toClaim, claimable.claimables_v1), shares)],
-			});
-
-			toClaim -= claimable.claimables_v1;
-		}
-
-		if (claimable.claimables_v2 && claimable.claimables_v2 > 0 && toClaim > 0) {
-			const contract: any = getContract({
-				address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-				abi: SUBSCRIPTIONS_ABI,
-				client: client as any,
-			});
-			const shares = await contract.read.convertToShares([toClaim]);
-
-			await claim_v2?.({
-				args: [min(toClaim, shares)],
-			});
-		}
-
-		form.reset();
-		refetchClaimable();
-	};
-	const [amountToClaim, setAmountToClaim] = useState("");
 	const hydrated = useHydrated();
-
-	const amountToClaimParsed =
-		amountToClaim !== ""
-			? parseUnits(amountToClaim, DAI_OPTIMISM.decimals)
-			: 0n;
-
-	const needToClaimTwoTxs =
-		amountToClaim !== "" &&
-		claimable &&
-		claimable.claimables_v1 &&
-		claimable.total &&
-		amountToClaimParsed > claimable.claimables_v1 &&
-		amountToClaimParsed <= claimable.total
-			? true
-			: false;
 
 	return (
 		<>
-			<form
-				className="relative mx-auto flex w-full max-w-[450px] flex-col gap-4 xl:-left-[102px]"
-				onSubmit={handleSubmit}
-			>
-				<label className="flex flex-col gap-1">
-					<span>Amount</span>
-
-					<span className="relative isolate rounded-lg border border-black/[0.15] bg-[#ffffff] p-3 pb-[26px] dark:border-white/5 dark:bg-[#141414]">
-						<input
-							name="amountToClaim"
-							className="relative z-10 w-full border-none bg-transparent pr-16 text-4xl !outline-none"
-							required
-							autoComplete="off"
-							autoCorrect="off"
-							type="text"
-							pattern="^[0-9]*[.,]?[0-9]*$"
-							placeholder="0.0"
-							minLength={1}
-							maxLength={79}
-							spellCheck="false"
-							inputMode="decimal"
-							title="Enter numbers only."
-							value={amountToClaim}
-							onChange={(e) => {
-								if (!Number.isNaN(Number(e.target.value))) {
-									setAmountToClaim(e.target.value.trim());
-								}
-							}}
-							disabled={confirmingClaimTx_v1 || confirmingClaimTx_v2}
+			<tr>
+				<td className="px-4 py-2 border">
+					<span className="flex items-center gap-1">
+						<img
+							src={`https://icons.llamao.fi/icons/chains/rsz_${
+								(chainIdToNames as any)[chain.id]?.iconServerName ?? ""
+							}?w=48&h=48`}
+							alt=""
+							className="h-5 w-5 rounded-full"
 						/>
-						<span className="absolute bottom-0 right-4 top-3 my-auto flex flex-col gap-2">
-							<p className="ml-auto flex items-center gap-1 text-xl">
-								<img src={DAI_OPTIMISM.img} width={16} height={16} alt="" />
-								<span>DAI</span>
-							</p>
-							<p className="flex items-center gap-1 text-xs">
-								<span>Claimable:</span>
-								{!hydrated || fetchingClaimables ? (
-									<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400" />
-								) : !isConnected || errorFetchingClaimables ? (
-									<span>-</span>
-								) : (
-									<>
-										<span>
-											{typeof claimable?.total === "bigint"
-												? formatNum(
-														formatUnits(claimable.total, DAI_OPTIMISM.decimals),
-														2,
-													)
-												: "-"}
-										</span>
-
-										<button
-											type="button"
-											className="text-[var(--page-text-color-2)] underline"
-											onClick={() =>
-												setAmountToClaim(
-													claimable?.total
-														? formatUnits(
-																claimable.total,
-																DAI_OPTIMISM.decimals,
-															)
-														: "0",
-												)
-											}
-										>
-											Max
-										</button>
-									</>
-								)}
-							</p>
-						</span>
+						<span>{chain.name}</span>
 					</span>
-				</label>
-
-				{hydrated && errorFetchingClaimables ? (
-					<p className="text-center text-sm text-red-500">
-						{(errorFetchingClaimables as any)?.shortMessage ??
-							(errorFetchingClaimables as any).message ??
-							"Failed to fetch amount claimable"}
-					</p>
-				) : null}
-
-				<p className="flex items-center gap-1 text-xs">
-					<span>Claimable Next Month:</span>
-					{!hydrated || fetchingClaimablesNextMonth ? (
+				</td>
+				<td className="px-4 py-2 border text-center">
+					{!hydrated || fetchingClaimables ? (
 						<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400" />
 					) : !isConnected || errorFetchingClaimables ? (
-						<span>-</span>
+						<>-</>
 					) : (
-						<span>
-							{typeof claimableNextMonth?.total === "bigint"
-								? `${formatNum(
-										formatUnits(
-											claimableNextMonth.total,
-											DAI_OPTIMISM.decimals,
-										),
-										2,
-									)} DAI`
-								: "-"}
-						</span>
+						<>
+							{claimablesByToken && claimablesByToken.length > 0 ? (
+								<span className="flex flex-col gap-2">
+									{claimablesByToken.map((token) => (
+										<ClaimByToken
+											token={token}
+											chain={chain}
+											key={`claimable-${token.address}`}
+											refetch={refetchClaimable}
+										/>
+									))}
+								</span>
+							) : (
+								"-"
+							)}
+						</>
 					)}
-				</p>
-
-				<button
-					className="rounded-lg bg-[#13785a] p-3 text-white disabled:opacity-60 dark:bg-[#23BF91] dark:text-black"
-					disabled={
-						!hydrated ||
-						!address ||
-						!chain ||
-						chain.id !== optimism.id ||
-						confirmingClaimTx_v1 ||
-						confirmingClaimTx_v2 ||
-						!claimable?.total ||
-						amountToClaimParsed > claimable.total
-					}
-				>
-					{confirmingClaimTx_v1 || confirmingClaimTx_v2
-						? "Confirming..."
-						: "Claim"}
-				</button>
-
-				{needToClaimTwoTxs ? (
-					<p className="flex items-center justify-center gap-1 flex-nowrap text-orange-500 text-sm text-center">
-						<Icon name="exclamation-circle" className="h-5 w-5 flex-shrink-0" />
-						<span>You need to confirm two transactions on your wallet</span>
-					</p>
-				) : null}
-			</form>
+				</td>
+				<td className="px-4 py-2 border text-center">
+					{!hydrated || fetchingClaimablesNextMonth ? (
+						<span className="inline-block h-4 w-8 animate-pulse rounded bg-gray-400" />
+					) : !isConnected || errorFetchingClaimablesNextMonth ? (
+						<>-</>
+					) : (
+						<>
+							{claimableNextMonth && claimableNextMonth.length > 0 ? (
+								<span className="flex flex-col gap-2">
+									{claimableNextMonth.map((token) => (
+										<ClaimByToken
+											token={token}
+											chain={chain}
+											refetch={refetchClaimable}
+											key={`claimable-${token.address}`}
+											disabled
+										/>
+									))}
+								</span>
+							) : (
+								"-"
+							)}
+						</>
+					)}
+				</td>
+			</tr>
 		</>
+	);
+};
+
+export const Claim = () => {
+	return (
+		<div className="overflow-x-auto">
+			<table className="min-w-full border-collapse">
+				<thead>
+					<tr>
+						<th className="whitespace-nowrap px-4 py-2 text-sm font-normal border">
+							Chain
+						</th>
+						<th className="whitespace-nowrap px-4 py-2 text-sm font-normal border">
+							Claimable
+						</th>
+						<th className="whitespace-nowrap px-4 py-2 text-sm font-normal border">
+							Claimable next month
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					{config.chains.map((chain) => (
+						<ClaimByChain chain={chain} key={`claimable-${chain.id}`} />
+					))}
+				</tbody>
+			</table>
+		</div>
 	);
 };

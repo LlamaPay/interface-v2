@@ -7,6 +7,16 @@ import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
 import { config, llamapayChainNamesToIds } from "~/lib/wallet";
 import { formatNewSubs, formatSubs } from "./utils";
 
+const subStatus = (data: ISub) => {
+	return data.startTimestamp === data.realExpiration
+		? -1
+		: +data.startTimestamp > Date.now() / 1e3
+			? 0
+			: +data.realExpiration < Date.now() / 1e3
+				? -1
+				: 1;
+};
+
 export async function getSubscriptions(address?: string) {
 	try {
 		if (!address) return null;
@@ -79,7 +89,7 @@ export async function getSubscriptions(address?: string) {
 				tokenDecimals,
 			}),
 			...formatSubs(data?.subs ?? []),
-		];
+		].sort((a, b) => subStatus(b) - subStatus(a));
 	} catch (error: any) {
 		throw new Error(error.message ?? "Failed to fetch subscriptions");
 	}

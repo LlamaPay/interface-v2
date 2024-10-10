@@ -48,7 +48,9 @@ export const Subscriptions = () => {
 				if (incoming) {
 					rows.push([
 						incoming ? sub.owner : sub.receiver,
-						formatUnits(BigInt(sub.amountPerCycle), DAI_OPTIMISM.decimals),
+						sub.tokenDecimal
+							? formatUnits(BigInt(sub.amountPerCycle), sub.tokenDecimal)
+							: `${sub.amountPerCycle} not formatted`,
 					]);
 				}
 			}

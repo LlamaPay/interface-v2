@@ -1,10 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { erc20Abi } from "viem";
-import { optimism } from "viem/chains";
-import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
+import {
+	readContract,
+	waitForTransactionReceipt,
+	writeContract,
+} from "wagmi/actions";
 import { SUBSCRIPTIONS_ABI } from "~/lib/abi.subscriptions";
-import { LLAMAPAY_CHAINS_LIB } from "~/lib/constants";
 import { config } from "~/lib/wallet";
 import type { IFormattedSub } from "~/types";
 
@@ -146,18 +148,32 @@ export const useWithdraw = () => {
 	return useMutation({ mutationFn: withdraw });
 };
 
-async function claimV1({
-	args,
+const min = (a: bigint, b: bigint) => (a > b ? b : a);
+
+async function claim({
+	address,
+	chainId,
+	toClaim,
 }: {
-	args: any;
+	address: `0x${string}`;
+	chainId: number;
+	toClaim: bigint;
 }) {
 	try {
+		const shares = await readContract(config, {
+			address,
+			abi: SUBSCRIPTIONS_ABI,
+			functionName: "convertToShares",
+			chainId: chainId as any,
+			args: [toClaim],
+		});
+
 		const hash = await writeContract(config, {
-			address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions_v1,
+			address,
 			abi: SUBSCRIPTIONS_ABI,
 			functionName: "claim",
-			chainId: optimism.id,
-			args,
+			chainId: chainId as any,
+			args: [min(toClaim, shares)],
 		});
 
 		const receipt = await waitForTransactionReceipt(config, { hash });
@@ -178,50 +194,10 @@ async function claimV1({
 		toast.error(msg.slice(0, 50), {
 			id: `tx-failed${Date.now()}`,
 		});
-		throw new Error(`[CLAIM-V1]: ${msg}`);
+		throw new Error(`[CLAIM]: ${msg}`);
 	}
 }
 
-export const useClaimV1 = () => {
-	return useMutation({ mutationFn: claimV1 });
-};
-
-async function claimV2({
-	args,
-}: {
-	args: any;
-}) {
-	try {
-		const hash = await writeContract(config, {
-			address: LLAMAPAY_CHAINS_LIB[optimism.id].contracts.subscriptions,
-			abi: SUBSCRIPTIONS_ABI,
-			functionName: "claim",
-			chainId: optimism.id,
-			args,
-		});
-
-		const receipt = await waitForTransactionReceipt(config, { hash });
-
-		if (receipt.status === "success") {
-			toast.success("Transaction Success", {
-				id: `tx-success${hash}`,
-			});
-		} else {
-			toast.error("Transaction Failed", {
-				id: `tx-failed${hash}`,
-			});
-		}
-
-		return receipt;
-	} catch (error) {
-		const msg = error instanceof Error ? error.message : "Failed to claim v2";
-		toast.error(msg.slice(0, 50), {
-			id: `tx-failed${Date.now()}`,
-		});
-		throw new Error(`[CLAIM-V2]: ${msg}`);
-	}
-}
-
-export const useClaimV2 = () => {
-	return useMutation({ mutationFn: claimV2 });
+export const useClaim = () => {
+	return useMutation({ mutationFn: claim });
 };
